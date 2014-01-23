@@ -60,7 +60,7 @@ class SystemInformation:
         self.logger.debug('cpu_clock = %s' % self.sysinfo['cpu_clock'])
         self.logger.debug('cpu_core = %s' % self.sysinfo['cpu_core'])
 
-        return int(self.sysinfo['cpu_core'])
+        return int(self.sysinfo['cpu_core']) # XXX
 
     def get_memory_info(self):
         # Requests:
@@ -74,7 +74,7 @@ class SystemInformation:
 
         self.logger.debug('memory_size = %s' % self.sysinfo['memory_size'])
 
-        return size
+        return size / 1024 # XXX
 
     def get_graphic_info(self):
         """
@@ -124,7 +124,7 @@ class SystemInformation:
             self.logger.debug('%s = %s' % ('disk%s_model' % i, self.sysinfo['disk%s_model' % i]))
             self.logger.debug('%s = %s' % ('disk%s_size' % i, self.sysinfo['disk%s_size' % i]))
 
-        return len(self.sysinfo['disk_list'])
+        return len(self.sysinfo['disk_list']) # XXX
 
     def get_screen_info(self):
         # Requests:
