@@ -224,9 +224,9 @@ def main():
     si = SystemInformation()
 
     product_type = question("""[1] Desktop, Integrated Desktop, and Notebook Computers
-[2] Workstations
-[3] Small-scale Servers
-[4] Thin Clients
+[2] Workstations (Not implemented yet)
+[3] Small-scale Servers (Not implemented yet)
+[4] Thin Clients (Not implemented yet)
 Which product type would you like to verify? [1-4] """, 1, "1234")
 
     if product_type == '1':
