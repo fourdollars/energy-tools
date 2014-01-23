@@ -162,7 +162,7 @@ Which type of computer do you use? [1-3] """, 1, "123")
 
         disk = si.get_disk_info()
         if disk > 1:
-            TEC_STORAGE = 25.0 * (num - 1)
+            TEC_STORAGE = 25.0 * (disk - 1)
         else:
             TEC_STORAGE = 0.0
     ## Maximum TEC Allowances for Notebook Computers
@@ -191,7 +191,7 @@ Which type of computer do you use? [1-3] """, 1, "123")
 
         disk = si.get_disk_info()
         if disk > 1:
-            TEC_STORAGE = 3.0 * (num - 1)
+            TEC_STORAGE = 3.0 * (disk - 1)
         else:
             TEC_STORAGE = 0.0
     E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
