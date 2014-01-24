@@ -17,7 +17,54 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sysinfo import SystemInformation
+import subprocess
+
+class SysInfo:
+    def __init__(self, cpu_core=0, cpu_clock=0.0, mem_size=0.0, disk_num=0):
+        self.cpu_core = cpu_core
+        self.cpu_clock = cpu_clock
+        self.mem_size = mem_size
+        self.disk_num = disk_num
+
+    def get_cpu_core(self):
+        if self.cpu_core:
+            return self.cpu_core
+
+        try:
+            subprocess.check_output('cat /proc/cpuinfo | grep cores', shell=True)
+        except subprocess.CalledProcessError:
+            self.cpu_core = 1
+        else:
+            self.cpu_core = int(subprocess.check_output('cat /proc/cpuinfo | grep "cpu cores" | sort -ru | head -n 1 | cut -d: -f2 | xargs', shell=True).strip())
+
+        return self.cpu_core
+
+    def get_cpu_clock(self):
+        if self.cpu_clock:
+            return self.cpu_clock
+
+        self.cpu_clock = float(subprocess.check_output("cat /proc/cpuinfo | grep 'model name' | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'", shell=True).strip())
+
+        return self.cpu_clock
+
+    def get_mem_size(self):
+        if self.mem_size:
+            return self.mem_size
+
+        for size in subprocess.check_output("sudo dmidecode -t 17 | grep Size | awk '{print $2}'", shell=True).split('\n'):
+            if size:
+                self.mem_size = self.mem_size + int(size)
+        self.mem_size = self.mem_size / 1024
+
+        return self.mem_size
+
+    def get_disk_num(self):
+        if self.disk_num:
+            return self.disk_num
+
+        self.disk_num = len(subprocess.check_output('ls /sys/block | grep sd', shell=True).strip().split('\n'))
+
+        return self.disk_num
 
 def question_str(prompt, length, validator):
     while True:
@@ -45,9 +92,9 @@ def lineno():
 class EnergyStar52:
     """Energy Star 5.2 calculator"""
     def __init__(self, sysinfo):
-        self.core = sysinfo.get_cpu_info()
-        self.disk = sysinfo.get_disk_info()
-        self.memory = sysinfo.get_memory_info()
+        self.core = sysinfo.get_cpu_core()
+        self.disk = sysinfo.get_disk_num()
+        self.memory = sysinfo.get_mem_size()
 
     def qualify_desktop_category(self, category, gpu_discrete, gpu_width):
         if category == 'D':
@@ -94,7 +141,7 @@ class EnergyStar52:
         return E_TEC
 
     def equation_two(self, computer, gpu_type, gpu_width):
-        """Equation 2: E_TEC_MAX Calculation for Desktop, Integrated Desktop"""
+        """Equation 2: E_TEC_MAX Calculation for Desktop, Integrated Desktop, and Notebook Computers"""
 
         result = []
 
@@ -234,9 +281,9 @@ class EnergyStar52:
 class EnergyStar60:
     """Energy Star 6.0 calculator"""
     def __init__(self, sysinfo):
-        self.core = sysinfo.get_cpu_info()
-        self.disk = sysinfo.get_disk_info()
-        self.memory = sysinfo.get_memory_info()
+        self.core = sysinfo.get_cpu_core()
+        self.disk = sysinfo.get_disk_num()
+        self.memory = sysinfo.get_mem_size()
 
     def qualify_desktop_category(self, category, gpu_discrete, gpu_width):
         if category == 'D':
@@ -272,7 +319,7 @@ class EnergyStar60:
 
     # Requirements for Desktop, Integrated Desktop, and Notebook Computers
     def equation_one(self, computer, P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE):
-        """Equation 1: TEC Calculation (E_TEC) for Desktop, Integrated Desktop, and Notebook Computers"""
+        """Equation 1: TEC Calculation (E_TEC) for Desktop, Integrated Desktop, Thin Client and Notebook Computers"""
         if computer == '3':
             (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.25, 0.35, 0.1, 0.3)
         else:
@@ -283,7 +330,7 @@ class EnergyStar60:
         return E_TEC
 
     def equation_two(self, computer, gpu_type, gpu_width):
-        """Equation 2: E_TEC_MAX Calculation for Desktop, Integrated Desktop"""
+        """Equation 2: E_TEC_MAX Calculation for Desktop, Integrated Desktop, and Notebook Computers"""
 
         result = []
 
@@ -421,7 +468,7 @@ class EnergyStar60:
         P_SLEEP_MAX = P_SLEEP_BASE + P_SLEEP_WOL
 
 def main():
-    sysinfo = SystemInformation()
+    sysinfo = SysInfo()
 
     product_type = question_str("""Which product type would you like to verify?
  [1] Desktop, Integrated Desktop, and Notebook Computers
@@ -441,11 +488,15 @@ def main():
             gpu_bit = '128'
 
         discrete = question_str("Is there a discrete GPU? [y/n]", 1, "yn")
+        if discrete == 'y':
+            switchable = question_str("Is it a switchable GPU? [y/n]", 1, "yn")
+        else:
+            switchable = 'n'
 
-        P_SHORT_IDLE = question_num("What is the power consumption in Short Idle Mode?")
-        P_LONG_IDLE = question_num("What is the power consumption in Long Idle Mode?")
-        P_SLEEP = question_num("What is the power consumption in Sleep Mode?")
         P_OFF = question_num("What is the power consumption in Off Mode?")
+        P_SLEEP = question_num("What is the power consumption in Sleep Mode?")
+        P_LONG_IDLE = question_num("What is the power consumption in Long Idle Mode?")
+        P_SHORT_IDLE = question_num("What is the power consumption in Short Idle Mode?")
 
         print("Energy Star 5.2:");
         estar52 = EnergyStar52(sysinfo)
@@ -474,7 +525,6 @@ def main():
         print("\nEnergy Star 6.0:");
         estar60 = EnergyStar60(sysinfo)
         E_TEC = estar60.equation_one(computer_type, P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE)
-
         print("  E_TEC = %s" % (E_TEC))
 
     elif product_type == '2':
