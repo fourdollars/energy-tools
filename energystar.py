@@ -231,6 +231,195 @@ class EnergyStar52:
         """Equation 7: Calculation of P_SLEEP_MAX for Thin Clients"""
         P_SLEEP_MAX = P_SLEEP_BASE + P_SLEEP_WOL
 
+class EnergyStar60:
+    """Energy Star 6.0 calculator"""
+    def __init__(self, sysinfo):
+        self.core = sysinfo.get_cpu_info()
+        self.disk = sysinfo.get_disk_info()
+        self.memory = sysinfo.get_memory_info()
+
+    def qualify_desktop_category(self, category, gpu_discrete, gpu_width):
+        if category == 'D':
+            if self.core >= 4:
+                if self.memory >= 4:
+                    return True
+                elif gpu_width == 'y':
+                    return True
+        elif category == 'C':
+            if self.core >= 2:
+                if self.memory >= 2:
+                    return True
+                elif gpu_discrete == 'y':
+                    return True
+        elif category == 'B':
+            if self.core == 2 and self.memory >= 2:
+                return True
+        elif category == 'A':
+            return True
+        return False
+
+    def qualify_netbook_category(self, category, gpu_discrete, gpu_width):
+        if category =='C':
+            if self.core >= 2 and self.memory >= 2:
+                if gpu_discrete == 'y' and gpu_width == 'y':
+                    return True
+        elif category =='B':
+            if gpu_discrete == 'y':
+                return True
+        elif category =='A':
+            return True
+        return False
+
+    # Requirements for Desktop, Integrated Desktop, and Notebook Computers
+    def equation_one(self, computer, P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE):
+        """Equation 1: TEC Calculation (E_TEC) for Desktop, Integrated Desktop, and Notebook Computers"""
+        if computer == '3':
+            (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.25, 0.35, 0.1, 0.3)
+        else:
+            (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.45, 0.05, 0.15, 0.35)
+
+        E_TEC = ((P_OFF * T_OFF) + (P_SLEEP * T_SLEEP) + (P_LONG_IDLE * T_LONG_IDLE) + (P_SHORT_IDLE * T_SHORT_IDLE)) * 8760 / 1000
+
+        return E_TEC
+
+    def equation_two(self, computer, gpu_type, gpu_width):
+        """Equation 2: E_TEC_MAX Calculation for Desktop, Integrated Desktop"""
+
+        result = []
+
+        ## Maximum TEC Allowances for Desktop and Integrated Desktop Computers
+        if computer == '1' or computer == '2':
+            if self.disk > 1:
+                TEC_STORAGE = 25.0 * (self.disk - 1)
+            else:
+                TEC_STORAGE = 0.0
+
+            if self.qualify_desktop_category('A', gpu_type, gpu_width):
+                TEC_BASE = 148.0
+
+                if self.memory > 2:
+                    TEC_MEMORY = 1.0 * (self.memory - 2)
+                else:
+                    TEC_MEMORY = 0.0
+
+                if gpu_width == 'y':
+                    TEC_GRAPHICS = 50.0
+                else:
+                    TEC_GRAPHICS = 35.0
+
+                E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+                result.append(('A', E_TEC_MAX))
+
+            if self.qualify_desktop_category('B', gpu_type, gpu_width):
+                TEC_BASE = 175.0
+
+                if self.memory > 2:
+                    TEC_MEMORY = 1.0 * (self.memory - 2)
+                else:
+                    TEC_MEMORY = 0.0
+
+                if gpu_width == 'y':
+                    TEC_GRAPHICS = 50.0
+                else:
+                    TEC_GRAPHICS = 35.0
+
+                E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+                result.append(('B', E_TEC_MAX))
+
+            if self.qualify_desktop_category('C', gpu_type, gpu_width):
+                TEC_BASE = 209.0
+
+                if self.memory > 2:
+                    TEC_MEMORY = 1.0 * (self.memory - 2)
+                else:
+                    TEC_MEMORY = 0.0
+
+                if gpu_width == 'y':
+                    TEC_GRAPHICS = 50.0
+                else:
+                    TEC_GRAPHICS = 0.0
+
+                E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+                result.append(('C', E_TEC_MAX))
+
+            if self.qualify_desktop_category('D', gpu_type, gpu_width):
+                TEC_BASE = 234.0
+
+                if self.memory > 4:
+                    TEC_MEMORY = 1.0 * (self.memory - 4)
+                else:
+                    TEC_MEMORY = 0.0
+
+                if gpu_width == 'y':
+                    TEC_GRAPHICS = 50.0
+                else:
+                    TEC_GRAPHICS = 0.0
+
+                E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+                result.append(('D', E_TEC_MAX))
+
+        ## Maximum TEC Allowances for Notebook Computers
+        else:
+            if self.memory > 4:
+                TEC_MEMORY = 0.4 * (self.memory - 4)
+            else:
+                TEC_MEMORY = 0.0
+
+            if self.disk > 1:
+                TEC_STORAGE = 3.0 * (self.disk - 1)
+            else:
+                TEC_STORAGE = 0.0
+
+            if self.qualify_netbook_category('A', gpu_type, gpu_width):
+                TEC_BASE = 40.0
+                TEC_GRAPHICS = 0.0
+
+                E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+                result.append(('A', E_TEC_MAX))
+
+            if self.qualify_netbook_category('B', gpu_type, gpu_width):
+                TEC_BASE = 53.0
+
+                if gpu_width == 'y':
+                    TEC_GRAPHICS = 3.0
+                else:
+                    TEC_GRAPHICS = 0.0
+
+                E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+                result.append(('B', E_TEC_MAX))
+
+            if self.qualify_netbook_category('C', gpu_type, gpu_width):
+                TEC_BASE = 88.5
+                TEC_GRAPHICS = 0.0
+
+                E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+                result.append(('C', E_TEC_MAX))
+
+        return result
+
+    # Requirements for Workstations
+    def equation_three():
+        """Equation 3: P_TEC Calculation for Workstations""" 
+        P_TEC = (P_OFF * T_OFF) + (P_SLEEP * T_SLEEP) + (P_IDLE * T_IDLE) 
+
+    def equation_four():
+        """Equation 4: P_TEC_MAX Calculation for Workstations"""
+        P_TEC_MAX <= 0.28 * (P_MAX + (N_HDD * 5))
+
+    # Requirements for Small-scale Servers
+    def equation_five():
+        """Equation 5: Calculation of P_OFF_MAX for Small-scale Servers"""
+        P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
+
+    # Requirements for Thin Clients
+    def equation_six():
+        """Equation 6: Calculation of P_OFF_MAX for Thin Clients"""
+        P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
+
+    def equation_seven():
+        """Equation 7: Calculation of P_SLEEP_MAX for Thin Clients"""
+        P_SLEEP_MAX = P_SLEEP_BASE + P_SLEEP_WOL
+
 def main():
     sysinfo = SystemInformation()
 
@@ -253,13 +442,14 @@ def main():
 
         discrete = question_str("Is there a discrete GPU? [y/n]", 1, "yn")
 
-        P_OFF = question_num("What is the power consumption in Off Mode?")
+        P_SHORT_IDLE = question_num("What is the power consumption in Short Idle Mode?")
+        P_LONG_IDLE = question_num("What is the power consumption in Long Idle Mode?")
         P_SLEEP = question_num("What is the power consumption in Sleep Mode?")
-        P_IDLE = question_num("What is the power consumption in Idle Mode?")
+        P_OFF = question_num("What is the power consumption in Off Mode?")
 
         print("Energy Star 5.2:");
         estar52 = EnergyStar52(sysinfo)
-        E_TEC = estar52.equation_one(computer_type, P_OFF, P_SLEEP, P_IDLE)
+        E_TEC = estar52.equation_one(computer_type, P_OFF, P_SLEEP, P_SHORT_IDLE)
 
         over_gpu_width = estar52.equation_two(computer_type, discrete, 'y')
         print("\n  If GPU Frame Buffer Width > %s," % (gpu_bit))
@@ -280,6 +470,12 @@ def main():
             else:
                 result = 'FAIL'
             print("    Category %s, E_TEC = %s, E_TEC_MAX = %s, %s" % (category, E_TEC, E_TEC_MAX, result))
+
+        print("\nEnergy Star 6.0:");
+        estar60 = EnergyStar60(sysinfo)
+        E_TEC = estar60.equation_one(computer_type, P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE)
+
+        print("  E_TEC = %s" % (E_TEC))
 
     elif product_type == '2':
         raise Exception('Not implemented yet.')
