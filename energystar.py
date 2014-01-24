@@ -235,16 +235,16 @@ def main():
     sysinfo = SystemInformation()
 
     product_type = question_str("""Which product type would you like to verify?
-[1] Desktop, Integrated Desktop, and Notebook Computers
-[2] Workstations (Not implemented yet)
-[3] Small-scale Servers (Not implemented yet)
-[4] Thin Clients (Not implemented yet)""", 1, "1234")
+ [1] Desktop, Integrated Desktop, and Notebook Computers
+ [2] Workstations (Not implemented yet)
+ [3] Small-scale Servers (Not implemented yet)
+ [4] Thin Clients (Not implemented yet)""", 1, "1234")
 
     if product_type == '1':
         computer_type = question_str("""Which type of computer do you use?
-[1] Desktop
-[2] Integrated Desktop
-[3] Notebook""", 1, "123")
+ [1] Desktop
+ [2] Integrated Desktop
+ [3] Notebook""", 1, "123")
 
         if computer_type == '3':
             gpu_bit = '64'
