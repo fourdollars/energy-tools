@@ -21,7 +21,7 @@ from sysinfo import SystemInformation
 
 def question_str(prompt, length, validator):
     while True:
-        s = raw_input(prompt + ' ')
+        s = raw_input(prompt + "\n>> ")
         if len(s) == length and set(s).issubset(validator):
             print('')
             return s
@@ -29,9 +29,10 @@ def question_str(prompt, length, validator):
 
 def question_num(prompt):
     while True:
-        s = raw_input(prompt + ' ')
+        s = raw_input(prompt + "\n>> ")
         try:
             num = float(s)
+            print('')
             return num
         except ValueError:
             print "Oops!  That was no valid number.  Try again..."
@@ -48,32 +49,25 @@ class EnergyStar52:
         self.disk = sysinfo.get_disk_info()
         self.memory = sysinfo.get_memory_info()
 
-    def get_desktop_category(self, gpu_discrete, gpu_width):
-        if self.core >= 4:
-            if self.memory >= 4:
-                return 'D'
-            elif gpu_width == 'y':
-                return 'D'
-
-        if self.core >= 2:
-            if self.memory >= 2:
-                return 'C'
-            elif gpu_discrete == 'y':
-                return 'C'
-
-        if self.core == 2 and self.memory >= 2:
-            return 'B'
-
-        return 'A'
-
-    def get_netbook_category(self, gpu_discrete, gpu_width):
-        if self.core >= 2 and self.memory >= 2:
-            if gpu_discrete == 'y' and gpu_width == 'y':
-                return 'C'
-        if gpu_discrete == 'y':
-            return 'B'
-
-        return 'A'
+    def qualify_desktop_category(self, category, gpu_discrete, gpu_width):
+        if category == 'D':
+            if self.core >= 4:
+                if self.memory >= 4:
+                    return True
+                elif gpu_width == 'y':
+                    return True
+        elif category == 'C':
+            if self.core >= 2:
+                if self.memory >= 2:
+                    return True
+                elif gpu_discrete == 'y':
+                    return True
+        elif category == 'B':
+            if self.core == 2 and self.memory >= 2:
+                return True
+        elif category == 'A':
+            return True
+        return False
 
     def qualify_netbook_category(self, category, gpu_discrete, gpu_width):
         if category =='C':
@@ -85,8 +79,6 @@ class EnergyStar52:
                 return True
         elif category =='A':
             return True
-        else:
-            return False
         return False
 
     # Requirements for Desktop, Integrated Desktop, and Notebook Computers
@@ -108,50 +100,32 @@ class EnergyStar52:
 
         ## Maximum TEC Allowances for Desktop and Integrated Desktop Computers
         if computer == '1' or computer == '2':
-            category = self.get_desktop_category(gpu_type, gpu_width)
-
             if self.disk > 1:
                 TEC_STORAGE = 25.0 * (self.disk - 1)
             else:
                 TEC_STORAGE = 0.0
 
-            if self.qualify_desktop_category('D', gpu_type, gpu_width):
-                TEC_BASE = 234.0
+            if self.qualify_desktop_category('A', gpu_type, gpu_width):
+                TEC_BASE = 148.0
 
-                if memory > 4:
-                    TEC_MEMORY = 1.0 * (memory - 4)
+                if self.memory > 2:
+                    TEC_MEMORY = 1.0 * (self.memory - 2)
                 else:
                     TEC_MEMORY = 0.0
 
                 if gpu_width == 'y':
                     TEC_GRAPHICS = 50.0
                 else:
-                    TEC_GRAPHICS = 0.0
+                    TEC_GRAPHICS = 35.0
 
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
-                result.append(('D', E_TEC_MAX))
-
-            if self.qualify_desktop_category('C', gpu_type, gpu_width):
-                TEC_BASE = 209.0
-
-                if memory > 2:
-                    TEC_MEMORY = 1.0 * (memory - 2)
-                else:
-                    TEC_MEMORY = 0.0
-
-                if gpu_width == 'y':
-                    TEC_GRAPHICS = 50.0
-                else:
-                    TEC_GRAPHICS = 0.0
-
-                E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
-                result.append(('C', E_TEC_MAX))
+                result.append(('A', E_TEC_MAX))
 
             if self.qualify_desktop_category('B', gpu_type, gpu_width):
                 TEC_BASE = 175.0
 
-                if memory > 2:
-                    TEC_MEMORY = 1.0 * (memory - 2)
+                if self.memory > 2:
+                    TEC_MEMORY = 1.0 * (self.memory - 2)
                 else:
                     TEC_MEMORY = 0.0
 
@@ -163,21 +137,37 @@ class EnergyStar52:
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
                 result.append(('B', E_TEC_MAX))
 
-            if self.qualify_desktop_category('A', gpu_type, gpu_width):
-                TEC_BASE = 148.0
+            if self.qualify_desktop_category('C', gpu_type, gpu_width):
+                TEC_BASE = 209.0
 
-                if memory > 2:
-                    TEC_MEMORY = 1.0 * (memory - 2)
+                if self.memory > 2:
+                    TEC_MEMORY = 1.0 * (self.memory - 2)
                 else:
                     TEC_MEMORY = 0.0
 
                 if gpu_width == 'y':
                     TEC_GRAPHICS = 50.0
                 else:
-                    TEC_GRAPHICS = 35.0
+                    TEC_GRAPHICS = 0.0
 
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
-                result.append(('A', E_TEC_MAX))
+                result.append(('C', E_TEC_MAX))
+
+            if self.qualify_desktop_category('D', gpu_type, gpu_width):
+                TEC_BASE = 234.0
+
+                if self.memory > 4:
+                    TEC_MEMORY = 1.0 * (self.memory - 4)
+                else:
+                    TEC_MEMORY = 0.0
+
+                if gpu_width == 'y':
+                    TEC_GRAPHICS = 50.0
+                else:
+                    TEC_GRAPHICS = 0.0
+
+                E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+                result.append(('D', E_TEC_MAX))
 
         ## Maximum TEC Allowances for Notebook Computers
         else:
@@ -191,12 +181,12 @@ class EnergyStar52:
             else:
                 TEC_STORAGE = 0.0
 
-            if self.qualify_netbook_category('C', gpu_type, gpu_width):
-                TEC_BASE = 88.5
+            if self.qualify_netbook_category('A', gpu_type, gpu_width):
+                TEC_BASE = 40.0
                 TEC_GRAPHICS = 0.0
 
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
-                result.append(('C', E_TEC_MAX))
+                result.append(('A', E_TEC_MAX))
 
             if self.qualify_netbook_category('B', gpu_type, gpu_width):
                 TEC_BASE = 53.0
@@ -209,12 +199,12 @@ class EnergyStar52:
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
                 result.append(('B', E_TEC_MAX))
 
-            if self.qualify_netbook_category('A', gpu_type, gpu_width):
-                TEC_BASE = 40.0
+            if self.qualify_netbook_category('C', gpu_type, gpu_width):
+                TEC_BASE = 88.5
                 TEC_GRAPHICS = 0.0
 
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
-                result.append(('A', E_TEC_MAX))
+                result.append(('C', E_TEC_MAX))
 
         return result
 
@@ -244,24 +234,22 @@ class EnergyStar52:
 def main():
     sysinfo = SystemInformation()
 
-    product_type = question_str("""[1] Desktop, Integrated Desktop, and Notebook Computers
+    product_type = question_str("""Which product type would you like to verify?
+[1] Desktop, Integrated Desktop, and Notebook Computers
 [2] Workstations (Not implemented yet)
 [3] Small-scale Servers (Not implemented yet)
-[4] Thin Clients (Not implemented yet)
-Which product type would you like to verify? [1-4] """, 1, "1234")
+[4] Thin Clients (Not implemented yet)""", 1, "1234")
 
     if product_type == '1':
-        computer_type = question_str("""[1] Desktop
+        computer_type = question_str("""Which type of computer do you use?
+[1] Desktop
 [2] Integrated Desktop
-[3] Notebook
-Which type of computer do you use? [1-3] """, 1, "123")
+[3] Notebook""", 1, "123")
 
         if computer_type == '3':
             gpu_bit = '64'
         else:
             gpu_bit = '128'
-
-        estar52 = EnergyStar52(sysinfo)
 
         discrete = question_str("Is there a discrete GPU? [y/n]", 1, "yn")
 
@@ -269,13 +257,29 @@ Which type of computer do you use? [1-3] """, 1, "123")
         P_SLEEP = question_num("What is the power consumption in Sleep Mode?")
         P_IDLE = question_num("What is the power consumption in Idle Mode?")
 
+        print("Energy Star 5.2:");
+        estar52 = EnergyStar52(sysinfo)
         E_TEC = estar52.equation_one(computer_type, P_OFF, P_SLEEP, P_IDLE)
-        print("E_TEC %s" % (E_TEC))
 
         over_gpu_width = estar52.equation_two(computer_type, discrete, 'y')
-        print(over_gpu_width)
+        print("\n  If GPU Frame Buffer Width > %s," % (gpu_bit))
+        for i in over_gpu_width:
+            (category, E_TEC_MAX) = i
+            if E_TEC <= E_TEC_MAX:
+                result = 'PASS'
+            else:
+                result = 'FAIL'
+            print("    Category %s, E_TEC = %s, E_TEC_MAX = %s, %s" % (category, E_TEC, E_TEC_MAX, result))
+
         under_gpu_width = estar52.equation_two(computer_type, discrete, 'n')
-        print(under_gpu_width)
+        print("\n  If GPU Frame Buffer Width <= %s," % (gpu_bit))
+        for i in under_gpu_width:
+            (category, E_TEC_MAX) = i
+            if E_TEC <= E_TEC_MAX:
+                result = 'PASS'
+            else:
+                result = 'FAIL'
+            print("    Category %s, E_TEC = %s, E_TEC_MAX = %s, %s" % (category, E_TEC, E_TEC_MAX, result))
 
     elif product_type == '2':
         raise Exception('Not implemented yet.')
