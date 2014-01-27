@@ -654,7 +654,7 @@ def qualifying(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    sysinfo = SysInfo()
+    # Test case from Energy Star 5.2/6.0 datasheet
 #    sysinfo = SysInfo(
 #            auto=True,
 #            product_type=1, computer_type=3,
@@ -664,6 +664,18 @@ def main():
 #            width=12, height=6.95, diagonal=False,
 #            discrete=False, switchable=False,
 #            off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
+    # Test case from OEM/ODM only for Energy Star 5.2
+    # Category B: 19.16688 (E_TEC) <= 60.8 (E_TEC_MAX), PASS
+#    sysinfo = SysInfo(
+#            auto=True,
+#            product_type=1, computer_type=3,
+#            cpu_core=2, cpu_clock=1.8,
+#            mem_size=16, disk_num=1,
+#            w=1366, h=768, eee=1,
+#            width=12, height=6.95, diagonal=False,
+#            discrete=True, switchable=False,
+#            off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
+    sysinfo = SysInfo()
     qualifying(sysinfo)
 
 if __name__ == '__main__':
