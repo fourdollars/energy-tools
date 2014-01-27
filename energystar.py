@@ -196,14 +196,14 @@ class EnergyStar52:
         return False
 
     def qualify_netbook_category(self, category, gpu_discrete, over_gpu_width):
-        if category =='C':
+        if category == 'C':
             if self.core >= 2 and self.memory >= 2:
                 if gpu_discrete and over_gpu_width:
                     return True
-        elif category =='B':
+        elif category == 'B':
             if gpu_discrete:
                 return True
-        elif category =='A':
+        elif category == 'A':
             return True
         return False
 
@@ -568,9 +568,11 @@ def qualifying(sysinfo):
             (category, E_TEC_MAX) = i
             if E_TEC <= E_TEC_MAX:
                 result = 'PASS'
+                operator = '<='
             else:
                 result = 'FAIL'
-            print("    Category %s, E_TEC = %s, E_TEC_MAX = %s, %s" % (category, E_TEC, E_TEC_MAX, result))
+                operator = '>'
+            print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
 
         under_gpu_width = estar52.equation_two(False)
         print("\n  If GPU Frame Buffer Width <= %s bits," % (gpu_bit))
@@ -578,9 +580,11 @@ def qualifying(sysinfo):
             (category, E_TEC_MAX) = i
             if E_TEC <= E_TEC_MAX:
                 result = 'PASS'
+                operator = '<='
             else:
                 result = 'FAIL'
-            print("    Category %s, E_TEC = %s, E_TEC_MAX = %s, %s" % (category, E_TEC, E_TEC_MAX, result))
+                operator = '>'
+            print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
 
         # Power Supply
         if not sysinfo.auto:
@@ -595,7 +599,7 @@ def qualifying(sysinfo):
                 width = question_num("What is the physical width of the display in inches?")
                 height = question_num("What is the physical height of the display in inches?")
                 diagonal = question_bool("Is the physical diagonal of the display bigger than or equal to 27 inches?")
-                ep = question_bool("Is there an Enhanced Perforcemance Display?")
+                ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
                 sysinfo.set_display(width, height, diagonal, ep)
 
         if not sysinfo.auto:
@@ -611,8 +615,10 @@ def qualifying(sysinfo):
                 E_TEC_MAX = estar60.equation_two(gpu)
                 if E_TEC <= E_TEC_MAX:
                     result = 'PASS'
+                    operator = '<='
                 else:
                     result = 'FAIL'
+                    operator = '>'
                 if gpu == 'G1':
                     gpu = "G1 (FB_BW <= 16)"
                 elif gpu == 'G2':
@@ -627,14 +633,16 @@ def qualifying(sysinfo):
                     gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
                 elif gpu == 'G7':
                     gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
-                print("  E_TEC = %s, E_TEC_MAX = %s for %s, %s" % (E_TEC, E_TEC_MAX, gpu, result))
+                print("  %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
         else:
             E_TEC_MAX = estar60.equation_two('G1')
             if E_TEC <= E_TEC_MAX:
                 result = 'PASS'
+                operator = '<='
             else:
                 result = 'FAIL'
-            print("  E_TEC = %s, E_TEC_MAX %s, %s" % (E_TEC, E_TEC_MAX, result))
+                operator = '>'
+            print("  %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
 
     elif product_type == '2':
         raise Exception('Not implemented yet.')
