@@ -19,8 +19,77 @@
 
 import subprocess
 
+def debug(message):
+    DEBUG=False
+    if DEBUG:
+        print(message)
+
+def question_str(prompt, length, validator):
+    while True:
+        s = raw_input(prompt + "\n>> ")
+        if len(s) == length and set(s).issubset(validator):
+            print('')
+            return s
+        print("The valid input '" + validator + "'.")
+
+def question_bool(prompt):
+    while True:
+        s = raw_input(prompt + " [y/n]\n>> ")
+        if len(s) == 1 and set(s).issubset("YyNn01"):
+            print('')
+            if s == 'Y' or s == 'y' or s == '1':
+                return True
+            else:
+                return False
+
+def question_int(prompt, maximum):
+    while True:
+        s = raw_input(prompt + "\n>> ")
+        if set(s).issubset("0123456789"):
+            try:
+                num = int(s)
+                if num <= maximum:
+                    print('')
+                    return num
+            except ValueError:
+                print("Please input a positive integer less than or equal to %s." % (maximum))
+        print("Please input a positive integer less than or equal to %s." % (maximum))
+
+def question_num(prompt):
+    while True:
+        s = raw_input(prompt + "\n>> ")
+        try:
+            num = float(s)
+            print('')
+            return num
+        except ValueError:
+            print "Oops!  That was no valid number.  Try again..."
+
+
 class SysInfo:
-    def __init__(self, cpu_core=0, cpu_clock=0.0, mem_size=0.0, disk_num=0, width=0, height=0, diagonal=0, w=0, h=0):
+    def __init__(self,
+            auto=False,
+            cpu_core=0,
+            cpu_clock=0.0,
+            mem_size=0.0,
+            disk_num=0,
+            width=0,
+            height=0,
+            diagonal=0,
+            ep=False,
+            w=0,
+            h=0,
+            product_type=0,
+            computer_type=0,
+            off=0,
+            sleep=0,
+            long_idle=0,
+            short_idle=0,
+            eee=0,
+            discrete=False,
+            switchable=False,
+            power_supply=''):
+        self.auto = auto
         self.cpu_core = cpu_core
         self.cpu_clock = cpu_clock
         self.mem_size = mem_size
@@ -30,22 +99,17 @@ class SysInfo:
         self.width = width
         self.height = height
         self.diagonal = diagonal
-
-    @property
-    def computer_type(self):
-        return self._computer_type
-
-    @computer_type.setter
-    def computer_type(self, value):
-        sefl._computer_type = value
-
-    @property
-    def eee(self):
-        return self._eee
-
-    @eee.setter
-    def eee(self, value):
-        sefl._eee = value
+        self.ep = ep
+        self.product_type = product_type
+        self.computer_type = computer_type
+        self.eee = eee
+        self.off = off
+        self.sleep = sleep
+        self.long_idle = long_idle
+        self.short_idle = short_idle
+        self.discrete = discrete
+        self.switchable = switchable
+        self.power_supply = power_supply
 
     def get_cpu_core(self):
         if self.cpu_core:
@@ -87,64 +151,21 @@ class SysInfo:
 
         return self.disk_num
 
-    def set_display(self, width, height, diagonal):
+    def set_display(self, width, height, diagonal, ep):
         self.width = width
         self.height = height
         self.diagonal = diagonal
+        self.ep = ep
 
     def get_display(self):
-        return (self.width, self.height, self.diagonal)
+        return (self.width, self.height, self.diagonal, self.ep)
 
     def get_resolution(self):
         if self.w == 0 or self.h == 0:
-            (self.w, self.h) = subprocess.check_output("xrandr --current | grep current | sed 's/.*current \\([0-9]*\\) x \\([0-9]*\\).*/\\1 \\2/'", shell=True).strip().split(' ')
+            (width, height) = subprocess.check_output("xrandr --current | grep current | sed 's/.*current \\([0-9]*\\) x \\([0-9]*\\).*/\\1 \\2/'", shell=True).strip().split(' ')
+            self.w = int(width)
+            self.h = int(height)
         return (self.w, self.h)
-
-def question_str(prompt, length, validator):
-    while True:
-        s = raw_input(prompt + "\n>> ")
-        if len(s) == length and set(s).issubset(validator):
-            print('')
-            return s
-        print("The valid input '" + validator + "'.")
-
-def question_bool(prompt):
-    while True:
-        s = raw_input(prompt + "\n>> ")
-        if len(s) == 1 and set(s).issubset("YyNn01"):
-            print('')
-            if s == 'Y' or s == 'y' or s == '1':
-                return True
-            else:
-                return False
-
-def question_int(prompt, maximum):
-    while True:
-        s = raw_input(prompt + "\n>> ")
-        if set(s).issubset("0123456789"):
-            try:
-                num = int(s)
-                if num <= maximum:
-                    print('')
-                    return num
-            except ValueError:
-                print("Please input a positive integer less than or equal to %s." % (maximum))
-        print("Please input a positive integer less than or equal to %s." % (maximum))
-
-def question_num(prompt):
-    while True:
-        s = raw_input(prompt + "\n>> ")
-        try:
-            num = float(s)
-            print('')
-            return num
-        except ValueError:
-            print "Oops!  That was no valid number.  Try again..."
-
-import inspect
-def lineno():
-    """Returns the current line number in our program."""
-    return " (DEBUG: line %s)" % str(inspect.currentframe().f_back.f_lineno) 
 
 class EnergyStar52:
     """Energy Star 5.2 calculator"""
@@ -392,8 +413,10 @@ class EnergyStar60:
                     TEC_BASE = 16.0
                 else:
                     TEC_BASE = 18.0
+        debug("TEC_BASE = %s" % (TEC_BASE))
 
         TEC_MEMORY = 0.8 * self.memory
+        debug("TEC_MEMORY = %s" % (TEC_MEMORY))
 
         if self.sysinfo.discrete:
             if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
@@ -411,11 +434,6 @@ class EnergyStar60:
                     TEC_GRAPHICS = 115 
                 elif gpu_category == 'G7':
                     TEC_GRAPHICS = 130 
-
-                if self.sysinfo.switchable:
-                    TEC_SWITCHABLE = 0.5 * TEC_GRAPHICS
-                else:
-                    TEC_SWITCHABLE = 0
             else:
                 if gpu_category == 'G1':
                     TEC_GRAPHICS = 14
@@ -431,31 +449,44 @@ class EnergyStar60:
                     TEC_GRAPHICS = 48
                 elif gpu_category == 'G7':
                     TEC_GRAPHICS = 60
-
-                TEC_SWITCHABLE = 0
         else:
             TEC_GRAPHICS = 0
+        debug("TEC_GRAPHICS = %s" % (TEC_GRAPHICS))
+
+        if self.sysinfo.switchable:
+            if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
+                TEC_SWITCHABLE = 0.5 * TEC_GRAPHICS
+            else:
+                TEC_SWITCHABLE = 0
+        else:
             TEC_SWITCHABLE = 0
+        debug("TEC_SWITCHABLE = %s" % (TEC_SWITCHABLE))
 
         if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
             TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * self.sysinfo.eee
         else:
             TEC_EEE = 8.76 * 0.2 * (0.10 + 0.30) * self.sysinfo.eee
+        debug("TEC_EEE = %s" % (TEC_EEE))
 
         if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
             TEC_STORAGE = 26 * (self.disk - 1)
         else:
             TEC_STORAGE = 2.6 * (self.disk - 1)
+        debug("TEC_STORAGE = %s" % (TEC_STORAGE))
 
         if self.sysinfo.computer_type != 1:
-            (width, height, diagonal) = self.sysinfo.get_display()
-            if diagonal >= 27:
-                EP = 0.75
+            (width, height, diagonal, enhanced_performance_display) = self.sysinfo.get_display()
+            if enhanced_performance_display:
+                if diagonal:
+                    EP = 0.75
+                else:
+                    EP = 0.3
             else:
-                EP = 0.3
-            (x, y) = self.sysinfo.get_resolution()
-            r = x * y / 1000000
+                EP = 0
+            (w, h) = self.sysinfo.get_resolution()
+            r = 1.0 * w * h / 1000000
             A = width * height
+            debug("EP = %s, r = %s, A = %s" % (EP, r, A))
 
         if self.sysinfo.computer_type == 2:
             TEC_INT_DISPLAY = 8.76 * 0.35 * (1 + EP) * (4 * r + 0.05 * A)
@@ -463,55 +494,76 @@ class EnergyStar60:
             TEC_INT_DISPLAY = 8.76 * 0.30 * (1 + EP) * (2 * r + 0.02 * A)
         else:
             TEC_INT_DISPLAY = 0
+        debug("TEC_INT_DISPLAY = %s" % (TEC_INT_DISPLAY))
 
         return TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE + TEC_INT_DISPLAY + TEC_SWITCHABLE + TEC_EEE
 
-def main():
-    sysinfo = SysInfo()
-
-    product_type = question_int("""Which product type would you like to verify?
+def qualifying(sysinfo):
+    if not sysinfo.auto:
+        product_type = question_int("""Which product type would you like to verify?
  [1] Desktop, Integrated Desktop, and Notebook Computers
  [2] Workstations (Not implemented yet)
  [3] Small-scale Servers (Not implemented yet)
  [4] Thin Clients (Not implemented yet)""", 4)
+        sysinfo.product_type = product_type
+    else:
+        product_type = sysinfo.product_type
 
     if product_type == 1:
-        computer_type = question_int("""Which type of computer do you use?
+        if not sysinfo.auto:
+            computer_type = question_int("""Which type of computer do you use?
  [1] Desktop
  [2] Integrated Desktop
  [3] Notebook""", 3)
-
-        sysinfo.computer_type = computer_type
-
-        if computer_type == 3:
-            gpu_bit = '64'
+            sysinfo.computer_type = computer_type
         else:
-            gpu_bit = '128'
+            computer_type = sysinfo.computer_type
 
         # GPU Information
-        if question_bool("Is there a discrete GPU?"):
-            sysinfo.discrete = True
+        if not sysinfo.auto:
+            if question_bool("Is there a discrete GPU?"):
+                sysinfo.discrete = True
+            else:
+                sysinfo.discrete = False
             if question_bool("Is it a switchable GPU?"):
                 sysinfo.switchable = True
             else:
                 sysinfo.switchable = False
-        else:
-            sysinfo.discrete = False
-            sysinfo.switchable = False
 
         # Power Consumption
-        P_OFF = question_num("What is the power consumption in Off Mode?")
-        P_SLEEP = question_num("What is the power consumption in Sleep Mode?")
-        P_LONG_IDLE = question_num("What is the power consumption in Long Idle Mode?")
-        P_SHORT_IDLE = question_num("What is the power consumption in Short Idle Mode?")
+        if not sysinfo.auto:
+            P_OFF = question_num("What is the power consumption in Off Mode?")
+            sysinfo.off = P_OFF
+        else:
+            P_OFF = sysinfo.off
+        if not sysinfo.auto:
+            P_SLEEP = question_num("What is the power consumption in Sleep Mode?")
+            sysinfo.sleep = P_SLEEP
+        else:
+            P_SLEEP = sysinfo.sleep
+        if not sysinfo.auto:
+            P_LONG_IDLE = question_num("What is the power consumption in Long Idle Mode?")
+            sysinfo.long_idle = P_LONG_IDLE
+        else:
+            P_LONG_IDLE = sysinfo.long_idle
+        if not sysinfo.auto:
+            P_SHORT_IDLE = question_num("What is the power consumption in Short Idle Mode?")
+            sysinfo.short_idle = P_SHORT_IDLE
+        else:
+            P_SHORT_IDLE = sysinfo.short_idle
 
         # Energy Star 5.2
         print("Energy Star 5.2:");
         estar52 = EnergyStar52(sysinfo)
         E_TEC = estar52.equation_one(P_OFF, P_SLEEP, P_SHORT_IDLE)
 
+        if computer_type == 3:
+            gpu_bit = '64'
+        else:
+            gpu_bit = '128'
+
         over_gpu_width = estar52.equation_two(True)
-        print("\n  If GPU Frame Buffer Width > %s," % (gpu_bit))
+        print("\n  If GPU Frame Buffer Width > %s bits," % (gpu_bit))
         for i in over_gpu_width:
             (category, E_TEC_MAX) = i
             if E_TEC <= E_TEC_MAX:
@@ -521,7 +573,7 @@ def main():
             print("    Category %s, E_TEC = %s, E_TEC_MAX = %s, %s" % (category, E_TEC, E_TEC_MAX, result))
 
         under_gpu_width = estar52.equation_two(False)
-        print("\n  If GPU Frame Buffer Width <= %s," % (gpu_bit))
+        print("\n  If GPU Frame Buffer Width <= %s bits," % (gpu_bit))
         for i in under_gpu_width:
             (category, E_TEC_MAX) = i
             if E_TEC <= E_TEC_MAX:
@@ -531,30 +583,58 @@ def main():
             print("    Category %s, E_TEC = %s, E_TEC_MAX = %s, %s" % (category, E_TEC, E_TEC_MAX, result))
 
         # Power Supply
-        power_supply = question_str("\nDoes it use external power supply or internal power supply? [e/i]", 1, "ei")
+        if not sysinfo.auto:
+            power_supply = question_str("\nDoes it use external power supply or internal power supply? [e/i]", 1, "ei")
+            sysinfo.power_supply = power_supply
+        else:
+            power_supply = sysinfo.power_supply
 
         # Screen size
         if computer_type != '1':
-            diagonal = question_num("What is the physical diagonal of the display in inches?")
-            width = question_num("What is the physical width of the display in inches?")
-            height = question_num("What is the physical height of the display in inches?")
-            sysinfo.set_display(width, height, diagonal)
-        else:
-            diagonal = 0
-            width = 0
-            height = 0
+            if not sysinfo.auto:
+                width = question_num("What is the physical width of the display in inches?")
+                height = question_num("What is the physical height of the display in inches?")
+                diagonal = question_bool("Is the physical diagonal of the display bigger than or equal to 27 inches?")
+                ep = question_bool("Is there an Enhanced Perforcemance Display?")
+                sysinfo.set_display(width, height, diagonal, ep)
 
-        sysinfo.eee = question_num("How many Gigabit Ethernet ports?")
+        if not sysinfo.auto:
+            sysinfo.eee = question_num("How many Gigabit Ethernet ports?")
 
         # Energy Star 6.0
-        print("Energy Star 6.0:");
+        print("\nEnergy Star 6.0:\n");
         estar60 = EnergyStar60(sysinfo)
         E_TEC = estar60.equation_one(P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE)
-        print("  E_TEC = %s" % (E_TEC))
 
-        for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
-            E_TEC_MAX = estar60.equation_two(gpu)
-            print("E_TEC_MAX %s for %s" % (E_TEC_MAX, gpu))
+        if sysinfo.discrete:
+            for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
+                E_TEC_MAX = estar60.equation_two(gpu)
+                if E_TEC <= E_TEC_MAX:
+                    result = 'PASS'
+                else:
+                    result = 'FAIL'
+                if gpu == 'G1':
+                    gpu = "G1 (FB_BW <= 16)"
+                elif gpu == 'G2':
+                    gpu = "G2 (16 < FB_BW <= 32)"
+                elif gpu == 'G3':
+                    gpu = "G3 (32 < FB_BW <= 64)"
+                elif gpu == 'G4':
+                    gpu = "G4 (64 < FB_BW <= 96)"
+                elif gpu == 'G5':
+                    gpu = "G5 (96 < FB_BW <= 128)"
+                elif gpu == 'G6':
+                    gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
+                elif gpu == 'G7':
+                    gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
+                print("  E_TEC = %s, E_TEC_MAX = %s for %s, %s" % (E_TEC, E_TEC_MAX, gpu, result))
+        else:
+            E_TEC_MAX = estar60.equation_two('G1')
+            if E_TEC <= E_TEC_MAX:
+                result = 'PASS'
+            else:
+                result = 'FAIL'
+            print("  E_TEC = %s, E_TEC_MAX %s, %s" % (E_TEC, E_TEC_MAX, result))
 
     elif product_type == '2':
         raise Exception('Not implemented yet.')
@@ -564,6 +644,19 @@ def main():
         raise Exception('Not implemented yet.')
     else:
         raise Exception('This is a bug when you see this.')
+
+def main():
+    sysinfo = SysInfo()
+#    sysinfo = SysInfo(
+#            auto=True,
+#            product_type=1, computer_type=3,
+#            cpu_core=2, cpu_clock=2.0,
+#            mem_size=8, disk_num=1,
+#            w=1366, h=768, eee=1,
+#            width=12, height=6.95, diagonal=False,
+#            discrete=False, switchable=False,
+#            off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
+    qualifying(sysinfo)
 
 if __name__ == '__main__':
     main()
