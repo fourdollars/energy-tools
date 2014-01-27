@@ -588,7 +588,10 @@ def qualifying(sysinfo):
 
         # Power Supply
         if not sysinfo.auto:
-            power_supply = question_str("\nDoes it use external power supply or internal power supply? [e/i]", 1, "ei")
+            if computer_type != 3:
+                power_supply = question_str("\nDoes it use external power supply or internal power supply? [e/i]", 1, "ei")
+            else:
+                power_supply = 'e'
             sysinfo.power_supply = power_supply
         else:
             power_supply = sysinfo.power_supply
@@ -610,7 +613,21 @@ def qualifying(sysinfo):
         estar60 = EnergyStar60(sysinfo)
         E_TEC = estar60.equation_one(P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE)
 
+        if power_supply == 'i':
+            lower = 1.015
+            if computer_type == 1:
+                higher = 1.03
+            else:
+                higher = 1.04
+        elif power_supply == 'e':
+            lower = 1.015
+            if computer_type != 2:
+                higher = 1.03
+            else:
+                higher = 1.04
+
         if sysinfo.discrete:
+            print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
             for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
                 E_TEC_MAX = estar60.equation_two(gpu)
                 if E_TEC <= E_TEC_MAX:
@@ -633,8 +650,57 @@ def qualifying(sysinfo):
                     gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
                 elif gpu == 'G7':
                     gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
-                print("  %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
+                print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
+            print("  If power supplies meet less efficiency requirements,")
+            for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
+                E_TEC_MAX = estar60.equation_two(gpu) * lower
+                if E_TEC <= E_TEC_MAX:
+                    result = 'PASS'
+                    operator = '<='
+                else:
+                    result = 'FAIL'
+                    operator = '>'
+                if gpu == 'G1':
+                    gpu = "G1 (FB_BW <= 16)"
+                elif gpu == 'G2':
+                    gpu = "G2 (16 < FB_BW <= 32)"
+                elif gpu == 'G3':
+                    gpu = "G3 (32 < FB_BW <= 64)"
+                elif gpu == 'G4':
+                    gpu = "G4 (64 < FB_BW <= 96)"
+                elif gpu == 'G5':
+                    gpu = "G5 (96 < FB_BW <= 128)"
+                elif gpu == 'G6':
+                    gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
+                elif gpu == 'G7':
+                    gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
+                print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
+            print("  If power supplies meet more efficiency requirements,")
+            for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
+                E_TEC_MAX = estar60.equation_two(gpu) * higher
+                if E_TEC <= E_TEC_MAX:
+                    result = 'PASS'
+                    operator = '<='
+                else:
+                    result = 'FAIL'
+                    operator = '>'
+                if gpu == 'G1':
+                    gpu = "G1 (FB_BW <= 16)"
+                elif gpu == 'G2':
+                    gpu = "G2 (16 < FB_BW <= 32)"
+                elif gpu == 'G3':
+                    gpu = "G3 (32 < FB_BW <= 64)"
+                elif gpu == 'G4':
+                    gpu = "G4 (64 < FB_BW <= 96)"
+                elif gpu == 'G5':
+                    gpu = "G5 (96 < FB_BW <= 128)"
+                elif gpu == 'G6':
+                    gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
+                elif gpu == 'G7':
+                    gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
+                print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
         else:
+            print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
             E_TEC_MAX = estar60.equation_two('G1')
             if E_TEC <= E_TEC_MAX:
                 result = 'PASS'
@@ -642,7 +708,27 @@ def qualifying(sysinfo):
             else:
                 result = 'FAIL'
                 operator = '>'
-            print("  %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+            print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+
+            print("  If power supplies meet less efficiency requirements,")
+            E_TEC_MAX = estar60.equation_two('G1') * lower
+            if E_TEC <= E_TEC_MAX:
+                result = 'PASS'
+                operator = '<='
+            else:
+                result = 'FAIL'
+                operator = '>'
+            print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+
+            print("  If power supplies meet more efficiency requirements,")
+            E_TEC_MAX = estar60.equation_two('G1') * higher
+            if E_TEC <= E_TEC_MAX:
+                result = 'PASS'
+                operator = '<='
+            else:
+                result = 'FAIL'
+                operator = '>'
+            print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
 
     elif product_type == '2':
         raise Exception('Not implemented yet.')
@@ -660,7 +746,7 @@ def main():
 #            product_type=1, computer_type=3,
 #            cpu_core=2, cpu_clock=2.0,
 #            mem_size=8, disk_num=1,
-#            w=1366, h=768, eee=1,
+#            w=1366, h=768, eee=1, power_supply='e',
 #            width=12, height=6.95, diagonal=False,
 #            discrete=False, switchable=False,
 #            off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
@@ -671,7 +757,7 @@ def main():
 #            product_type=1, computer_type=3,
 #            cpu_core=2, cpu_clock=1.8,
 #            mem_size=16, disk_num=1,
-#            w=1366, h=768, eee=1,
+#            w=1366, h=768, eee=1, power_supply='e',
 #            width=12, height=6.95, diagonal=False,
 #            discrete=True, switchable=False,
 #            off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
