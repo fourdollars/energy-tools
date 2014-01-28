@@ -111,6 +111,51 @@ class SysInfo:
         self.switchable = switchable
         self.power_supply = power_supply
 
+        if not auto:
+            # Product type
+            self.product_type = question_int("""Which product type would you like to verify?
+ [1] Desktop, Integrated Desktop, and Notebook Computers
+ [2] Workstations (Not implemented yet)
+ [3] Small-scale Servers (Not implemented yet)
+ [4] Thin Clients (Not implemented yet)""", 4)
+
+            # Computer type
+            self.computer_type = question_int("""Which type of computer do you use?
+ [1] Desktop
+ [2] Integrated Desktop
+ [3] Notebook""", 3)
+
+            # GPU Information
+            if question_bool("Is there a discrete GPU?"):
+                self.discrete = True
+            else:
+                self.discrete = False
+            if question_bool("Is it a switchable GPU?"):
+                self.switchable = True
+            else:
+                self.switchable = False
+
+            # Power Consumption
+            self.off = question_num("What is the power consumption in Off Mode?")
+            self.sleep = question_num("What is the power consumption in Sleep Mode?")
+            self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
+            self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+
+            # Power Supply
+            if self.computer_type != 3:
+                self.power_supply = question_str("\nDoes it use external power supply or internal power supply? [e/i]", 1, "ei")
+            else:
+                self.power_supply = 'e'
+
+            # Screen size
+            if self.computer_type != '1':
+                self.width = question_num("What is the physical width of the display in inches?")
+                self.height = question_num("What is the physical height of the display in inches?")
+                self.diagonal = question_bool("Is the physical diagonal of the display bigger than or equal to 27 inches?")
+                self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
+
+            self.eee = question_num("How many Gigabit Ethernet ports?")
+
     def get_cpu_core(self):
         if self.cpu_core:
             return self.cpu_core
@@ -208,8 +253,11 @@ class EnergyStar52:
         return False
 
     # Requirements for Desktop, Integrated Desktop, and Notebook Computers
-    def equation_one(self, P_OFF, P_SLEEP, P_IDLE):
+    def equation_one(self):
         """Equation 1: TEC Calculation (E_TEC) for Desktop, Integrated Desktop, and Notebook Computers"""
+        P_OFF   = self.sysinfo.off
+        P_SLEEP = self.sysinfo.sleep
+        P_IDLE  = self.sysinfo.short_idle
         if self.sysinfo.computer_type == 3:
             (T_OFF, T_SLEEP, T_IDLE) = (0.6, 0.1, 0.3)
         else:
@@ -367,8 +415,12 @@ class EnergyStar60:
         self.sysinfo = sysinfo
 
     # Requirements for Desktop, Integrated Desktop, and Notebook Computers
-    def equation_one(self, P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE):
+    def equation_one(self):
         """Equation 1: TEC Calculation (E_TEC) for Desktop, Integrated Desktop, Thin Client and Notebook Computers"""
+        P_OFF        = self.sysinfo.off
+        P_SLEEP      = self.sysinfo.sleep
+        P_LONG_IDLE  = self.sysinfo.long_idle
+        P_SHORT_IDLE = self.sysinfo.short_idle
         if self.sysinfo.computer_type == 3:
             (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.25, 0.35, 0.1, 0.3)
         else:
@@ -382,8 +434,9 @@ class EnergyStar60:
         """Equation 2: E_TEC_MAX Calculation for Desktop, Integrated Desktop, and Notebook Computers"""
 
         P = self.core * self.clock
+        debug("P = %s" % (P))
 
-        if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
+        if self.sysinfo.computer_type != 3:
             if P <= 3:
                 TEC_BASE = 69.0
             elif self.sysinfo.switchable or self.sysinfo.discrete:
@@ -499,65 +552,14 @@ class EnergyStar60:
         return TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE + TEC_INT_DISPLAY + TEC_SWITCHABLE + TEC_EEE
 
 def qualifying(sysinfo):
-    if not sysinfo.auto:
-        product_type = question_int("""Which product type would you like to verify?
- [1] Desktop, Integrated Desktop, and Notebook Computers
- [2] Workstations (Not implemented yet)
- [3] Small-scale Servers (Not implemented yet)
- [4] Thin Clients (Not implemented yet)""", 4)
-        sysinfo.product_type = product_type
-    else:
-        product_type = sysinfo.product_type
-
-    if product_type == 1:
-        if not sysinfo.auto:
-            computer_type = question_int("""Which type of computer do you use?
- [1] Desktop
- [2] Integrated Desktop
- [3] Notebook""", 3)
-            sysinfo.computer_type = computer_type
-        else:
-            computer_type = sysinfo.computer_type
-
-        # GPU Information
-        if not sysinfo.auto:
-            if question_bool("Is there a discrete GPU?"):
-                sysinfo.discrete = True
-            else:
-                sysinfo.discrete = False
-            if question_bool("Is it a switchable GPU?"):
-                sysinfo.switchable = True
-            else:
-                sysinfo.switchable = False
-
-        # Power Consumption
-        if not sysinfo.auto:
-            P_OFF = question_num("What is the power consumption in Off Mode?")
-            sysinfo.off = P_OFF
-        else:
-            P_OFF = sysinfo.off
-        if not sysinfo.auto:
-            P_SLEEP = question_num("What is the power consumption in Sleep Mode?")
-            sysinfo.sleep = P_SLEEP
-        else:
-            P_SLEEP = sysinfo.sleep
-        if not sysinfo.auto:
-            P_LONG_IDLE = question_num("What is the power consumption in Long Idle Mode?")
-            sysinfo.long_idle = P_LONG_IDLE
-        else:
-            P_LONG_IDLE = sysinfo.long_idle
-        if not sysinfo.auto:
-            P_SHORT_IDLE = question_num("What is the power consumption in Short Idle Mode?")
-            sysinfo.short_idle = P_SHORT_IDLE
-        else:
-            P_SHORT_IDLE = sysinfo.short_idle
+    if sysinfo.product_type == 1:
 
         # Energy Star 5.2
         print("Energy Star 5.2:");
         estar52 = EnergyStar52(sysinfo)
-        E_TEC = estar52.equation_one(P_OFF, P_SLEEP, P_SHORT_IDLE)
+        E_TEC = estar52.equation_one()
 
-        if computer_type == 3:
+        if sysinfo.computer_type == 3:
             gpu_bit = '64'
         else:
             gpu_bit = '128'
@@ -586,42 +588,20 @@ def qualifying(sysinfo):
                 operator = '>'
             print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
 
-        # Power Supply
-        if not sysinfo.auto:
-            if computer_type != 3:
-                power_supply = question_str("\nDoes it use external power supply or internal power supply? [e/i]", 1, "ei")
-            else:
-                power_supply = 'e'
-            sysinfo.power_supply = power_supply
-        else:
-            power_supply = sysinfo.power_supply
-
-        # Screen size
-        if computer_type != '1':
-            if not sysinfo.auto:
-                width = question_num("What is the physical width of the display in inches?")
-                height = question_num("What is the physical height of the display in inches?")
-                diagonal = question_bool("Is the physical diagonal of the display bigger than or equal to 27 inches?")
-                ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
-                sysinfo.set_display(width, height, diagonal, ep)
-
-        if not sysinfo.auto:
-            sysinfo.eee = question_num("How many Gigabit Ethernet ports?")
-
         # Energy Star 6.0
         print("\nEnergy Star 6.0:\n");
         estar60 = EnergyStar60(sysinfo)
-        E_TEC = estar60.equation_one(P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE)
+        E_TEC = estar60.equation_one()
 
-        if power_supply == 'i':
+        if sysinfo.power_supply == 'i':
             lower = 1.015
-            if computer_type == 1:
+            if sysinfo.computer_type == 1:
                 higher = 1.03
             else:
                 higher = 1.04
-        elif power_supply == 'e':
+        elif sysinfo.power_supply == 'e':
             lower = 1.015
-            if computer_type != 2:
+            if sysinfo.computer_type != 2:
                 higher = 1.03
             else:
                 higher = 1.04
@@ -748,7 +728,7 @@ def main():
 #            mem_size=8, disk_num=1,
 #            w=1366, h=768, eee=1, power_supply='e',
 #            width=12, height=6.95, diagonal=False,
-#            discrete=False, switchable=False,
+#            discrete=False, switchable=True,
 #            off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
     # Test case from OEM/ODM only for Energy Star 5.2
     # Category B: 19.16688 (E_TEC) <= 60.8 (E_TEC_MAX), PASS
