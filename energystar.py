@@ -89,7 +89,8 @@ class SysInfo:
             discrete=False,
             switchable=False,
             power_supply='',
-            max_power=0):
+            max_power=0,
+            more_discrete=False):
         self.auto = auto
         self.cpu_core = cpu_core
         self.cpu_clock = cpu_clock
@@ -112,13 +113,14 @@ class SysInfo:
         self.switchable = switchable
         self.power_supply = power_supply
         self.max_power = max_power
+        self.more_discrete = more_discrete
 
         if not auto:
             # Product type
             self.product_type = question_int("""Which product type would you like to verify?
  [1] Desktop, Integrated Desktop, and Notebook Computers
  [2] Workstations
- [3] Small-scale Servers (Not implemented yet)
+ [3] Small-scale Servers
  [4] Thin Clients (Not implemented yet)""", 4)
 
             if self.product_type == 1:
@@ -166,6 +168,12 @@ class SysInfo:
                 self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
                 self.max_power = question_num("What is the maximum power consumption?")
                 self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
+            elif self.product_type == 3:
+                self.off = question_num("What is the power consumption in Off Mode?")
+                self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+                self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
+                if self.get_cpu_core() < 2:
+                    self.more_discrete = question_bool("Does it have more than one discrete GPU?")
 
     def get_cpu_core(self):
         if self.cpu_core:
@@ -419,9 +427,21 @@ class EnergyStar52:
 
         return P_TEC_MAX
 
-    def equation_five(self):
+    def equation_five(self, wol):
         """Equation 5: Calculation of P_OFF_MAX for Small-scale Servers"""
+        P_OFF_BASE = 2.0
+        if wol:
+            P_OFF_WOL = 0.7
+        else:
+            P_OFF_WOL = 0
+        if (self.core > 1 or self.sysinfo.more_discrete) and self.memory >= 1:
+            category = 'B'
+            P_IDLE_MAX = 65.0
+        else:
+            category = 'A'
+            P_IDLE_MAX = 50.0
         P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
+        return (category, P_OFF_MAX, P_IDLE_MAX)
 
     def equation_six(self):
         """Equation 6: Calculation of P_OFF_MAX for Thin Clients"""
@@ -595,12 +615,30 @@ class EnergyStar60:
         P_TEC_MAX = 0.28 * (P_MAX + N_HDD * 5) + 8.76 * P_EEE * (T_SLEEP + T_LONG_IDLE + T_SHORT_IDLE)
         return P_TEC_MAX
 
+    def equation_six(self, wol):
+        """Calculation of P_OFF_MAX for Small-scale Servers"""
+        P_OFF_BASE = 1.0
+        if wol:
+            P_OFF_WOL = 0.4
+        else:
+            P_OFF_WOL = 0
+        P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
+        return P_OFF_MAX
+
+    def equation_seven(self):
+        """Equation 7: Calculation of P_IDLE_MAX for Small-scale Servers"""
+        N = self.sysinfo.disk_num
+        P_IDLE_BASE = 24.0
+        P_IDLE_HDD = 8.0
+        P_EEE = 0.2 * self.sysinfo.eee
+        P_IDLE_MAX = P_IDLE_BASE + (N - 1) * P_IDLE_HDD + P_EEE
+        return P_IDLE_MAX
 
 def qualifying(sysinfo):
     if sysinfo.product_type == 1:
 
         # Energy Star 5.2
-        print("Energy Star 5.2:");
+        print("Energy Star 5.2:")
         estar52 = EnergyStar52(sysinfo)
         E_TEC = estar52.equation_one()
 
@@ -634,7 +672,7 @@ def qualifying(sysinfo):
             print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
 
         # Energy Star 6.0
-        print("\nEnergy Star 6.0:\n");
+        print("\nEnergy Star 6.0:\n")
         estar60 = EnergyStar60(sysinfo)
         E_TEC = estar60.equation_one()
 
@@ -652,112 +690,56 @@ def qualifying(sysinfo):
                 higher = 1.04
 
         if sysinfo.discrete:
-            print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
-            for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
-                E_TEC_MAX = estar60.equation_two(gpu)
-                if E_TEC <= E_TEC_MAX:
-                    result = 'PASS'
-                    operator = '<='
-                else:
-                    result = 'FAIL'
-                    operator = '>'
-                if gpu == 'G1':
-                    gpu = "G1 (FB_BW <= 16)"
-                elif gpu == 'G2':
-                    gpu = "G2 (16 < FB_BW <= 32)"
-                elif gpu == 'G3':
-                    gpu = "G3 (32 < FB_BW <= 64)"
-                elif gpu == 'G4':
-                    gpu = "G4 (64 < FB_BW <= 96)"
-                elif gpu == 'G5':
-                    gpu = "G5 (96 < FB_BW <= 128)"
-                elif gpu == 'G6':
-                    gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
-                elif gpu == 'G7':
-                    gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
-                print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
-            print("  If power supplies meet less efficiency requirements,")
-            for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
-                E_TEC_MAX = estar60.equation_two(gpu) * lower
-                if E_TEC <= E_TEC_MAX:
-                    result = 'PASS'
-                    operator = '<='
-                else:
-                    result = 'FAIL'
-                    operator = '>'
-                if gpu == 'G1':
-                    gpu = "G1 (FB_BW <= 16)"
-                elif gpu == 'G2':
-                    gpu = "G2 (16 < FB_BW <= 32)"
-                elif gpu == 'G3':
-                    gpu = "G3 (32 < FB_BW <= 64)"
-                elif gpu == 'G4':
-                    gpu = "G4 (64 < FB_BW <= 96)"
-                elif gpu == 'G5':
-                    gpu = "G5 (96 < FB_BW <= 128)"
-                elif gpu == 'G6':
-                    gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
-                elif gpu == 'G7':
-                    gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
-                print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
-            print("  If power supplies meet more efficiency requirements,")
-            for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
-                E_TEC_MAX = estar60.equation_two(gpu) * higher
-                if E_TEC <= E_TEC_MAX:
-                    result = 'PASS'
-                    operator = '<='
-                else:
-                    result = 'FAIL'
-                    operator = '>'
-                if gpu == 'G1':
-                    gpu = "G1 (FB_BW <= 16)"
-                elif gpu == 'G2':
-                    gpu = "G2 (16 < FB_BW <= 32)"
-                elif gpu == 'G3':
-                    gpu = "G3 (32 < FB_BW <= 64)"
-                elif gpu == 'G4':
-                    gpu = "G4 (64 < FB_BW <= 96)"
-                elif gpu == 'G5':
-                    gpu = "G5 (96 < FB_BW <= 128)"
-                elif gpu == 'G6':
-                    gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
-                elif gpu == 'G7':
-                    gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
-                print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
+            for AllowancePSU in (1, lower, higher):
+                if AllowancePSU == 1:
+                    print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
+                elif AllowancePSU == lower:
+                    print("  If power supplies meet less efficiency requirements,")
+                elif AllowancePSU == higher:
+                    print("  If power supplies meet more efficiency requirements,")
+                for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
+                    E_TEC_MAX = estar60.equation_two(gpu) * AllowancePSU
+                    if E_TEC <= E_TEC_MAX:
+                        result = 'PASS'
+                        operator = '<='
+                    else:
+                        result = 'FAIL'
+                        operator = '>'
+                    if gpu == 'G1':
+                        gpu = "G1 (FB_BW <= 16)"
+                    elif gpu == 'G2':
+                        gpu = "G2 (16 < FB_BW <= 32)"
+                    elif gpu == 'G3':
+                        gpu = "G3 (32 < FB_BW <= 64)"
+                    elif gpu == 'G4':
+                        gpu = "G4 (64 < FB_BW <= 96)"
+                    elif gpu == 'G5':
+                        gpu = "G5 (96 < FB_BW <= 128)"
+                    elif gpu == 'G6':
+                        gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
+                    elif gpu == 'G7':
+                        gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
+                    print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
         else:
-            print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
-            E_TEC_MAX = estar60.equation_two('G1')
-            if E_TEC <= E_TEC_MAX:
-                result = 'PASS'
-                operator = '<='
-            else:
-                result = 'FAIL'
-                operator = '>'
-            print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
-
-            print("  If power supplies meet less efficiency requirements,")
-            E_TEC_MAX = estar60.equation_two('G1') * lower
-            if E_TEC <= E_TEC_MAX:
-                result = 'PASS'
-                operator = '<='
-            else:
-                result = 'FAIL'
-                operator = '>'
-            print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
-
-            print("  If power supplies meet more efficiency requirements,")
-            E_TEC_MAX = estar60.equation_two('G1') * higher
-            if E_TEC <= E_TEC_MAX:
-                result = 'PASS'
-                operator = '<='
-            else:
-                result = 'FAIL'
-                operator = '>'
-            print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+            for AllowancePSU in (1, lower, higher):
+                if AllowancePSU == 1:
+                    print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
+                elif AllowancePSU == lower:
+                    print("  If power supplies meet less efficiency requirements,")
+                elif AllowancePSU == higher:
+                    print("  If power supplies meet more efficiency requirements,")
+                E_TEC_MAX = estar60.equation_two('G1') * AllowancePSU
+                if E_TEC <= E_TEC_MAX:
+                    result = 'PASS'
+                    operator = '<='
+                else:
+                    result = 'FAIL'
+                    operator = '>'
+                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
 
     elif sysinfo.product_type == 2:
         # Energy Star 5.2
-        print("Energy Star 5.2:");
+        print("Energy Star 5.2:")
         estar52 = EnergyStar52(sysinfo)
         P_TEC = estar52.equation_three()
         P_TEC_MAX = estar52.equation_four()
@@ -770,7 +752,7 @@ def qualifying(sysinfo):
         print("  %s (P_TEC) %s %s (P_TEC_MAX), %s" % (P_TEC, operator, P_TEC_MAX, result))
 
         # Energy Star 6.0
-        print("Energy Star 6.0:");
+        print("Energy Star 6.0:")
         estar60 = EnergyStar60(sysinfo)
         P_TEC = estar60.equation_four()
         P_TEC_MAX = estar60.equation_five()
@@ -782,7 +764,63 @@ def qualifying(sysinfo):
             operator = '>'
         print("  %s (P_TEC) %s %s (P_TEC_MAX), %s" % (P_TEC, operator, P_TEC_MAX, result))
     elif sysinfo.product_type == 3:
-        raise Exception('Not implemented yet.')
+        # Energy Star 5.2
+        print("Energy Star 5.2:")
+        estar52 = EnergyStar52(sysinfo)
+        for wol in (True, False):
+            (category, P_OFF_MAX, P_IDLE_MAX) = estar52.equation_five(wol)
+            P_OFF = sysinfo.off
+            P_IDLE = sysinfo.short_idle
+
+            if P_OFF <= P_OFF_MAX and P_IDLE <= P_IDLE_MAX:
+                result = 'PASS'
+            else:
+                result = 'FAIL'
+
+            if P_OFF <= P_OFF_MAX:
+                op1 = '<='
+            else:
+                op1 = '>'
+
+            if P_IDLE <= P_IDLE_MAX:
+                op2 = '<='
+            else:
+                op2 = '>'
+            if wol:
+                print("  If Wake-On-LAN (WOL) is enabled by default upon shipment.")
+            else:
+                print("  If Wake-On-LAN (WOL) is disabled by default upon shipment.")
+            print("    Category %s: %s (P_OFF) %s %s (P_OFF_MAX), %s (P_IDLE) %s %s (P_IDLE_MAX), %s" % (category, P_OFF, op1, P_OFF_MAX, P_IDLE, op2, P_IDLE_MAX, result))
+
+        # Energy Star 6.0
+        print("Energy Star 6.0:")
+        estar60 = EnergyStar60(sysinfo)
+        for wol in (True, False):
+            P_OFF = sysinfo.off
+            P_OFF_MAX = estar60.equation_six(wol)
+            P_IDLE = sysinfo.short_idle
+            P_IDLE_MAX = estar60.equation_seven()
+
+            if P_OFF <= P_OFF_MAX and P_IDLE <= P_IDLE_MAX:
+                result = 'PASS'
+            else:
+                result = 'FAIL'
+
+            if P_OFF <= P_OFF_MAX:
+                op1 = '<='
+            else:
+                op1 = '>'
+
+            if P_IDLE <= P_IDLE_MAX:
+                op2 = '<='
+            else:
+                op2 = '>'
+            if wol:
+                print("  If Wake-On-LAN (WOL) is enabled by default upon shipment.")
+            else:
+                print("  If Wake-On-LAN (WOL) is disabled by default upon shipment.")
+            print("    %s (P_OFF) %s %s (P_OFF_MAX), %s (P_IDLE) %s %s (P_IDLE_MAX), %s" % (P_OFF, op1, P_OFF_MAX, P_IDLE, op2, P_IDLE_MAX, result))
+
     elif sysinfo.product_type == 4:
         raise Exception('Not implemented yet.')
     else:
@@ -815,6 +853,13 @@ def main():
 #            auto=True,
 #            product_type=2, disk_num=2, eee=0,
 #            off=2, sleep=4, long_idle=50, short_idle=80, max_power=180)
+    # Test case from Energy Star 5.2/6.0 for Small-scale Servers 
+#    sysinfo = SysInfo(
+#            auto=True,
+#            product_type=3,
+#            cpu_core=1, more_discrete=False,
+#            eee=1, disk_num=1,
+#            off=2.7, short_idle=65.0)
     sysinfo = SysInfo()
     qualifying(sysinfo)
 
