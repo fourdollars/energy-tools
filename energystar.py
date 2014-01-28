@@ -88,7 +88,8 @@ class SysInfo:
             eee=0,
             discrete=False,
             switchable=False,
-            power_supply=''):
+            power_supply='',
+            max_power=0):
         self.auto = auto
         self.cpu_core = cpu_core
         self.cpu_clock = cpu_clock
@@ -110,51 +111,61 @@ class SysInfo:
         self.discrete = discrete
         self.switchable = switchable
         self.power_supply = power_supply
+        self.max_power = max_power
 
         if not auto:
             # Product type
             self.product_type = question_int("""Which product type would you like to verify?
  [1] Desktop, Integrated Desktop, and Notebook Computers
- [2] Workstations (Not implemented yet)
+ [2] Workstations
  [3] Small-scale Servers (Not implemented yet)
  [4] Thin Clients (Not implemented yet)""", 4)
 
-            # Computer type
-            self.computer_type = question_int("""Which type of computer do you use?
+            if self.product_type == 1:
+                # Computer type
+                self.computer_type = question_int("""Which type of computer do you use?
  [1] Desktop
  [2] Integrated Desktop
  [3] Notebook""", 3)
 
-            # GPU Information
-            if question_bool("Is there a discrete GPU?"):
-                self.discrete = True
-            else:
-                self.discrete = False
-            if question_bool("Is it a switchable GPU?"):
-                self.switchable = True
-            else:
-                self.switchable = False
+                # GPU Information
+                if question_bool("Is there a discrete GPU?"):
+                    self.discrete = True
+                else:
+                    self.discrete = False
+                if question_bool("Is it a switchable GPU?"):
+                    self.switchable = True
+                else:
+                    self.switchable = False
 
-            # Power Consumption
-            self.off = question_num("What is the power consumption in Off Mode?")
-            self.sleep = question_num("What is the power consumption in Sleep Mode?")
-            self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
-            self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+                # Power Consumption
+                self.off = question_num("What is the power consumption in Off Mode?")
+                self.sleep = question_num("What is the power consumption in Sleep Mode?")
+                self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
+                self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
 
-            # Power Supply
-            if self.computer_type != 3:
-                self.power_supply = question_str("\nDoes it use external power supply or internal power supply? [e/i]", 1, "ei")
-            else:
-                self.power_supply = 'e'
+                # Power Supply
+                if self.computer_type != 3:
+                    self.power_supply = question_str("\nDoes it use external power supply or internal power supply? [e/i]", 1, "ei")
+                else:
+                    self.power_supply = 'e'
 
-            # Screen size
-            if self.computer_type != '1':
-                self.width = question_num("What is the physical width of the display in inches?")
-                self.height = question_num("What is the physical height of the display in inches?")
-                self.diagonal = question_bool("Is the physical diagonal of the display bigger than or equal to 27 inches?")
-                self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
+                # Screen size
+                if self.computer_type != '1':
+                    self.width = question_num("What is the physical width of the display in inches?")
+                    self.height = question_num("What is the physical height of the display in inches?")
+                    self.diagonal = question_bool("Is the physical diagonal of the display bigger than or equal to 27 inches?")
+                    self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
 
-            self.eee = question_num("How many Gigabit Ethernet ports?")
+                # Gigabit Ethernet
+                self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
+            elif self.product_type == 2:
+                self.off = question_num("What is the power consumption in Off Mode?")
+                self.sleep = question_num("What is the power consumption in Sleep Mode?")
+                self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
+                self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+                self.max_power = question_num("What is the maximum power consumption?")
+                self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
 
     def get_cpu_core(self):
         if self.cpu_core:
@@ -167,6 +178,7 @@ class SysInfo:
         else:
             self.cpu_core = int(subprocess.check_output('cat /proc/cpuinfo | grep "cpu cores" | sort -ru | head -n 1 | cut -d: -f2 | xargs', shell=True).strip())
 
+        debug("CPU core: %s" % (self.cpu_core))
         return self.cpu_core
 
     def get_cpu_clock(self):
@@ -175,6 +187,7 @@ class SysInfo:
 
         self.cpu_clock = float(subprocess.check_output("cat /proc/cpuinfo | grep 'model name' | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'", shell=True).strip())
 
+        debug("CPU clock: %s" % (self.cpu_clock))
         return self.cpu_clock
 
     def get_mem_size(self):
@@ -186,6 +199,7 @@ class SysInfo:
                 self.mem_size = self.mem_size + int(size)
         self.mem_size = self.mem_size / 1024
 
+        debug("Memory size: %s GB" % (self.mem_size))
         return self.mem_size
 
     def get_disk_num(self):
@@ -194,6 +208,7 @@ class SysInfo:
 
         self.disk_num = len(subprocess.check_output('ls /sys/block | grep sd', shell=True).strip().split('\n'))
 
+        debug("Disk number: %s" % (self.disk_num))
         return self.disk_num
 
     def set_display(self, width, height, diagonal, ep):
@@ -210,7 +225,11 @@ class SysInfo:
             (width, height) = subprocess.check_output("xrandr --current | grep current | sed 's/.*current \\([0-9]*\\) x \\([0-9]*\\).*/\\1 \\2/'", shell=True).strip().split(' ')
             self.w = int(width)
             self.h = int(height)
+        debug("Resolution: %s x %s" % (self.w, self.h))
         return (self.w, self.h)
+
+    def get_power_consumptions(self):
+        return (self.off, self.sleep, self.long_idle, self.short_idle)
 
 class EnergyStar52:
     """Energy Star 5.2 calculator"""
@@ -252,12 +271,11 @@ class EnergyStar52:
             return True
         return False
 
-    # Requirements for Desktop, Integrated Desktop, and Notebook Computers
     def equation_one(self):
         """Equation 1: TEC Calculation (E_TEC) for Desktop, Integrated Desktop, and Notebook Computers"""
-        P_OFF   = self.sysinfo.off
-        P_SLEEP = self.sysinfo.sleep
-        P_IDLE  = self.sysinfo.short_idle
+        (P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE) = self.sysinfo.get_power_consumptions()
+        P_IDLE = P_SHORT_IDLE
+
         if self.sysinfo.computer_type == 3:
             (T_OFF, T_SLEEP, T_IDLE) = (0.6, 0.1, 0.3)
         else:
@@ -382,26 +400,34 @@ class EnergyStar52:
 
         return result
 
-    # Requirements for Workstations
-    def equation_three():
+    def equation_three(self):
         """Equation 3: P_TEC Calculation for Workstations""" 
+        (P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE) = self.sysinfo.get_power_consumptions()
+        P_IDLE = P_SHORT_IDLE
+
+        (T_OFF, T_SLEEP, T_IDLE) = (0.35, 0.10, 0.55)
         P_TEC = (P_OFF * T_OFF) + (P_SLEEP * T_SLEEP) + (P_IDLE * T_IDLE) 
 
-    def equation_four():
-        """Equation 4: P_TEC_MAX Calculation for Workstations"""
-        P_TEC_MAX <= 0.28 * (P_MAX + (N_HDD * 5))
+        return P_TEC
 
-    # Requirements for Small-scale Servers
-    def equation_five():
+    def equation_four(self):
+        """Equation 4: P_TEC_MAX Calculation for Workstations"""
+        P_MAX = self.sysinfo.max_power
+        N_HDD = self.sysinfo.disk_num
+
+        P_TEC_MAX = 0.28 * (P_MAX + (N_HDD * 5))
+
+        return P_TEC_MAX
+
+    def equation_five(self):
         """Equation 5: Calculation of P_OFF_MAX for Small-scale Servers"""
         P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
 
-    # Requirements for Thin Clients
-    def equation_six():
+    def equation_six(self):
         """Equation 6: Calculation of P_OFF_MAX for Thin Clients"""
         P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
 
-    def equation_seven():
+    def equation_seven(self):
         """Equation 7: Calculation of P_SLEEP_MAX for Thin Clients"""
         P_SLEEP_MAX = P_SLEEP_BASE + P_SLEEP_WOL
 
@@ -417,10 +443,7 @@ class EnergyStar60:
     # Requirements for Desktop, Integrated Desktop, and Notebook Computers
     def equation_one(self):
         """Equation 1: TEC Calculation (E_TEC) for Desktop, Integrated Desktop, Thin Client and Notebook Computers"""
-        P_OFF        = self.sysinfo.off
-        P_SLEEP      = self.sysinfo.sleep
-        P_LONG_IDLE  = self.sysinfo.long_idle
-        P_SHORT_IDLE = self.sysinfo.short_idle
+        (P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE) = self.sysinfo.get_power_consumptions()
         if self.sysinfo.computer_type == 3:
             (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.25, 0.35, 0.1, 0.3)
         else:
@@ -528,18 +551,7 @@ class EnergyStar60:
         debug("TEC_STORAGE = %s" % (TEC_STORAGE))
 
         if self.sysinfo.computer_type != 1:
-            (width, height, diagonal, enhanced_performance_display) = self.sysinfo.get_display()
-            if enhanced_performance_display:
-                if diagonal:
-                    EP = 0.75
-                else:
-                    EP = 0.3
-            else:
-                EP = 0
-            (w, h) = self.sysinfo.get_resolution()
-            r = 1.0 * w * h / 1000000
-            A = width * height
-            debug("EP = %s, r = %s, A = %s" % (EP, r, A))
+            (EP, r, A) = self.equation_three()
 
         if self.sysinfo.computer_type == 2:
             TEC_INT_DISPLAY = 8.76 * 0.35 * (1 + EP) * (4 * r + 0.05 * A)
@@ -550,6 +562,39 @@ class EnergyStar60:
         debug("TEC_INT_DISPLAY = %s" % (TEC_INT_DISPLAY))
 
         return TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE + TEC_INT_DISPLAY + TEC_SWITCHABLE + TEC_EEE
+
+    def equation_three(self):
+        """Equation 3: Calculation of Allowance for Enhanced-performance Integrated Displays"""
+        (width, height, diagonal, enhanced_performance_display) = self.sysinfo.get_display()
+        if enhanced_performance_display:
+            if diagonal:
+                EP = 0.75
+            else:
+                EP = 0.3
+        else:
+            EP = 0
+        (w, h) = self.sysinfo.get_resolution()
+        r = 1.0 * w * h / 1000000
+        A = width * height
+        debug("EP = %s, r = %s, A = %s" % (EP, r, A))
+        return (EP, r, A)
+
+    def equation_four(self):
+        """Equation 4: P_TEC Calculation for Workstations""" 
+        (P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE) = self.sysinfo.get_power_consumptions()
+        (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.35, 0.10, 0.15, 0.40)
+        P_TEC = P_OFF * T_OFF + P_SLEEP * T_SLEEP + P_LONG_IDLE * T_LONG_IDLE + P_SHORT_IDLE * T_SHORT_IDLE
+        return P_TEC
+
+    def equation_five(self):
+        """Equation 5: P_TEC_MAX Calculation for Workstations"""
+        (T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.10, 0.15, 0.40)
+        P_EEE = 0.2 * self.sysinfo.eee
+        P_MAX = self.sysinfo.max_power
+        N_HDD = self.sysinfo.disk_num
+        P_TEC_MAX = 0.28 * (P_MAX + N_HDD * 5) + 8.76 * P_EEE * (T_SLEEP + T_LONG_IDLE + T_SHORT_IDLE)
+        return P_TEC_MAX
+
 
 def qualifying(sysinfo):
     if sysinfo.product_type == 1:
@@ -710,17 +755,41 @@ def qualifying(sysinfo):
                 operator = '>'
             print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
 
-    elif product_type == '2':
+    elif sysinfo.product_type == 2:
+        # Energy Star 5.2
+        print("Energy Star 5.2:");
+        estar52 = EnergyStar52(sysinfo)
+        P_TEC = estar52.equation_three()
+        P_TEC_MAX = estar52.equation_four()
+        if P_TEC <= P_TEC_MAX:
+            result = 'PASS'
+            operator = '<='
+        else:
+            result = 'FAIL'
+            operator = '>'
+        print("  %s (P_TEC) %s %s (P_TEC_MAX), %s" % (P_TEC, operator, P_TEC_MAX, result))
+
+        # Energy Star 6.0
+        print("Energy Star 6.0:");
+        estar60 = EnergyStar60(sysinfo)
+        P_TEC = estar60.equation_four()
+        P_TEC_MAX = estar60.equation_five()
+        if P_TEC <= P_TEC_MAX:
+            result = 'PASS'
+            operator = '<='
+        else:
+            result = 'FAIL'
+            operator = '>'
+        print("  %s (P_TEC) %s %s (P_TEC_MAX), %s" % (P_TEC, operator, P_TEC_MAX, result))
+    elif sysinfo.product_type == 3:
         raise Exception('Not implemented yet.')
-    elif product_type == '3':
-        raise Exception('Not implemented yet.')
-    elif product_type == '4':
+    elif sysinfo.product_type == 4:
         raise Exception('Not implemented yet.')
     else:
         raise Exception('This is a bug when you see this.')
 
 def main():
-    # Test case from Energy Star 5.2/6.0 datasheet
+    # Test case from Energy Star 5.2/6.0 for Notebooks
 #    sysinfo = SysInfo(
 #            auto=True,
 #            product_type=1, computer_type=3,
@@ -741,6 +810,11 @@ def main():
 #            width=12, height=6.95, diagonal=False,
 #            discrete=True, switchable=False,
 #            off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
+    # Test case from Energy Star 5.2/6.0 for Workstations
+#    sysinfo = SysInfo(
+#            auto=True,
+#            product_type=2, disk_num=2, eee=0,
+#            off=2, sleep=4, long_idle=50, short_idle=80, max_power=180)
     sysinfo = SysInfo()
     qualifying(sysinfo)
 
