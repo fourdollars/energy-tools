@@ -194,7 +194,7 @@ class SysInfo:
         if self.mem_size:
             return self.mem_size
 
-        for size in subprocess.check_output("sudo dmidecode -t 17 | grep Size | awk '{print $2}'", shell=True).split('\n'):
+        for size in subprocess.check_output("sudo dmidecode -t 17 | grep 'Size:.*MB' | awk '{print $2}'", shell=True).split('\n'):
             if size:
                 self.mem_size = self.mem_size + int(size)
         self.mem_size = self.mem_size / 1024
