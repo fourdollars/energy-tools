@@ -20,8 +20,7 @@
 import subprocess
 
 def debug(message):
-    DEBUG=False
-    if DEBUG:
+    if False:
         print(message)
 
 def question_str(prompt, length, validator):
@@ -91,7 +90,8 @@ class SysInfo:
             power_supply='',
             max_power=0,
             more_discrete=False,
-            media_codec=False):
+            media_codec=False,
+            integrated_display=False):
         self.auto = auto
         self.cpu_core = cpu_core
         self.cpu_clock = cpu_clock
@@ -116,6 +116,7 @@ class SysInfo:
         self.max_power = max_power
         self.more_discrete = more_discrete
         self.media_codec = media_codec
+        self.integrated_display = integrated_display
 
         if not auto:
             # Product type
@@ -178,9 +179,18 @@ class SysInfo:
                     self.more_discrete = question_bool("Does it have more than one discrete GPU?")
             elif self.product_type == 4:
                 self.off = question_num("What is the power consumption in Off Mode?")
-                self.sleep = question_num("What is the power consumption in Sleep Mode?")
+                self.sleep = question_num("What is the power consumption in Sleep Mode?\n(You can input the power consumption in Long Idle Mode, if it lacks a discrete System Sleep Mode)")
+                self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
                 self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
                 self.media_codec = question_bool("Does it support local multimedia encode/decode?")
+                self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
+                self.integrated_display = question_bool("Does it have integrated display?")
+                if self.integrated_display:
+                    self.computer_type = 2
+                    self.width = question_num("What is the physical width of the display in inches?")
+                    self.height = question_num("What is the physical height of the display in inches?")
+                    self.diagonal = question_bool("Is the physical diagonal of the display bigger than or equal to 27 inches?")
+                    self.ep = question_bool("Is it an Enhanced-perforcemance Integrated Display?")
 
     def get_cpu_core(self):
         if self.cpu_core:
@@ -494,6 +504,9 @@ class EnergyStar60:
 
         E_TEC = ((P_OFF * T_OFF) + (P_SLEEP * T_SLEEP) + (P_LONG_IDLE * T_LONG_IDLE) + (P_SHORT_IDLE * T_SHORT_IDLE)) * 8760 / 1000
 
+        debug("(T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = %s %s %s %s" % (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE))
+        debug("(P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE) = %s %s %s %s" % (P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE))
+
         return E_TEC
 
     def equation_two(self, gpu_category):
@@ -657,6 +670,33 @@ class EnergyStar60:
         P_EEE = 0.2 * self.sysinfo.eee
         P_IDLE_MAX = P_IDLE_BASE + (N - 1) * P_IDLE_HDD + P_EEE
         return P_IDLE_MAX
+
+    def equation_eight(self, discrete, wol):
+        """Equation 8: Calculation of E_TEC_MAX for Thin Clients"""
+        TEC_BASE = 60
+
+        if discrete:
+            TEC_GRAPHICS = 36
+        else:
+            TEC_GRAPHICS = 0
+
+        if wol:
+            TEC_WOL = 2
+        else:
+            TEC_WOL = 0
+
+        if self.sysinfo.integrated_display:
+            (EP, r, A) = self.equation_three()
+            TEC_INT_DISPLAY = 8.76 * 0.35 * (1 + EP) * (4 * r + 0.05 * A)
+        else:
+            TEC_INT_DISPLAY = 0
+        debug("TEC_INT_DISPLAY = %s" % (TEC_INT_DISPLAY))
+
+        TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * self.sysinfo.eee
+
+        E_TEC_MAX = TEC_BASE + TEC_GRAPHICS + TEC_WOL + TEC_INT_DISPLAY + TEC_EEE
+
+        return E_TEC_MAX
 
 def qualifying(sysinfo):
     if sysinfo.product_type == 1:
@@ -895,6 +935,29 @@ def qualifying(sysinfo):
             else:
                 result = 'FAIL'
             print("        %s" % (result))
+        # Energy Star 6.0
+        print("Energy Star 6.0:")
+        estar60 = EnergyStar60(sysinfo)
+        E_TEC = estar60.equation_one()
+        for discrete in (True, False):
+            for wol in (True, False):
+                E_TEC_MAX = estar60.equation_eight(discrete, wol)
+                if discrete:
+                    msg1 = "it has Discrete Graphics enabled"
+                else:
+                    msg1 = "it doesn't have Discrete Graphics enabled"
+                if wol:
+                    msg2 = "Wake-On-LAN (WOL) is enabled"
+                else:
+                    msg2 = "Wake-On-LAN (WOL) is disabled"
+                print("  If %s and %s by default upon shipment," % (msg1, msg2))
+                if E_TEC <= E_TEC_MAX:
+                    operator = '<='
+                    result = 'PASS'
+                else:
+                    operator = '>'
+                    result = 'FAIL'
+                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
     else:
         raise Exception('This is a bug when you see this.')
 
@@ -936,11 +999,12 @@ def main():
 #            eee=1, disk_num=1,
 #            off=2.7, short_idle=65.0)
 
-    # Test case from Energy Star 5.2 for Thin Clients
+    # Test case from Energy Star 5.2/6.0 for Thin Clients
 #    sysinfo = SysInfo(
 #            auto=True,
-#            product_type=4,
-#            off=2.7, sleep=2.7, short_idle=15.0, media_codec=True)
+#            product_type=4, computer_type=2,
+#            integrated_display=True, w=1366, h=768, width=12, height=6.95, diagonal=True, ep=True,
+#            off=2.7, sleep=2.7, long_idle=15.0, short_idle=15.0, media_codec=True)
 
     sysinfo = SysInfo()
     qualifying(sysinfo)
