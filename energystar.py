@@ -90,7 +90,8 @@ class SysInfo:
             switchable=False,
             power_supply='',
             max_power=0,
-            more_discrete=False):
+            more_discrete=False,
+            media_codec=False):
         self.auto = auto
         self.cpu_core = cpu_core
         self.cpu_clock = cpu_clock
@@ -114,6 +115,7 @@ class SysInfo:
         self.power_supply = power_supply
         self.max_power = max_power
         self.more_discrete = more_discrete
+        self.media_codec = media_codec
 
         if not auto:
             # Product type
@@ -121,7 +123,7 @@ class SysInfo:
  [1] Desktop, Integrated Desktop, and Notebook Computers
  [2] Workstations
  [3] Small-scale Servers
- [4] Thin Clients (Not implemented yet)""", 4)
+ [4] Thin Clients""", 4)
 
             if self.product_type == 1:
                 # Computer type
@@ -174,6 +176,11 @@ class SysInfo:
                 self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
                 if self.get_cpu_core() < 2:
                     self.more_discrete = question_bool("Does it have more than one discrete GPU?")
+            elif self.product_type == 4:
+                self.off = question_num("What is the power consumption in Off Mode?")
+                self.sleep = question_num("What is the power consumption in Sleep Mode?")
+                self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+                self.media_codec = question_bool("Does it support local multimedia encode/decode?")
 
     def get_cpu_core(self):
         if self.cpu_core:
@@ -239,37 +246,41 @@ class SysInfo:
     def get_power_consumptions(self):
         return (self.off, self.sleep, self.long_idle, self.short_idle)
 
+    def get_basic_info(self):
+        return (self.get_cpu_core(), self.get_cpu_clock(), self.get_mem_size(), self.get_disk_num())
+
 class EnergyStar52:
     """Energy Star 5.2 calculator"""
     def __init__(self, sysinfo):
-        self.core = sysinfo.get_cpu_core()
-        self.disk = sysinfo.get_disk_num()
-        self.memory = sysinfo.get_mem_size()
         self.sysinfo = sysinfo
 
     def qualify_desktop_category(self, category, gpu_discrete, gpu_width):
+        (core, clock, memory, disk) = self.sysinfo.get_basic_info()
+
         if category == 'D':
-            if self.core >= 4:
-                if self.memory >= 4:
+            if core >= 4:
+                if memory >= 4:
                     return True
                 elif gpu_width:
                     return True
         elif category == 'C':
-            if self.core >= 2:
-                if self.memory >= 2:
+            if core >= 2:
+                if memory >= 2:
                     return True
                 elif gpu_discrete:
                     return True
         elif category == 'B':
-            if self.core == 2 and self.memory >= 2:
+            if core == 2 and memory >= 2:
                 return True
         elif category == 'A':
             return True
         return False
 
     def qualify_netbook_category(self, category, gpu_discrete, over_gpu_width):
+        (core, clock, memory, disk) = self.sysinfo.get_basic_info()
+
         if category == 'C':
-            if self.core >= 2 and self.memory >= 2:
+            if core >= 2 and memory >= 2:
                 if gpu_discrete and over_gpu_width:
                     return True
         elif category == 'B':
@@ -296,20 +307,22 @@ class EnergyStar52:
     def equation_two(self, over_gpu_width):
         """Equation 2: E_TEC_MAX Calculation for Desktop, Integrated Desktop, and Notebook Computers"""
 
+        (core, clock, memory, disk) = self.sysinfo.get_basic_info()
+
         result = []
 
         ## Maximum TEC Allowances for Desktop and Integrated Desktop Computers
         if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
-            if self.disk > 1:
-                TEC_STORAGE = 25.0 * (self.disk - 1)
+            if disk > 1:
+                TEC_STORAGE = 25.0 * (disk - 1)
             else:
                 TEC_STORAGE = 0.0
 
             if self.qualify_desktop_category('A', self.sysinfo.discrete, over_gpu_width):
                 TEC_BASE = 148.0
 
-                if self.memory > 2:
-                    TEC_MEMORY = 1.0 * (self.memory - 2)
+                if memory > 2:
+                    TEC_MEMORY = 1.0 * (memory - 2)
                 else:
                     TEC_MEMORY = 0.0
 
@@ -324,8 +337,8 @@ class EnergyStar52:
             if self.qualify_desktop_category('B', self.sysinfo.discrete, over_gpu_width):
                 TEC_BASE = 175.0
 
-                if self.memory > 2:
-                    TEC_MEMORY = 1.0 * (self.memory - 2)
+                if memory > 2:
+                    TEC_MEMORY = 1.0 * (memory - 2)
                 else:
                     TEC_MEMORY = 0.0
 
@@ -340,8 +353,8 @@ class EnergyStar52:
             if self.qualify_desktop_category('C', self.sysinfo.discrete, over_gpu_width):
                 TEC_BASE = 209.0
 
-                if self.memory > 2:
-                    TEC_MEMORY = 1.0 * (self.memory - 2)
+                if memory > 2:
+                    TEC_MEMORY = 1.0 * (memory - 2)
                 else:
                     TEC_MEMORY = 0.0
 
@@ -356,8 +369,8 @@ class EnergyStar52:
             if self.qualify_desktop_category('D', self.sysinfo.discrete, over_gpu_width):
                 TEC_BASE = 234.0
 
-                if self.memory > 4:
-                    TEC_MEMORY = 1.0 * (self.memory - 4)
+                if memory > 4:
+                    TEC_MEMORY = 1.0 * (memory - 4)
                 else:
                     TEC_MEMORY = 0.0
 
@@ -371,13 +384,13 @@ class EnergyStar52:
 
         ## Maximum TEC Allowances for Notebook Computers
         else:
-            if self.memory > 4:
-                TEC_MEMORY = 0.4 * (self.memory - 4)
+            if memory > 4:
+                TEC_MEMORY = 0.4 * (memory - 4)
             else:
                 TEC_MEMORY = 0.0
 
-            if self.disk > 1:
-                TEC_STORAGE = 3.0 * (self.disk - 1)
+            if disk > 1:
+                TEC_STORAGE = 3.0 * (disk - 1)
             else:
                 TEC_STORAGE = 0.0
 
@@ -429,12 +442,14 @@ class EnergyStar52:
 
     def equation_five(self, wol):
         """Equation 5: Calculation of P_OFF_MAX for Small-scale Servers"""
+        (core, clock, memory, disk) = self.sysinfo.get_basic_info()
+
         P_OFF_BASE = 2.0
         if wol:
             P_OFF_WOL = 0.7
         else:
             P_OFF_WOL = 0
-        if (self.core > 1 or self.sysinfo.more_discrete) and self.memory >= 1:
+        if (core > 1 or self.sysinfo.more_discrete) and memory >= 1:
             category = 'B'
             P_IDLE_MAX = 65.0
         else:
@@ -443,21 +458,29 @@ class EnergyStar52:
         P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
         return (category, P_OFF_MAX, P_IDLE_MAX)
 
-    def equation_six(self):
+    def equation_six(self, wol):
         """Equation 6: Calculation of P_OFF_MAX for Thin Clients"""
+        P_OFF_BASE = 2.0
+        if wol:
+            P_OFF_WOL = 0.7
+        else:
+            P_OFF_WOL = 0
         P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
+        return P_OFF_MAX
 
-    def equation_seven(self):
+    def equation_seven(self, wol):
         """Equation 7: Calculation of P_SLEEP_MAX for Thin Clients"""
+        P_SLEEP_BASE = 2.0
+        if wol:
+            P_SLEEP_WOL = 0.7
+        else:
+            P_SLEEP_WOL = 0
         P_SLEEP_MAX = P_SLEEP_BASE + P_SLEEP_WOL
+        return P_SLEEP_MAX
 
 class EnergyStar60:
     """Energy Star 6.0 calculator"""
     def __init__(self, sysinfo):
-        self.clock = sysinfo.get_cpu_clock()
-        self.core = sysinfo.get_cpu_core()
-        self.disk = sysinfo.get_disk_num()
-        self.memory = sysinfo.get_mem_size()
         self.sysinfo = sysinfo
 
     # Requirements for Desktop, Integrated Desktop, and Notebook Computers
@@ -475,8 +498,9 @@ class EnergyStar60:
 
     def equation_two(self, gpu_category):
         """Equation 2: E_TEC_MAX Calculation for Desktop, Integrated Desktop, and Notebook Computers"""
+        (core, clock, memory, disk) = self.sysinfo.get_basic_info()
 
-        P = self.core * self.clock
+        P = core * clock
         debug("P = %s" % (P))
 
         if self.sysinfo.computer_type != 3:
@@ -511,7 +535,7 @@ class EnergyStar60:
                     TEC_BASE = 18.0
         debug("TEC_BASE = %s" % (TEC_BASE))
 
-        TEC_MEMORY = 0.8 * self.memory
+        TEC_MEMORY = 0.8 * memory
         debug("TEC_MEMORY = %s" % (TEC_MEMORY))
 
         if self.sysinfo.discrete:
@@ -565,9 +589,9 @@ class EnergyStar60:
         debug("TEC_EEE = %s" % (TEC_EEE))
 
         if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
-            TEC_STORAGE = 26 * (self.disk - 1)
+            TEC_STORAGE = 26 * (disk - 1)
         else:
-            TEC_STORAGE = 2.6 * (self.disk - 1)
+            TEC_STORAGE = 2.6 * (disk - 1)
         debug("TEC_STORAGE = %s" % (TEC_STORAGE))
 
         if self.sysinfo.computer_type != 1:
@@ -822,7 +846,55 @@ def qualifying(sysinfo):
             print("    %s (P_OFF) %s %s (P_OFF_MAX), %s (P_IDLE) %s %s (P_IDLE_MAX), %s" % (P_OFF, op1, P_OFF_MAX, P_IDLE, op2, P_IDLE_MAX, result))
 
     elif sysinfo.product_type == 4:
-        raise Exception('Not implemented yet.')
+        # Energy Star 5.2
+        print("Energy Star 5.2:")
+        estar52 = EnergyStar52(sysinfo)
+        for wol in (True, False):
+            if wol:
+                print("  If Wake-On-LAN (WOL) is enabled by default upon shipment.")
+            else:
+                print("  If Wake-On-LAN (WOL) is disabled by default upon shipment.")
+
+            P_OFF = sysinfo.off
+            P_OFF_MAX = estar52.equation_six(wol)
+
+            P_SLEEP = sysinfo.sleep
+            P_SLEEP_MAX = estar52.equation_seven(wol)
+
+            P_IDLE = sysinfo.short_idle
+            if sysinfo.media_codec:
+                P_IDLE_MAX = 15.0
+                category = 'B'
+            else:
+                P_IDLE_MAX = 12.0
+                category = 'A'
+
+            print("    Category %s:" % (category))
+
+            if P_OFF <= P_OFF_MAX:
+                op1 = '<='
+            else:
+                op1 = '>'
+            print("      %s (P_OFF) %s %s (P_OFF_MAX)" % (P_OFF, op1, P_OFF_MAX))
+
+            if P_SLEEP <= P_SLEEP_MAX:
+                op2 = '<='
+            else:
+                op2 = '>'
+            print("      %s (P_SLEEP) %s %s (P_SLEEP_MAX)" % (P_SLEEP, op2, P_SLEEP_MAX))
+
+            if P_IDLE <= P_IDLE_MAX:
+                op3 = '<='
+            else:
+                op3 = '>'
+            print("      %s (P_IDLE) %s %s (P_IDLE_MAX)" % (P_IDLE, op3, P_IDLE_MAX))
+
+
+            if P_OFF <= P_OFF_MAX and P_SLEEP <= P_SLEEP_MAX and P_IDLE <= P_IDLE_MAX:
+                result = 'PASS'
+            else:
+                result = 'FAIL'
+            print("        %s" % (result))
     else:
         raise Exception('This is a bug when you see this.')
 
@@ -837,6 +909,7 @@ def main():
 #            width=12, height=6.95, diagonal=False,
 #            discrete=False, switchable=True,
 #            off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
+
     # Test case from OEM/ODM only for Energy Star 5.2
     # Category B: 19.16688 (E_TEC) <= 60.8 (E_TEC_MAX), PASS
 #    sysinfo = SysInfo(
@@ -848,11 +921,13 @@ def main():
 #            width=12, height=6.95, diagonal=False,
 #            discrete=True, switchable=False,
 #            off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
+
     # Test case from Energy Star 5.2/6.0 for Workstations
 #    sysinfo = SysInfo(
 #            auto=True,
 #            product_type=2, disk_num=2, eee=0,
 #            off=2, sleep=4, long_idle=50, short_idle=80, max_power=180)
+
     # Test case from Energy Star 5.2/6.0 for Small-scale Servers 
 #    sysinfo = SysInfo(
 #            auto=True,
@@ -860,6 +935,13 @@ def main():
 #            cpu_core=1, more_discrete=False,
 #            eee=1, disk_num=1,
 #            off=2.7, short_idle=65.0)
+
+    # Test case from Energy Star 5.2 for Thin Clients
+#    sysinfo = SysInfo(
+#            auto=True,
+#            product_type=4,
+#            off=2.7, sleep=2.7, short_idle=15.0, media_codec=True)
+
     sysinfo = SysInfo()
     qualifying(sysinfo)
 
