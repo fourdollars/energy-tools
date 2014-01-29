@@ -27,7 +27,7 @@ def question_str(prompt, length, validator):
     while True:
         s = raw_input(prompt + "\n>> ")
         if len(s) == length and set(s).issubset(validator):
-            print('')
+            print('-'*80)
             return s
         print("The valid input '" + validator + "'.")
 
@@ -35,7 +35,7 @@ def question_bool(prompt):
     while True:
         s = raw_input(prompt + " [y/n]\n>> ")
         if len(s) == 1 and set(s).issubset("YyNn01"):
-            print('')
+            print('-'*80)
             if s == 'Y' or s == 'y' or s == '1':
                 return True
             else:
@@ -48,7 +48,7 @@ def question_int(prompt, maximum):
             try:
                 num = int(s)
                 if num <= maximum:
-                    print('')
+                    print('-'*80)
                     return num
             except ValueError:
                 print("Please input a positive integer less than or equal to %s." % (maximum))
@@ -59,7 +59,7 @@ def question_num(prompt):
         s = raw_input(prompt + "\n>> ")
         try:
             num = float(s)
-            print('')
+            print('-'*80)
             return num
         except ValueError:
             print "Oops!  That was no valid number.  Try again..."
@@ -151,7 +151,7 @@ class SysInfo:
 
                 # Power Supply
                 if self.computer_type != 3:
-                    self.power_supply = question_str("\nDoes it use external power supply or internal power supply? [e/i]", 1, "ei")
+                    self.power_supply = question_str("Does it use external power supply or internal power supply? [e/i]", 1, "ei")
                 else:
                     self.power_supply = 'e'
 
@@ -962,6 +962,7 @@ def qualifying(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
+    print("Energy Star 5.2/6.0 calculator v1.0\n" + '=' * 80)
     # Test case from Energy Star 5.2/6.0 for Notebooks
 #    sysinfo = SysInfo(
 #            auto=True,
