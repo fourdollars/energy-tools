@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess
+import math, subprocess
 
 def debug(message):
     if False:
@@ -74,7 +74,6 @@ class SysInfo:
             disk_num=0,
             width=0,
             height=0,
-            diagonal=0,
             ep=False,
             w=0,
             h=0,
@@ -101,7 +100,6 @@ class SysInfo:
         self.h = h
         self.width = width
         self.height = height
-        self.diagonal = diagonal
         self.ep = ep
         self.product_type = product_type
         self.computer_type = computer_type
@@ -159,7 +157,6 @@ class SysInfo:
                 if self.computer_type != '1':
                     self.width = question_num("What is the physical width of the display in inches?")
                     self.height = question_num("What is the physical height of the display in inches?")
-                    self.diagonal = question_bool("Is the physical diagonal of the display bigger than or equal to 27 inches?")
                     self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
 
                 # Gigabit Ethernet
@@ -189,7 +186,6 @@ class SysInfo:
                     self.computer_type = 2
                     self.width = question_num("What is the physical width of the display in inches?")
                     self.height = question_num("What is the physical height of the display in inches?")
-                    self.diagonal = question_bool("Is the physical diagonal of the display bigger than or equal to 27 inches?")
                     self.ep = question_bool("Is it an Enhanced-perforcemance Integrated Display?")
 
     def get_cpu_core(self):
@@ -236,14 +232,13 @@ class SysInfo:
         debug("Disk number: %s" % (self.disk_num))
         return self.disk_num
 
-    def set_display(self, width, height, diagonal, ep):
+    def set_display(self, width, height, ep):
         self.width = width
         self.height = height
-        self.diagonal = diagonal
         self.ep = ep
 
     def get_display(self):
-        return (self.width, self.height, self.diagonal, self.ep)
+        return (self.width, self.height, self.ep)
 
     def get_resolution(self):
         if self.w == 0 or self.h == 0:
@@ -622,9 +617,9 @@ class EnergyStar60:
 
     def equation_three(self):
         """Equation 3: Calculation of Allowance for Enhanced-performance Integrated Displays"""
-        (width, height, diagonal, enhanced_performance_display) = self.sysinfo.get_display()
+        (width, height, enhanced_performance_display) = self.sysinfo.get_display()
         if enhanced_performance_display:
-            if diagonal:
+            if math.sqrt(width * width + height * height) >= 27.0:
                 EP = 0.75
             else:
                 EP = 0.3
@@ -970,7 +965,7 @@ def main():
 #            cpu_core=2, cpu_clock=2.0,
 #            mem_size=8, disk_num=1,
 #            w=1366, h=768, eee=1, power_supply='e',
-#            width=12, height=6.95, diagonal=False,
+#            width=12, height=6.95,
 #            discrete=False, switchable=True,
 #            off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
 
@@ -982,7 +977,7 @@ def main():
 #            cpu_core=2, cpu_clock=1.8,
 #            mem_size=16, disk_num=1,
 #            w=1366, h=768, eee=1, power_supply='e',
-#            width=12, height=6.95, diagonal=False,
+#            width=12, height=6.95,
 #            discrete=True, switchable=False,
 #            off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
 
@@ -1004,7 +999,7 @@ def main():
 #    sysinfo = SysInfo(
 #            auto=True,
 #            product_type=4, computer_type=2,
-#            integrated_display=True, w=1366, h=768, width=12, height=6.95, diagonal=True, ep=True,
+#            integrated_display=True, w=1366, h=768, width=12, height=6.95, ep=True,
 #            off=2.7, sleep=2.7, long_idle=15.0, short_idle=15.0, media_codec=True)
 
     sysinfo = SysInfo()
