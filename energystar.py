@@ -132,14 +132,16 @@ class SysInfo:
  [3] Notebook""", 3)
 
                 # GPU Information
-                if question_bool("Is there a discrete GPU?"):
-                    self.discrete = True
-                else:
-                    self.discrete = False
-                if question_bool("Is it a switchable GPU?"):
+                if question_bool("Does it have switchable graphics and automated switching enabled by default?"):
                     self.switchable = True
+                    # Those with switchable graphics may not apply the Discrete Graphics allowance.
+                    self.discrete = False
                 else:
                     self.switchable = False
+                    if question_bool("Is there a discrete graphics device?"):
+                        self.discrete = True
+                    else:
+                        self.discrete = False
 
                 # Power Consumption
                 self.off = question_num("What is the power consumption in Off Mode?")
@@ -173,7 +175,7 @@ class SysInfo:
                 self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
                 self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
                 if self.get_cpu_core() < 2:
-                    self.more_discrete = question_bool("Does it have more than one discrete GPU?")
+                    self.more_discrete = question_bool("Does it have more than one discrete graphics device?")
             elif self.product_type == 4:
                 self.off = question_num("What is the power consumption in Off Mode?")
                 self.sleep = question_num("What is the power consumption in Sleep Mode?\n(You can input the power consumption in Long Idle Mode, if it lacks a discrete System Sleep Mode)")
@@ -208,7 +210,7 @@ class SysInfo:
 
         self.cpu_clock = float(subprocess.check_output("cat /proc/cpuinfo | grep 'model name' | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'", shell=True).strip())
 
-        debug("CPU clock: %s" % (self.cpu_clock))
+        debug("CPU clock: %s GHz" % (self.cpu_clock))
         return self.cpu_clock
 
     def get_mem_size(self):
@@ -546,49 +548,48 @@ class EnergyStar60:
         TEC_MEMORY = 0.8 * memory
         debug("TEC_MEMORY = %s" % (TEC_MEMORY))
 
-        if self.sysinfo.discrete:
-            if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
-                if gpu_category == 'G1':
-                    TEC_GRAPHICS = 36
-                elif gpu_category == 'G2':
-                    TEC_GRAPHICS = 51
-                elif gpu_category == 'G3':
-                    TEC_GRAPHICS = 64
-                elif gpu_category == 'G4':
-                    TEC_GRAPHICS = 83
-                elif gpu_category == 'G5':
-                    TEC_GRAPHICS = 105 
-                elif gpu_category == 'G6':
-                    TEC_GRAPHICS = 115 
-                elif gpu_category == 'G7':
-                    TEC_GRAPHICS = 130 
-            else:
-                if gpu_category == 'G1':
-                    TEC_GRAPHICS = 14
-                elif gpu_category == 'G2':
-                    TEC_GRAPHICS = 20
-                elif gpu_category == 'G3':
-                    TEC_GRAPHICS = 26
-                elif gpu_category == 'G4':
-                    TEC_GRAPHICS = 32
-                elif gpu_category == 'G5':
-                    TEC_GRAPHICS = 42
-                elif gpu_category == 'G6':
-                    TEC_GRAPHICS = 48
-                elif gpu_category == 'G7':
-                    TEC_GRAPHICS = 60
-        else:
-            TEC_GRAPHICS = 0
-        debug("TEC_GRAPHICS = %s" % (TEC_GRAPHICS))
-
         if self.sysinfo.switchable:
             if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
-                TEC_SWITCHABLE = 0.5 * TEC_GRAPHICS
+                TEC_SWITCHABLE = 0.5 * 36
             else:
                 TEC_SWITCHABLE = 0
+            TEC_GRAPHICS = 0
         else:
             TEC_SWITCHABLE = 0
-        debug("TEC_SWITCHABLE = %s" % (TEC_SWITCHABLE))
+            if self.sysinfo.discrete:
+                if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
+                    if gpu_category == 'G1':
+                        TEC_GRAPHICS = 36
+                    elif gpu_category == 'G2':
+                        TEC_GRAPHICS = 51
+                    elif gpu_category == 'G3':
+                        TEC_GRAPHICS = 64
+                    elif gpu_category == 'G4':
+                        TEC_GRAPHICS = 83
+                    elif gpu_category == 'G5':
+                        TEC_GRAPHICS = 105 
+                    elif gpu_category == 'G6':
+                        TEC_GRAPHICS = 115 
+                    elif gpu_category == 'G7':
+                        TEC_GRAPHICS = 130 
+                else:
+                    if gpu_category == 'G1':
+                        TEC_GRAPHICS = 14
+                    elif gpu_category == 'G2':
+                        TEC_GRAPHICS = 20
+                    elif gpu_category == 'G3':
+                        TEC_GRAPHICS = 26
+                    elif gpu_category == 'G4':
+                        TEC_GRAPHICS = 32
+                    elif gpu_category == 'G5':
+                        TEC_GRAPHICS = 42
+                    elif gpu_category == 'G6':
+                        TEC_GRAPHICS = 48
+                    elif gpu_category == 'G7':
+                        TEC_GRAPHICS = 60
+            else:
+                TEC_GRAPHICS = 0
+        debug("TEC_GRAPHICS = %s, TEC_SWITCHABLE = %s" % (TEC_GRAPHICS, TEC_SWITCHABLE))
 
         if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
             TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * self.sysinfo.eee
@@ -957,7 +958,7 @@ def qualifying(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    print("Energy Star 5.2/6.0 calculator v1.0\n" + '=' * 80)
+    print("Energy Star 5.2/6.0 calculator v1.1\n" + '=' * 80)
     # Test case from Energy Star 5.2/6.0 for Notebooks
 #    sysinfo = SysInfo(
 #            auto=True,
