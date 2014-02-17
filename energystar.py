@@ -156,7 +156,7 @@ class SysInfo:
                     self.power_supply = 'e'
 
                 # Screen size
-                if self.computer_type != '1':
+                if self.computer_type != 1:
                     self.width = question_num("What is the physical width of the display in inches?")
                     self.height = question_num("What is the physical height of the display in inches?")
                     self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
