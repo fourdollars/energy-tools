@@ -143,18 +143,6 @@ class SysInfo:
                     else:
                         self.discrete = False
 
-                # Power Consumption
-                self.off = question_num("What is the power consumption in Off Mode?")
-                self.sleep = question_num("What is the power consumption in Sleep Mode?")
-                self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
-                self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
-
-                # Power Supply
-                if self.computer_type != 3:
-                    self.power_supply = question_str("Does it use external power supply or internal power supply? [e/i]", 1, "ei")
-                else:
-                    self.power_supply = 'e'
-
                 # Screen size
                 if self.computer_type != 1:
                     self.width = question_num("What is the physical width of the display in inches?")
@@ -163,6 +151,18 @@ class SysInfo:
 
                 # Gigabit Ethernet
                 self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
+
+                # Power Supply
+                if self.computer_type != 3:
+                    self.power_supply = question_str("Does it use external power supply or internal power supply? [e/i]", 1, "ei")
+                else:
+                    self.power_supply = 'e'
+
+                # Power Consumption
+                self.off = question_num("What is the power consumption in Off Mode?")
+                self.sleep = question_num("What is the power consumption in Sleep Mode?")
+                self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
+                self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
             elif self.product_type == 2:
                 self.off = question_num("What is the power consumption in Off Mode?")
                 self.sleep = question_num("What is the power consumption in Sleep Mode?")
