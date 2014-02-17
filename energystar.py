@@ -72,11 +72,10 @@ class SysInfo:
             cpu_clock=0.0,
             mem_size=0.0,
             disk_num=0,
+            diagonal=0,
+            ep=False,
             width=0,
             height=0,
-            ep=False,
-            w=0,
-            h=0,
             product_type=0,
             computer_type=0,
             off=0,
@@ -96,10 +95,9 @@ class SysInfo:
         self.cpu_clock = cpu_clock
         self.mem_size = mem_size
         self.disk_num = disk_num
-        self.w = w
-        self.h = h
         self.width = width
         self.height = height
+        self.diagonal = diagonal
         self.ep = ep
         self.product_type = product_type
         self.computer_type = computer_type
@@ -145,8 +143,7 @@ class SysInfo:
 
                 # Screen size
                 if self.computer_type != 1:
-                    self.width = question_num("What is the physical width of the display in inches?")
-                    self.height = question_num("What is the physical height of the display in inches?")
+                    self.diagonal = question_num("What is the display diagonal in inches?")
                     self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
 
                 # Gigabit Ethernet
@@ -186,8 +183,7 @@ class SysInfo:
                 self.integrated_display = question_bool("Does it have integrated display?")
                 if self.integrated_display:
                     self.computer_type = 2
-                    self.width = question_num("What is the physical width of the display in inches?")
-                    self.height = question_num("What is the physical height of the display in inches?")
+                    self.diagonal = question_num("What is the display diagonal in inches?")
                     self.ep = question_bool("Is it an Enhanced-perforcemance Integrated Display?")
 
     def get_cpu_core(self):
@@ -234,21 +230,20 @@ class SysInfo:
         debug("Disk number: %s" % (self.disk_num))
         return self.disk_num
 
-    def set_display(self, width, height, ep):
-        self.width = width
-        self.height = height
+    def set_display(self, diagonal, ep):
+        self.diagonal = diagonal 
         self.ep = ep
 
     def get_display(self):
-        return (self.width, self.height, self.ep)
+        return (self.diagonal, self.ep)
 
     def get_resolution(self):
-        if self.w == 0 or self.h == 0:
+        if self.width == 0 or self.height == 0:
             (width, height) = subprocess.check_output("xrandr --current | grep current | sed 's/.*current \\([0-9]*\\) x \\([0-9]*\\).*/\\1 \\2/'", shell=True).strip().split(' ')
-            self.w = int(width)
-            self.h = int(height)
-        debug("Resolution: %s x %s" % (self.w, self.h))
-        return (self.w, self.h)
+            self.width = int(width)
+            self.height = int(height)
+        debug("Resolution: %s x %s" % (self.width, self.height))
+        return (self.width, self.height)
 
     def get_power_consumptions(self):
         return (self.off, self.sleep, self.long_idle, self.short_idle)
@@ -619,17 +614,17 @@ class EnergyStar60:
 
     def equation_three(self):
         """Equation 3: Calculation of Allowance for Enhanced-performance Integrated Displays"""
-        (width, height, enhanced_performance_display) = self.sysinfo.get_display()
+        (diagonal, enhanced_performance_display) = self.sysinfo.get_display()
         if enhanced_performance_display:
-            if math.sqrt(width * width + height * height) >= 27.0:
+            if diagonal >= 27.0:
                 EP = 0.75
             else:
                 EP = 0.3
         else:
             EP = 0
-        (w, h) = self.sysinfo.get_resolution()
-        r = 1.0 * w * h / 1000000
-        A = width * height
+        (width, height) = self.sysinfo.get_resolution()
+        r = 1.0 * width * height / 1000000
+        A =  1.0 * diagonal * diagonal * width * height / (width ** 2 + height ** 2)
         debug("EP = %s, r = %s, A = %s" % (EP, r, A))
         return (EP, r, A)
 
@@ -984,8 +979,8 @@ def main():
 #            product_type=1, computer_type=3,
 #            cpu_core=2, cpu_clock=2.0,
 #            mem_size=8, disk_num=1,
-#            w=1366, h=768, eee=1, power_supply='e',
-#            width=12.203488773514014, height=6.861112282619884,
+#            width=1366, height=768, eee=1, power_supply='e',
+#            diagonal=14, ep=False,
 #            discrete=False, switchable=True,
 #            off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
 
@@ -996,8 +991,8 @@ def main():
 #            product_type=1, computer_type=3,
 #            cpu_core=2, cpu_clock=1.8,
 #            mem_size=16, disk_num=1,
-#            w=1366, h=768, eee=1, power_supply='e',
-#            width=12.203488773514014, height=6.861112282619884,
+#            width=1366, height=768, eee=1, power_supply='e',
+#            diagonal=14, ep=False,
 #            discrete=True, switchable=False,
 #            off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
 
@@ -1019,7 +1014,7 @@ def main():
 #    sysinfo = SysInfo(
 #            auto=True,
 #            product_type=4, computer_type=2,
-#            integrated_display=True, w=1366, h=768, width=12, height=6.95, ep=True,
+#            integrated_display=True, width=1366, height=768, diagonal=14, ep=True,
 #            off=2.7, sleep=2.7, long_idle=15.0, short_idle=15.0, media_codec=True)
 
     sysinfo = SysInfo()
