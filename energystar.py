@@ -309,6 +309,9 @@ class EnergyStar52:
 
         E_TEC = ((P_OFF * T_OFF) + (P_SLEEP * T_SLEEP) + (P_IDLE * T_IDLE)) * 8760 / 1000
 
+        debug("T_OFF = %s, T_SLEEP = %s, T_IDLE = %s" % (T_OFF, T_SLEEP, T_IDLE))
+        debug("P_OFF = %s, P_SLEEP = %s, P_IDLE = %s" % (P_OFF, P_SLEEP, P_IDLE))
+
         return E_TEC
 
     def equation_two(self, over_gpu_width):
@@ -426,6 +429,9 @@ class EnergyStar52:
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
                 result.append(('C', E_TEC_MAX))
 
+        debug("TEC_BASE = %s, TEC_MEMORY = %s, TEC_STORAGE = %s, TEC_GRAPHICS = %s" % (TEC_BASE, TEC_MEMORY, TEC_STORAGE, TEC_GRAPHICS))
+        debug("E_TEC_MAX = %s" % (E_TEC_MAX))
+
         return result
 
     def equation_three(self):
@@ -501,8 +507,8 @@ class EnergyStar60:
 
         E_TEC = ((P_OFF * T_OFF) + (P_SLEEP * T_SLEEP) + (P_LONG_IDLE * T_LONG_IDLE) + (P_SHORT_IDLE * T_SHORT_IDLE)) * 8760 / 1000
 
-        debug("(T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = %s %s %s %s" % (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE))
-        debug("(P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE) = %s %s %s %s" % (P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE))
+        debug("T_OFF = %s, T_SLEEP = %s, T_LONG_IDLE = %s, T_SHORT_IDLE = %s" % (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE))
+        debug("P_OFF = %s, P_SLEEP = %s, P_LONG_IDLE = %s, P_SHORT_IDLE = %s" % (P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE))
 
         return E_TEC
 
@@ -543,10 +549,8 @@ class EnergyStar60:
                     TEC_BASE = 16.0
                 else:
                     TEC_BASE = 18.0
-        debug("TEC_BASE = %s" % (TEC_BASE))
 
         TEC_MEMORY = 0.8 * memory
-        debug("TEC_MEMORY = %s" % (TEC_MEMORY))
 
         if self.sysinfo.switchable:
             if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
@@ -589,19 +593,16 @@ class EnergyStar60:
                         TEC_GRAPHICS = 60
             else:
                 TEC_GRAPHICS = 0
-        debug("TEC_GRAPHICS = %s, TEC_SWITCHABLE = %s" % (TEC_GRAPHICS, TEC_SWITCHABLE))
 
         if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
             TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * self.sysinfo.eee
         else:
             TEC_EEE = 8.76 * 0.2 * (0.10 + 0.30) * self.sysinfo.eee
-        debug("TEC_EEE = %s" % (TEC_EEE))
 
         if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
             TEC_STORAGE = 26 * (disk - 1)
         else:
             TEC_STORAGE = 2.6 * (disk - 1)
-        debug("TEC_STORAGE = %s" % (TEC_STORAGE))
 
         if self.sysinfo.computer_type != 1:
             (EP, r, A) = self.equation_three()
@@ -612,7 +613,7 @@ class EnergyStar60:
             TEC_INT_DISPLAY = 8.76 * 0.30 * (1 + EP) * (2 * r + 0.02 * A)
         else:
             TEC_INT_DISPLAY = 0
-        debug("TEC_INT_DISPLAY = %s" % (TEC_INT_DISPLAY))
+        debug("TEC_BASE = %s, TEC_MEMORY = %s, TEC_GRAPHICS = %s, TEC_SWITCHABLE = %s, TEC_EEE = %s, TEC_STORAGE = %s, TEC_INT_DISPLAY = %s" % (TEC_BASE, TEC_MEMORY, TEC_GRAPHICS, TEC_SWITCHABLE, TEC_EEE, TEC_STORAGE, TEC_INT_DISPLAY))
 
         return TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE + TEC_INT_DISPLAY + TEC_SWITCHABLE + TEC_EEE
 
@@ -708,28 +709,46 @@ def qualifying(sysinfo):
             gpu_bit = '128'
 
         over_gpu_width = estar52.equation_two(True)
-        print("\n  If GPU Frame Buffer Width > %s bits," % (gpu_bit))
-        for i in over_gpu_width:
-            (category, E_TEC_MAX) = i
-            if E_TEC <= E_TEC_MAX:
-                result = 'PASS'
-                operator = '<='
-            else:
-                result = 'FAIL'
-                operator = '>'
-            print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
-
         under_gpu_width = estar52.equation_two(False)
-        print("\n  If GPU Frame Buffer Width <= %s bits," % (gpu_bit))
-        for i in under_gpu_width:
-            (category, E_TEC_MAX) = i
-            if E_TEC <= E_TEC_MAX:
-                result = 'PASS'
-                operator = '<='
-            else:
-                result = 'FAIL'
-                operator = '>'
-            print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+        different=False
+
+        for i,j in zip(over_gpu_width, under_gpu_width):
+            (cat1, max1) = i
+            (cat2, max2) = j
+            if cat1 != cat2 or max1 != max2:
+                different=True
+                debug("%s %s %s %s" % (cat1, cat2, max1, max2))
+                print("\n  If GPU Frame Buffer Width > %s bits," % (gpu_bit))
+                for i in over_gpu_width:
+                    (category, E_TEC_MAX) = i
+                    if E_TEC <= E_TEC_MAX:
+                        result = 'PASS'
+                        operator = '<='
+                    else:
+                        result = 'FAIL'
+                        operator = '>'
+                    print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+                print("\n  If GPU Frame Buffer Width <= %s bits," % (gpu_bit))
+                for i in under_gpu_width:
+                    (category, E_TEC_MAX) = i
+                    if E_TEC <= E_TEC_MAX:
+                        result = 'PASS'
+                        operator = '<='
+                    else:
+                        result = 'FAIL'
+                        operator = '>'
+                    print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+        else:
+            if different is False:
+                for i in under_gpu_width:
+                    (category, E_TEC_MAX) = i
+                    if E_TEC <= E_TEC_MAX:
+                        result = 'PASS'
+                        operator = '<='
+                    else:
+                        result = 'FAIL'
+                        operator = '>'
+                    print("\n  Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
 
         # Energy Star 6.0
         print("\nEnergy Star 6.0:\n")
@@ -966,7 +985,7 @@ def main():
 #            cpu_core=2, cpu_clock=2.0,
 #            mem_size=8, disk_num=1,
 #            w=1366, h=768, eee=1, power_supply='e',
-#            width=12, height=6.95,
+#            width=12.203488773514014, height=6.861112282619884,
 #            discrete=False, switchable=True,
 #            off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
 
@@ -978,7 +997,7 @@ def main():
 #            cpu_core=2, cpu_clock=1.8,
 #            mem_size=16, disk_num=1,
 #            w=1366, h=768, eee=1, power_supply='e',
-#            width=12, height=6.95,
+#            width=12.203488773514014, height=6.861112282619884,
 #            discrete=True, switchable=False,
 #            off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
 
