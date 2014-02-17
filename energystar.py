@@ -754,9 +754,9 @@ def qualifying(sysinfo):
                 if AllowancePSU == 1:
                     print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
                 elif AllowancePSU == lower:
-                    print("  If power supplies meet less efficiency requirements,")
+                    print("  If power supplies meet lower efficiency requirements,")
                 elif AllowancePSU == higher:
-                    print("  If power supplies meet more efficiency requirements,")
+                    print("  If power supplies meet higher efficiency requirements,")
                 for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
                     E_TEC_MAX = estar60.equation_two(gpu) * AllowancePSU
                     if E_TEC <= E_TEC_MAX:
@@ -785,9 +785,9 @@ def qualifying(sysinfo):
                 if AllowancePSU == 1:
                     print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
                 elif AllowancePSU == lower:
-                    print("  If power supplies meet less efficiency requirements,")
+                    print("  If power supplies meet lower efficiency requirements,")
                 elif AllowancePSU == higher:
-                    print("  If power supplies meet more efficiency requirements,")
+                    print("  If power supplies meet higher efficiency requirements,")
                 E_TEC_MAX = estar60.equation_two('G1') * AllowancePSU
                 if E_TEC <= E_TEC_MAX:
                     result = 'PASS'
