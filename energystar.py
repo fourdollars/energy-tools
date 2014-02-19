@@ -712,7 +712,9 @@ def qualifying(sysinfo):
             (cat2, max2) = j
             if cat1 != cat2 or max1 != max2:
                 different=True
-                debug("%s %s %s %s" % (cat1, cat2, max1, max2))
+                debug("Category %s E_TEC_MAX %s is different from Category %s E_TEC_MAX %s" % (cat1, max1, cat2, max2))
+        else:
+            if different is True:
                 print("\n  If GPU Frame Buffer Width > %s bits," % (gpu_bit))
                 for i in over_gpu_width:
                     (category, E_TEC_MAX) = i
@@ -733,8 +735,7 @@ def qualifying(sysinfo):
                         result = 'FAIL'
                         operator = '>'
                     print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
-        else:
-            if different is False:
+            else:
                 for i in under_gpu_width:
                     (category, E_TEC_MAX) = i
                     if E_TEC <= E_TEC_MAX:
