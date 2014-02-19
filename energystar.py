@@ -17,10 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import math, subprocess
+import argparse
+import math
+import subprocess
 
 def debug(message):
-    if False:
+    if args.debug:
         print(message)
 
 def question_str(prompt, length, validator):
@@ -974,52 +976,68 @@ def qualifying(sysinfo):
 
 def main():
     print("Energy Star 5.2/6.0 calculator v1.1\n" + '=' * 80)
-    # Test case from Energy Star 5.2/6.0 for Notebooks
-#    sysinfo = SysInfo(
-#            auto=True,
-#            product_type=1, computer_type=3,
-#            cpu_core=2, cpu_clock=2.0,
-#            mem_size=8, disk_num=1,
-#            width=1366, height=768, eee=1, power_supply='e',
-#            diagonal=14, ep=False,
-#            discrete=False, switchable=True,
-#            off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
-
-    # Test case from OEM/ODM only for Energy Star 5.2
-    # Category B: 19.16688 (E_TEC) <= 60.8 (E_TEC_MAX), PASS
-#    sysinfo = SysInfo(
-#            auto=True,
-#            product_type=1, computer_type=3,
-#            cpu_core=2, cpu_clock=1.8,
-#            mem_size=16, disk_num=1,
-#            width=1366, height=768, eee=1, power_supply='e',
-#            diagonal=14, ep=False,
-#            discrete=True, switchable=False,
-#            off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
-
-    # Test case from Energy Star 5.2/6.0 for Workstations
-#    sysinfo = SysInfo(
-#            auto=True,
-#            product_type=2, disk_num=2, eee=0,
-#            off=2, sleep=4, long_idle=50, short_idle=80, max_power=180)
-
-    # Test case from Energy Star 5.2/6.0 for Small-scale Servers 
-#    sysinfo = SysInfo(
-#            auto=True,
-#            product_type=3,
-#            cpu_core=1, more_discrete=False,
-#            eee=1, disk_num=1,
-#            off=2.7, short_idle=65.0)
-
-    # Test case from Energy Star 5.2/6.0 for Thin Clients
-#    sysinfo = SysInfo(
-#            auto=True,
-#            product_type=4, computer_type=2,
-#            integrated_display=True, width=1366, height=768, diagonal=14, ep=True,
-#            off=2.7, sleep=2.7, long_idle=15.0, short_idle=15.0, media_codec=True)
-
-    sysinfo = SysInfo()
+    if args.test == 1:
+        # Test case from Energy Star 5.2/6.0 for Notebooks
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=1, computer_type=3,
+                cpu_core=2, cpu_clock=2.0,
+                mem_size=8, disk_num=1,
+                width=1366, height=768, eee=1, power_supply='e',
+                diagonal=14, ep=False,
+                discrete=False, switchable=True,
+                off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
+    elif args.test == 2:
+        # Test case from OEM/ODM only for Energy Star 5.2
+        # Category B: 19.16688 (E_TEC) <= 60.8 (E_TEC_MAX), PASS
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=1, computer_type=3,
+                cpu_core=2, cpu_clock=1.8,
+                mem_size=16, disk_num=1,
+                width=1366, height=768, eee=1, power_supply='e',
+                diagonal=14, ep=False,
+                discrete=True, switchable=False,
+                off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
+    elif args.test == 3:
+        # Test case from Energy Star 5.2/6.0 for Workstations
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=2, disk_num=2, eee=0,
+                off=2, sleep=4, long_idle=50, short_idle=80, max_power=180)
+    elif args.test == 4:
+        # Test case from Energy Star 5.2/6.0 for Small-scale Servers 
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=3,
+                cpu_core=1, more_discrete=False,
+                eee=1, disk_num=1,
+                off=2.7, short_idle=65.0)
+    elif args.test == 5:
+        # Test case from Energy Star 5.2/6.0 for Thin Clients
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=4, computer_type=2,
+                integrated_display=True, width=1366, height=768, diagonal=14, ep=True,
+                off=2.7, sleep=2.7, long_idle=15.0, short_idle=15.0, media_codec=True)
+    elif args.test == 6:
+        # Test Case #1
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=1, computer_type=2,
+                cpu_core=2, cpu_clock=2.4,
+                mem_size=4, disk_num=1,
+                width=1680, height=1050, eee=1, power_supply='e',
+                diagonal=27, ep=True,
+                discrete=False, switchable=True,
+                off=12, sleep=23, long_idle=34, short_idle=45)
+    else:
+        sysinfo = SysInfo()
     qualifying(sysinfo)
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--debug",  help="print debug messages", action="store_true")
+    parser.add_argument("-t", "--test",  help="use test case", type=int)
+    args = parser.parse_args()
     main()
