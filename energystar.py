@@ -1040,205 +1040,281 @@ def main():
 
     qualifying(sysinfo)
 
-    if args.output:
-        xlsx = True
-        try:
-            from xlsxwriter import Workbook
-        except:
-            warning("You need to install Python xlsxwriter module or you can not output Excel format file.")
-            xlsx = False
+    if not args.output:
+        return
 
-        if xlsx:
-            book = Workbook(args.output)
-            book.set_properties({'comments':"Created by Energy Star 5.2/6.0 calculator %s from Canonical Ltd." % (version)})
+    try:
+        from xlsxwriter import Workbook
+    except:
+        warning("You need to install Python xlsxwriter module or you can not output Excel format file.")
+        return
 
-            sheet = book.add_worksheet()
-            sheet.set_column('A:A', 60)
-            sheet.set_column('B:B', 46)
-            header = book.add_format({
-                'bold': 1,
-                'border': 1,
-                'align': 'center',
-                'fg_color': '#CFE2F3'})
-            field = book.add_format({
-                'border': 1,
-                'fg_color': '#F3F3F3'})
-            field1 = book.add_format({
-                'left': 1,
-                'right': 1,
-                'fg_color': '#F3F3F3'})
-            field2 = book.add_format({
-                'left': 1,
-                'right': 1,
-                'bottom': 1,
-                'fg_color': '#F3F3F3'})
-            value = book.add_format({'border': 1})
-            float2 = book.add_format({'border': 1})
-            float2.set_num_format('0.00')
-            float3 = book.add_format({'border': 1})
-            float3.set_num_format('0.000')
-            result = book.add_format({
-                'border': 1,
-                'fg_color': '#F4CCCC'})
-            result_value = book.add_format({
-                'border': 1,
-                'fg_color': '#FFF2CC'})
+    book = Workbook(args.output)
+    book.set_properties({'comments':"Created by Energy Star 5.2/6.0 calculator %s from Canonical Ltd." % (version)})
 
-            sheet.merge_range("A1:B1", "General", header)
+    sheet = book.add_worksheet()
+    sheet.set_column('A:A', 60)
+    sheet.set_column('B:B', 46)
+    sheet.set_column('C:C', 1)
+    sheet.set_column('D:D', 15)
+    sheet.set_column('E:E', 8)
 
-            sheet.write("A2", "Product Type", field)
-            if sysinfo.product_type == 1:
-                sheet.write("B2", "Desktop, Integrated Desktop, and Notebook Computers", value)
+    header = book.add_format({
+        'bold': 1,
+        'border': 1,
+        'align': 'center',
+        'fg_color': '#CFE2F3'})
+    field = book.add_format({
+        'border': 1,
+        'fg_color': '#F3F3F3'})
+    field1 = book.add_format({
+        'left': 1,
+        'right': 1,
+        'fg_color': '#F3F3F3'})
+    field2 = book.add_format({
+        'left': 1,
+        'right': 1,
+        'bottom': 1,
+        'fg_color': '#F3F3F3'})
+    value = book.add_format({'border': 1})
+    value1 = book.add_format({
+        'left': 1,
+        'right': 1})
+    value1.set_num_format('0.00')
+    value2 = book.add_format({
+        'left': 1,
+        'right': 1,
+        'bottom': 1})
+    value2.set_num_format('0.00')
+    value3 = book.add_format({
+        'left': 1,
+        'right': 1})
+    value3.set_num_format('0%')
+    value4 = book.add_format({
+        'left': 1,
+        'right': 1,
+        'bottom': 1})
+    value4.set_num_format('0%')
+    float2 = book.add_format({'border': 1})
+    float2.set_num_format('0.00')
+    float3 = book.add_format({
+        'left': 1,
+        'right': 1})
+    float3.set_num_format('0.000')
+    result = book.add_format({
+        'border': 1,
+        'fg_color': '#F4CCCC'})
+    result_value = book.add_format({
+        'border': 1,
+        'fg_color': '#FFF2CC'})
+    result_value.set_num_format('0.00')
 
-                sheet.write("A3", "Computer Type", field)
-                if sysinfo.computer_type == 1:
-                    sheet.write("B3", "Desktop", value)
-                elif sysinfo.computer_type == 2:
-                    sheet.write("B3", "Integrated Desktop", value)
-                else:
-                    sheet.write("B3", "Notebook", value)
+    sheet.merge_range("A1:B1", "General", header)
 
-                sheet.write("A4", "CPU cores", field)
-                sheet.write("B4", sysinfo.cpu_core, value)
+    sheet.write("A2", "Product Type", field)
+    if sysinfo.product_type == 1:
+        sheet.write("B2", "Desktop, Integrated Desktop, and Notebook Computers", value)
 
-                sheet.write("A5", "CPU clock (GHz)", field)
-                sheet.write("B5", sysinfo.cpu_clock, float2)
+    sheet.write("A3", "Computer Type", field)
+    if sysinfo.computer_type == 1:
+        sheet.write("B3", "Desktop", value)
+    elif sysinfo.computer_type == 2:
+        sheet.write("B3", "Integrated Desktop", value)
+    else:
+        sheet.write("B3", "Notebook", value)
+    sheet.data_validation('B3', {
+        'validate': 'list',
+        'source': [
+            'Desktop',
+            'Integrated Desktop',
+            'Notebook']})
 
-                sheet.write("A6", "Memory size (GB)", field)
-                sheet.write("B6", sysinfo.mem_size, value)
+    sheet.write("A4", "CPU cores", field)
+    sheet.write("B4", sysinfo.cpu_core, value)
 
-                sheet.write("A7", "Number of Hard Drives", field)
-                sheet.write("B7", sysinfo.disk_num, value)
+    sheet.write("A5", "CPU clock (GHz)", field)
+    sheet.write("B5", sysinfo.cpu_clock, float2)
 
-                sheet.write("A8", "IEEE 802.3az compliant (Energy Efficient Ethernet) Gigabit Ethernet ports", field)
-                sheet.write("B8", sysinfo.eee, value)
+    sheet.write("A6", "Memory size (GB)", field)
+    sheet.write("B6", sysinfo.mem_size, value)
 
-                sheet.merge_range("A10:B10", "Graphics", header)
+    sheet.write("A7", "Number of Hard Drives", field)
+    sheet.write("B7", sysinfo.disk_num, value)
 
-                sheet.write("A11", "Graphics Type", field)
-                if sysinfo.switchable:
-                    sheet.write("B11", "Switchable", value)
-                elif sysinfo.discrete:
-                    sheet.write("B11", "Discrete", value)
-                else:
-                    sheet.write("B11", "Integrated", value)
+    sheet.write("A8", "IEEE 802.3az compliant (Energy Efficient Ethernet) Gigabit Ethernet ports", field)
+    sheet.write("B8", sysinfo.eee, value)
 
-                if sysinfo.computer_type == 3:
-                    sheet.write("A12", "GPU Frame Buffer Width > 64 bits", field)
-                else:
-                    sheet.write("A12", "GPU Frame Buffer Width > 128 bits", field)
-                sheet.write("B12", "No", value)
-                sheet.data_validation('B12', {
-                    'validate': 'list',
-                    'source': [
-                        'Yes',
-                        'No']})
+    sheet.merge_range("A10:B10", "Graphics", header)
 
-                sheet.write("A13", "Graphics Category", field)
-                sheet.write("B13", "G1 (FB_BW <= 16)", value)
-                sheet.data_validation('B13', {
-                    'validate': 'list',
-                    'source': [
-                        'G1 (FB_BW <= 16)',
-                        'G2 (16 < FB_BW <= 32)',
-                        'G3 (32 < FB_BW <= 64)',
-                        'G4 (64 < FB_BW <= 96)',
-                        'G5 (96 < FB_BW <= 128)',
-                        'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)',
-                        'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)']})
+    sheet.write("A11", "Graphics Type", field)
+    if sysinfo.switchable:
+        sheet.write("B11", "Switchable", value)
+    elif sysinfo.discrete:
+        sheet.write("B11", "Discrete", value)
+    else:
+        sheet.write("B11", "Integrated", value)
+    sheet.data_validation('B11', {
+        'validate': 'list',
+        'source': [
+            'Switchable',
+            'Discrete',
+            'Integrated']})
 
-                sheet.merge_range("A15:B15", "Display", header)
+    sheet.write_formula("A12", '=IF(EXACT(B3,"Notebook"), "GPU Frame Buffer Width > 64 bits", "GPU Frame Buffer Width > 128 bits")', field, "GPU Frame Buffer Width > 64 bits")
 
-                sheet.write("A16", "Enhanced-performance Integrated Display", field)
-                sheet.write("B16", "No", value)
-                sheet.data_validation('B16', {
-                    'validate': 'list',
-                    'source': [
-                        'Yes',
-                        'No']})
+    sheet.write("B12", "No", value)
+    sheet.data_validation('B12', {
+        'validate': 'list',
+        'source': [
+            'Yes',
+            'No']})
 
-                sheet.write("A17", "Physical Diagonal (inch)", field)
-                sheet.write("B17", sysinfo.diagonal, value)
+    sheet.write("A13", "Graphics Category", field)
+    sheet.write("B13", "G1 (FB_BW <= 16)", value)
+    sheet.data_validation('B13', {
+        'validate': 'list',
+        'source': [
+            'G1 (FB_BW <= 16)',
+            'G2 (16 < FB_BW <= 32)',
+            'G3 (32 < FB_BW <= 64)',
+            'G4 (64 < FB_BW <= 96)',
+            'G5 (96 < FB_BW <= 128)',
+            'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)',
+            'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)']})
 
-                sheet.write("A18", "Screen Width (px)", field)
-                sheet.write("B18", sysinfo.width, value)
+    sheet.merge_range("A15:B15", "Display", header)
 
-                sheet.write("A19", "Screen Height (px)", field)
-                sheet.write("B19", sysinfo.height, value)
+    sheet.write("A16", "Enhanced-performance Integrated Display", field)
+    sheet.write("B16", "No", value)
+    sheet.data_validation('B16', {
+        'validate': 'list',
+        'source': [
+            'Yes',
+            'No']})
 
-                sheet.merge_range("A21:B21", "Power Supply", header)
+    sheet.write("A17", "Physical Diagonal (inch)", field)
+    sheet.write("B17", sysinfo.diagonal, value)
 
-                sheet.write("A22", "Power Supply Type", field)
-                if sysinfo.power_supply == 'e':
-                    sheet.write("B22", "External", value)
-                else:
-                    sheet.write("B22", "Internal", value)
+    sheet.write("A18", "Screen Width (px)", field)
+    sheet.write("B18", sysinfo.width, value)
 
-                sheet.write("A23", "Meet the requirements of Power Supply Efficiency Allowance", field)
-                sheet.write("B23", "None", value)
-                sheet.data_validation('B23', {
-                    'validate': 'list',
-                    'source': [
-                        'None',
-                        'Lower',
-                        'Higher']})
+    sheet.write("A19", "Screen Height (px)", field)
+    sheet.write("B19", sysinfo.height, value)
 
-                sheet.merge_range("A25:B25", "Power Consumption", header)
-                sheet.write("A26", "Off mode (W)", field)
-                sheet.write("B26", sysinfo.off, float2)
-                sheet.write("A27", "Sleep mode (W)", field)
-                sheet.write("B27", sysinfo.sleep, float2)
-                sheet.write("A28", "Long idle mode (W)", field)
-                sheet.write("B28", sysinfo.long_idle, float2)
-                sheet.write("A29", "Short idle mode (W)", field)
-                sheet.write("B29", sysinfo.short_idle, float2)
+    sheet.merge_range("A21:B21", "Power Supply", header)
 
-                sheet.merge_range("A31:B31", "Energy Star 5.2", header)
+    sheet.write("A22", "Power Supply Type", field)
+    if sysinfo.power_supply == 'e':
+        sheet.write("B22", "External", value)
+    else:
+        sheet.write("B22", "Internal", value)
 
-                sheet.write("A32", "T_OFF", field1)
-                sheet.write("A33", "T_SLEEP", field1)
-                sheet.write("A34", "T_IDLE", field2)
+    sheet.write("A23", "Meet the requirements of Power Supply Efficiency Allowance", field)
+    sheet.write("B23", "None", value)
+    sheet.data_validation('B23', {
+        'validate': 'list',
+        'source': [
+            'None',
+            'Lower',
+            'Higher']})
 
-                sheet.write("A35", "P_OFF", field1)
-                sheet.write("A36", "P_SLEEP", field1)
-                sheet.write("A37", "P_IDLE", field2)
+    sheet.merge_range("A25:B25", "Power Consumption", header)
+    sheet.write("A26", "Off mode (W)", field)
+    sheet.write("B26", sysinfo.off, float2)
+    sheet.write("A27", "Sleep mode (W)", field)
+    sheet.write("B27", sysinfo.sleep, float2)
+    sheet.write("A28", "Long idle mode (W)", field)
+    sheet.write("B28", sysinfo.long_idle, float2)
+    sheet.write("A29", "Short idle mode (W)", field)
+    sheet.write("B29", sysinfo.short_idle, float2)
 
-                sheet.write("A38", "E_TEC", result)
+    sheet.merge_range("D1:E1", "Energy Star 5.2", header)
 
-                sheet.write("A39", "TEC_BASE", field1)
-                sheet.write("A40", "TEC_MEMORY", field1)
-                sheet.write("A41", "TEC_GRAPHICS", field1)
-                sheet.write("A42", "TEC_STORAGE", field1)
+    if sysinfo.computer_type == 3:
+        (T_OFF, T_SLEEP, T_IDLE) = (0.6, 0.1, 0.3)
+    else:
+        (T_OFF, T_SLEEP, T_IDLE) = (0.55, 0.05, 0.4)
 
-                sheet.write("A43", "E_TEC_MAX", result)
+    sheet.write("D2", "T_OFF", field1)
+    sheet.write_formula("E2", '=IF(EXACT(E,"Notebook"),0.6,0.55', value3, T_OFF)
+    sheet.write("D3", "T_SLEEP", field1)
+    sheet.write_formula("E3", '=IF(EXACT(E,"Notebook"),0.1,0.05', value3, T_SLEEP)
+    sheet.write("D4", "T_IDLE", field2)
+    sheet.write_formula("E4", '=IF(EXACT(E,"Notebook"),0.3,0.4', value4, T_IDLE)
 
-                sheet.merge_range("A46:B46", "Energy Star 6.0", header)
+    sheet.write("D5", "P_OFF", field1)
+    sheet.write_formula("E5", "=B26", value1, sysinfo.off)
+    sheet.write("D6", "P_SLEEP", field1)
+    sheet.write_formula("E6", "=B27", value1, sysinfo.sleep)
+    sheet.write("D7", "P_IDLE", field2)
+    sheet.write_formula("E7", "=B29", value2, sysinfo.short_idle)
 
-                sheet.write("A47", "T_OFF", field1)
-                sheet.write("A48", "T_SLEEP", field1)
-                sheet.write("A49", "T_LONG_IDLE", field1)
-                sheet.write("A50", "T_SHORT_IDLE", field2)
+    sheet.write("D8", "E_TEC", result)
+    sheet.write_formula("E8", "=(E2*E5+E3*E6+E4*E7)*8760/1000", result_value,
+            (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_IDLE * sysinfo.short_idle) * 8760 / 1000)
 
-                sheet.write("A51", "P_OFF", field1)
-                sheet.write("A52", "P_SLEEP", field1)
-                sheet.write("A53", "P_LONG_IDLE", field1)
-                sheet.write("A54", "P_SHORT_IDLE", field2)
+    sheet.write("D9", "TEC_BASE", field1)
+    sheet.write("E9", "", value1)
+    sheet.write("D10", "TEC_MEMORY", field1)
+    sheet.write("E10", "", value1)
+    sheet.write("D11", "TEC_GRAPHICS", field1)
+    sheet.write("E11", "", value1)
+    sheet.write("D12", "TEC_STORAGE", field1)
+    sheet.write("E12", "", value2)
 
-                sheet.write("A55", "E_TEC", result)
+    sheet.write("D13", "E_TEC_MAX", result)
+    sheet.write_formula("E13", "=TEC_BASE+TEC_MEMORY+TEC_GRAPHICS+TEC_STORAGE", result_value)
 
-                sheet.write("A56", "ALLOWANCE_PSU", field1)
-                sheet.write("B56", '=IF(EXACT(B23, "Higher"), 0.03, IF(EXACT(B23, "Lower"), 0.015, 0))', float3)
-                sheet.write("A57", "TEC_BASE", field1)
-                sheet.write("A58", "TEC_MEMORY", field1)
-                sheet.write("A59", "TEC_GRAPHICS", field1)
-                sheet.write("A60", "TEC_STORAGE", field1)
-                sheet.write("A61", "TEC_INT_DISPLAY", field1)
-                sheet.write("A62", "TEC_SWITCHABLE", field1)
-                sheet.write("A63", "TEC_EEE", field1)
+    sheet.merge_range("D15:E15", "Energy Star 6.0", header)
 
-                sheet.write("A64", "E_TEC_MAX", result)
+    if sysinfo.computer_type == 3:
+        (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.25, 0.35, 0.1, 0.3)
+    else:
+        (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.45, 0.05, 0.15, 0.35)
 
-            book.close()
+    sheet.write("D16", "T_OFF", field1)
+    sheet.write_formula("E16", '=IF(EXACT(B3,"Notebook"),0.25,0.45', value3, T_OFF)
+    sheet.write("D17", "T_SLEEP", field1)
+    sheet.write_formula("E17", '=IF(EXACT(B3,"Notebook"),0.35,0.05', value3, T_SLEEP)
+    sheet.write("D18", "T_LONG_IDLE", field1)
+    sheet.write_formula("E18", '=IF(EXACT(B3,"Notebook"),0.1,0.15', value3, T_LONG_IDLE)
+    sheet.write("D19", "T_SHORT_IDLE", field2)
+    sheet.write_formula("E19", '=IF(EXACT(B3,"Notebook"),0.3,0.35', value4, T_SHORT_IDLE)
+
+    sheet.write("D20", "P_OFF", field1)
+    sheet.write_formula("E20", "=B26", value1, sysinfo.off)
+    sheet.write("D21", "P_SLEEP", field1)
+    sheet.write_formula("E21", "=B27", value1, sysinfo.sleep)
+    sheet.write("D22", "P_LONG_IDLE", field1)
+    sheet.write_formula("E22", "=B29", value1, sysinfo.long_idle)
+    sheet.write("D23", "P_SHORT_IDLE", field2)
+    sheet.write_formula("E23", "=B29", value2, sysinfo.short_idle)
+
+    sheet.write("D24", "E_TEC", result)
+    sheet.write_formula("E24", "=T_OFF*P_OFF+T_SLEEP*P_SLEEP+T_LONG_IDLE*P_LONG_IDLE+T_SHORT_IDLE*P_SHORT_IDLE", result_value,
+            (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_LONG_IDLE * sysinfo.long_idle + T_SHORT_IDLE * sysinfo.short_idle) * 8760 / 1000)
+
+    sheet.write("D25", "ALLOWANCE_PSU", field1)
+    sheet.write_formula("E25", '=IF(EXACT(B23, "Higher"), 0.03, IF(EXACT(B23, "Lower"), 0.015, 0))', float3)
+    sheet.write("D26", "TEC_BASE", field1)
+    sheet.write("E26", "", value1)
+    sheet.write("D27", "TEC_MEMORY", field1)
+    sheet.write("E27", "", value1)
+    sheet.write("D28", "TEC_GRAPHICS", field1)
+    sheet.write("E28", "", value1)
+    sheet.write("D29", "TEC_STORAGE", field1)
+    sheet.write("E29", "", value1)
+    sheet.write("D30", "TEC_INT_DISPLAY", field1)
+    sheet.write("E30", "", value1)
+    sheet.write("D31", "TEC_SWITCHABLE", field1)
+    sheet.write("E31", "", value1)
+    sheet.write("D32", "TEC_EEE", field1)
+    sheet.write("E32", "", value1)
+
+    sheet.write("D33", "E_TEC_MAX", result)
+    sheet.write_formula("E33", "=(1+B56)*(B57+B58+B59+B60+B61+B62+B63)", result_value)
+
+    book.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
