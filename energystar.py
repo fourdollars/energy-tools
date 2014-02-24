@@ -1101,6 +1101,7 @@ def generate_excel(sysinfo, version):
         'border': 1,
         'align': 'center',
         'fg_color': '#CFE2F3'})
+    left = book.add_format({'align': 'left'})
     right = book.add_format({'align': 'right'})
     center = book.add_format({'align': 'center'})
     field = book.add_format({
@@ -1402,40 +1403,93 @@ def generate_excel(sysinfo, version):
     sheet.write("D18", "P_SHORT_IDLE", field2)
     sheet.write_formula("E18", "=B29", value2, sysinfo.short_idle)
 
+    E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_LONG_IDLE * sysinfo.long_idle + T_SHORT_IDLE * sysinfo.short_idle) * 8760 / 1000
     sheet.write("D19", "E_TEC", result)
-    sheet.write_formula("E19", "=T_OFF*P_OFF+T_SLEEP*P_SLEEP+T_LONG_IDLE*P_LONG_IDLE+T_SHORT_IDLE*P_SHORT_IDLE", result_value,
-            (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_LONG_IDLE * sysinfo.long_idle + T_SHORT_IDLE * sysinfo.short_idle) * 8760 / 1000)
+    sheet.write_formula("E19", "=T_OFF*P_OFF+T_SLEEP*P_SLEEP+T_LONG_IDLE*P_LONG_IDLE+T_SHORT_IDLE*P_SHORT_IDLE", result_value, E_TEC)
 
     sheet.write("F11", "ALLOWANCE_PSU", field1)
     sheet.write_formula("G11", '=IF(EXACT(B23, "Higher"), 0.03, IF(EXACT(B23, "Lower"), 0.015, 0))', float3)
+
+    P = sysinfo.cpu_core * sysinfo.cpu_clock
+    if sysinfo.discrete:
+        if P > 9:
+            TEC_BASE = 18
+        elif P > 2:
+            TEC_BASE = 16
+        else:
+            TEC_BASE = 14
+    else:
+        if P > 8:
+            TEC_BASE = 28
+        elif P > 5.2:
+            TEC_BASE = 24
+        elif P > 2:
+            TEC_BASE = 22
+        else:
+            TEC_BASE = 14
     sheet.write("F12", "TEC_BASE", field1)
-    sheet.write_formula("G12", '=IF(EXACT(B11,"Discrete"), IF(I11>9, 18, IF(AND(I11<=9, I11>2), 16, 14)), IF(I11>8, 28, IF(AND(I11<=8, I11>5.2), 24, IF(AND(I11<=5.2, I11>2), 22, 14))))', value1)
+    sheet.write_formula("G12", '=IF(EXACT(B11,"Discrete"), IF(I11>9, 18, IF(AND(I11<=9, I11>2), 16, 14)), IF(I11>8, 28, IF(AND(I11<=8, I11>5.2), 24, IF(AND(I11<=5.2, I11>2), 22, 14))))', value1, TEC_BASE)
+
+    TEC_MEMORY = 0.8 * sysinfo.mem_size
     sheet.write("F13", "TEC_MEMORY", field1)
-    sheet.write_formula("G13", '=B6*0.8', value1)
+    sheet.write_formula("G13", '=B6*0.8', value1, TEC_MEMORY)
+
+    if sysinfo.discrete:
+        TEC_GRAPHICS = 14
+    else:
+        TEC_GRAPHICS = 0
     sheet.write("F14", "TEC_GRAPHICS", field1)
-    sheet.write_formula("G14", '=IF(EXACT(B11, "Discrete"), IF(EXACT(B13, "G1 (FB_BW <= 16)"), 14, IF(EXACT(B13, "G2 (16 < FB_BW <= 32)"), 20, IF(EXACT(B13, "G2 (16 < FB_BW <= 32)"), 20, IF(EXACT(B13, "G3 (32 < FB_BW <= 64)"), 26, IF(EXACT(B13, "G4 (64 < FB_BW <= 96)"), 32, IF(EXACT(B13, "G5 (96 < FB_BW <= 128)"), 42, IF(EXACT(B13, "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"), 48, 60))))))), 0)', value1)
+    sheet.write_formula("G14", '=IF(EXACT(B11, "Discrete"), IF(EXACT(B13, "G1 (FB_BW <= 16)"), 14, IF(EXACT(B13, "G2 (16 < FB_BW <= 32)"), 20, IF(EXACT(B13, "G2 (16 < FB_BW <= 32)"), 20, IF(EXACT(B13, "G3 (32 < FB_BW <= 64)"), 26, IF(EXACT(B13, "G4 (64 < FB_BW <= 96)"), 32, IF(EXACT(B13, "G5 (96 < FB_BW <= 128)"), 42, IF(EXACT(B13, "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"), 48, 60))))))), 0)', value1, TEC_GRAPHICS)
+    
+    if sysinfo.disk_num > 1:
+        TEC_STORAGE = 2.6 * (TEC_STORAGE - 1)
+    else:
+        TEC_STORAGE = 0
     sheet.write("F15", "TEC_STORAGE", field1)
-    sheet.write_formula("G15", '=IF(B7>1,2.6*(B7-1),0)', value1)
-    sheet.write("F16", "TEC_INT_DISPLAY", field1)
-    sheet.write_formula("G16", '=8.76 * 0.3 * (1+I12) * (2*I13 + 0.02*I14)', value1)
-    sheet.write("F17", "TEC_SWITCHABLE", field1)
-    sheet.write("G17", 0, value1)
-    sheet.write("F18", "TEC_EEE", field1)
-    sheet.write_formula("G18", '=8.76 * 0.2 * (0.1 + 0.3) * B8', value1)
-
-    sheet.write("F19", "E_TEC_MAX", result)
-    sheet.write_formula("G19", "=(1+G11)*(G12+G13+G14+G15+G16+G17+G18)", result_value)
-
-    sheet.write_formula("G20", '=IF(E19<=G19, "PASS", "FAIL")', center)
+    sheet.write_formula("G15", '=IF(B7>1,2.6*(B7-1),0)', value1, TEC_STORAGE)
 
     sheet.write("H11", "P:", right)
-    sheet.write_formula("I11", '=B4*B5')
+    sheet.write_formula("I11", '=B4*B5', left, P)
+
     sheet.write("H12", "EP:", right)
-    sheet.write_formula("I12", '=IF(EXACT(B16,"Yes"), IF(B17>=27, 0.75, 0.3), 0)')
+    if sysinfo.ep:
+        if sysinfo.diagonal >= 27:
+            EP = 0.75
+        else:
+            EP = 0.3
+    else:
+        EP = 0
+    sheet.write_formula("I12", '=IF(EXACT(B16,"Yes"), IF(B17>=27, 0.75, 0.3), 0)', left, EP)
+
+    r = 1.0 * sysinfo.width * sysinfo.height / 1000000
     sheet.write("H13", "r:", right)
-    sheet.write_formula("I13", '=B18*B19/1000000')
+    sheet.write_formula("I13", '=B18*B19/1000000', left, r)
+
+    A =  1.0 * sysinfo.diagonal * sysinfo.diagonal * sysinfo.width * sysinfo.height / (sysinfo.width ** 2 + sysinfo.height ** 2)
     sheet.write("H14", "A:", right)
-    sheet.write_formula("I14", '=B17 * B17 * B18 * B19 / (B18 * B18 + B19 * B19)')
+    sheet.write_formula("I14", '=B17 * B17 * B18 * B19 / (B18 * B18 + B19 * B19)', left, A)
+
+    TEC_INT_DISPLAY = 8.76 * 0.3 * (1+EP) * (2*r + 0.02*A)
+    sheet.write("F16", "TEC_INT_DISPLAY", field1)
+    sheet.write_formula("G16", '=8.76 * 0.3 * (1+I12) * (2*I13 + 0.02*I14)', value1, TEC_INT_DISPLAY)
+
+    TEC_SWITCHABLE = 0
+    sheet.write("F17", "TEC_SWITCHABLE", field1)
+    sheet.write("G17", TEC_SWITCHABLE, value1)
+
+    TEC_EEE = 8.76 * 0.2 * (0.1 + 0.3) * sysinfo.eee
+    sheet.write("F18", "TEC_EEE", field1)
+    sheet.write_formula("G18", '=8.76 * 0.2 * (0.1 + 0.3) * B8', value1, TEC_EEE)
+
+    E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE + TEC_INT_DISPLAY + TEC_SWITCHABLE + TEC_EEE
+    sheet.write("F19", "E_TEC_MAX", result)
+    sheet.write_formula("G19", "=(1+G11)*(G12+G13+G14+G15+G16+G17+G18)", result_value, E_TEC_MAX)
+
+    if E_TEC <= E_TEC_MAX:
+        RESULT = "PASS"
+    else:
+        RESULT = "FAIL"
+    sheet.write_formula("G20", '=IF(E19<=G19, "PASS", "FAIL")', center, RESULT)
 
     book.close()
 
