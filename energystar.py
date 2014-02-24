@@ -261,20 +261,20 @@ class EnergyStar52:
     def __init__(self, sysinfo):
         self.sysinfo = sysinfo
 
-    def qualify_desktop_category(self, category, gpu_discrete, gpu_width):
+    def qualify_desktop_category(self, category, discrete=False, over_frame_buffer_width_128=False):
         (core, clock, memory, disk) = self.sysinfo.get_basic_info()
 
         if category == 'D':
             if core >= 4:
                 if memory >= 4:
                     return True
-                elif gpu_width:
+                elif over_frame_buffer_width_128:
                     return True
         elif category == 'C':
             if core >= 2:
                 if memory >= 2:
                     return True
-                elif gpu_discrete:
+                elif discrete:
                     return True
         elif category == 'B':
             if core == 2 and memory >= 2:
@@ -283,15 +283,15 @@ class EnergyStar52:
             return True
         return False
 
-    def qualify_netbook_category(self, category, gpu_discrete, over_gpu_width):
+    def qualify_netbook_category(self, category, discrete=False, over_frame_buffer_width_128=False):
         (core, clock, memory, disk) = self.sysinfo.get_basic_info()
 
         if category == 'C':
             if core >= 2 and memory >= 2:
-                if gpu_discrete and over_gpu_width:
+                if discrete and over_frame_buffer_width_128:
                     return True
         elif category == 'B':
-            if gpu_discrete:
+            if discrete:
                 return True
         elif category == 'A':
             return True
@@ -314,7 +314,7 @@ class EnergyStar52:
 
         return E_TEC
 
-    def equation_two(self, over_gpu_width):
+    def equation_two(self, over_frame_buffer_width_128=False, over_frame_buffer_width_64=False):
         """Equation 2: E_TEC_MAX Calculation for Desktop, Integrated Desktop, and Notebook Computers"""
 
         (core, clock, memory, disk) = self.sysinfo.get_basic_info()
@@ -328,7 +328,7 @@ class EnergyStar52:
             else:
                 TEC_STORAGE = 0.0
 
-            if self.qualify_desktop_category('A', self.sysinfo.discrete, over_gpu_width):
+            if self.qualify_desktop_category('A'):
                 TEC_BASE = 148.0
 
                 if memory > 2:
@@ -336,7 +336,7 @@ class EnergyStar52:
                 else:
                     TEC_MEMORY = 0.0
 
-                if over_gpu_width:
+                if over_frame_buffer_width_128:
                     TEC_GRAPHICS = 50.0
                 else:
                     TEC_GRAPHICS = 35.0
@@ -344,7 +344,7 @@ class EnergyStar52:
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
                 result.append(('A', E_TEC_MAX))
 
-            if self.qualify_desktop_category('B', self.sysinfo.discrete, over_gpu_width):
+            if self.qualify_desktop_category('B'):
                 TEC_BASE = 175.0
 
                 if memory > 2:
@@ -352,7 +352,7 @@ class EnergyStar52:
                 else:
                     TEC_MEMORY = 0.0
 
-                if over_gpu_width == 'y':
+                if over_frame_buffer_width_128:
                     TEC_GRAPHICS = 50.0
                 else:
                     TEC_GRAPHICS = 35.0
@@ -360,7 +360,7 @@ class EnergyStar52:
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
                 result.append(('B', E_TEC_MAX))
 
-            if self.qualify_desktop_category('C', self.sysinfo.discrete, over_gpu_width):
+            if self.qualify_desktop_category('C', self.sysinfo.discrete):
                 TEC_BASE = 209.0
 
                 if memory > 2:
@@ -368,7 +368,7 @@ class EnergyStar52:
                 else:
                     TEC_MEMORY = 0.0
 
-                if over_gpu_width:
+                if over_frame_buffer_width_128:
                     TEC_GRAPHICS = 50.0
                 else:
                     TEC_GRAPHICS = 0.0
@@ -376,7 +376,7 @@ class EnergyStar52:
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
                 result.append(('C', E_TEC_MAX))
 
-            if self.qualify_desktop_category('D', self.sysinfo.discrete, over_gpu_width):
+            if self.qualify_desktop_category('D', self.sysinfo.discrete, over_frame_buffer_width_128):
                 TEC_BASE = 234.0
 
                 if memory > 4:
@@ -384,7 +384,7 @@ class EnergyStar52:
                 else:
                     TEC_MEMORY = 0.0
 
-                if over_gpu_width:
+                if over_frame_buffer_width_128:
                     TEC_GRAPHICS = 50.0
                 else:
                     TEC_GRAPHICS = 0.0
@@ -404,17 +404,17 @@ class EnergyStar52:
             else:
                 TEC_STORAGE = 0.0
 
-            if self.qualify_netbook_category('A', self.sysinfo.discrete, over_gpu_width):
+            if self.qualify_netbook_category('A'):
                 TEC_BASE = 40.0
                 TEC_GRAPHICS = 0.0
 
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
                 result.append(('A', E_TEC_MAX))
 
-            if self.qualify_netbook_category('B', self.sysinfo.discrete, over_gpu_width):
+            if self.qualify_netbook_category('B', self.sysinfo.discrete):
                 TEC_BASE = 53.0
 
-                if over_gpu_width:
+                if over_frame_buffer_width_64:
                     TEC_GRAPHICS = 3.0
                 else:
                     TEC_GRAPHICS = 0.0
@@ -422,7 +422,7 @@ class EnergyStar52:
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
                 result.append(('B', E_TEC_MAX))
 
-            if self.qualify_netbook_category('C', self.sysinfo.discrete, over_gpu_width):
+            if self.qualify_netbook_category('C', self.sysinfo.discrete, over_frame_buffer_width_128):
                 TEC_BASE = 88.5
                 TEC_GRAPHICS = 0.0
 
@@ -708,20 +708,24 @@ def qualifying(sysinfo):
         else:
             gpu_bit = '128'
 
-        over_gpu_width = estar52.equation_two(True)
-        under_gpu_width = estar52.equation_two(False)
+        over_128 = estar52.equation_two(True, True)
+        over_64 = estar52.equation_two(False, True)
+        under_64 = estar52.equation_two(False, False)
+        print(over_128)
+        print(over_64)
+        print(under_64)
         different=False
 
-        for i,j in zip(over_gpu_width, under_gpu_width):
+        for i,j,k in zip(over_128, over_64, under_64):
             (cat1, max1) = i
             (cat2, max2) = j
-            if cat1 != cat2 or max1 != max2:
+            (cat3, max3) = k
+            if cat1 != cat2 or max1 != max2 or cat2 != cat3 or max2 != max3:
                 different=True
-                debug("Category %s E_TEC_MAX %s is different from Category %s E_TEC_MAX %s" % (cat1, max1, cat2, max2))
         else:
             if different is True:
-                print("\n  If GPU Frame Buffer Width > %s bits," % (gpu_bit))
-                for i in over_gpu_width:
+                print("\n  If GPU Frame Buffer Width is greater than 128 bits, (X > 128)")
+                for i in over_128:
                     (category, E_TEC_MAX) = i
                     if E_TEC <= E_TEC_MAX:
                         result = 'PASS'
@@ -730,18 +734,40 @@ def qualifying(sysinfo):
                         result = 'FAIL'
                         operator = '>'
                     print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
-                print("\n  If GPU Frame Buffer Width <= %s bits," % (gpu_bit))
-                for i in under_gpu_width:
-                    (category, E_TEC_MAX) = i
-                    if E_TEC <= E_TEC_MAX:
-                        result = 'PASS'
-                        operator = '<='
-                    else:
-                        result = 'FAIL'
-                        operator = '>'
-                    print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+                if sysinfo.computer_type == 3:
+                    print("\n  If GPU Frame Buffer Width between 64 and 128 bits, (64 < X <= 128)")
+                    for i in over_64:
+                        (category, E_TEC_MAX) = i
+                        if E_TEC <= E_TEC_MAX:
+                            result = 'PASS'
+                            operator = '<='
+                        else:
+                            result = 'FAIL'
+                            operator = '>'
+                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+                    print("\n  If GPU Frame Buffer Width is less than or equal to 64 bits, (X <= 64)")
+                    for i in under_64:
+                        (category, E_TEC_MAX) = i
+                        if E_TEC <= E_TEC_MAX:
+                            result = 'PASS'
+                            operator = '<='
+                        else:
+                            result = 'FAIL'
+                            operator = '>'
+                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+                else:
+                    print("\n  If GPU Frame Buffer Width is less than or equal to 128 bits, (X <= 128)")
+                    for i in over_64:
+                        (category, E_TEC_MAX) = i
+                        if E_TEC <= E_TEC_MAX:
+                            result = 'PASS'
+                            operator = '<='
+                        else:
+                            result = 'FAIL'
+                            operator = '>'
+                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
             else:
-                for i in under_gpu_width:
+                for i in under_64:
                     (category, E_TEC_MAX) = i
                     if E_TEC <= E_TEC_MAX:
                         result = 'PASS'
@@ -1024,7 +1050,6 @@ def main():
                 integrated_display=True, width=1366, height=768, diagonal=14, ep=True,
                 off=2.7, sleep=2.7, long_idle=15.0, short_idle=15.0, media_codec=True)
     elif args.test == 6:
-        # Test Case #1
         sysinfo = SysInfo(
                 auto=True,
                 product_type=1, computer_type=2,
@@ -1034,6 +1059,16 @@ def main():
                 diagonal=27, ep=True,
                 discrete=False, switchable=True,
                 off=12, sleep=23, long_idle=34, short_idle=45)
+    elif args.test == 7:
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=1, computer_type=3,
+                cpu_core=2, cpu_clock=2.0,
+                mem_size=8, disk_num=1,
+                width=1366, height=768, eee=1, power_supply='e',
+                diagonal=14, ep=False,
+                discrete=True, switchable=False,
+                off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
     else:
         sysinfo = SysInfo()
 
@@ -1261,9 +1296,9 @@ def generate_excel(sysinfo, version):
     sheet.write("D7", "P_IDLE", field2)
     sheet.write_formula("E7", "=B29", value2, sysinfo.short_idle)
 
+    E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_IDLE * sysinfo.short_idle) * 8760 / 1000
     sheet.write("D8", "E_TEC", result)
-    sheet.write_formula("E8", "=(E2*E5+E3*E6+E4*E7)*8760/1000", result_value,
-            (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_IDLE * sysinfo.short_idle) * 8760 / 1000)
+    sheet.write_formula("E8", "=(E2*E5+E3*E6+E4*E7)*8760/1000", result_value, E_TEC)
 
     sheet.merge_range("F2:F3", "Category", fieldC)
     sheet.merge_range("G2:G3", "A", fieldC)
@@ -1278,26 +1313,69 @@ def generate_excel(sysinfo, version):
     sheet.write("F7", "TEC_STORAGE", field1)
     sheet.write("F8", "E_TEC_MAX", result)
 
-    sheet.write("G4", 40, value1)
-    sheet.write_formula("G5", "=IF(B6>4, 0.4*(B6-4), 0)", value1)
-    sheet.write("G6", 0, value1)
-    sheet.write_formula("G7", "=IF(B7>1, 3*(B7-1), 0)", value2)
-    sheet.write_formula("G8", "=G4+G5+G6+G7", result_value)
-    sheet.write_formula("G9", '=IF(E8<=G8, "PASS", "FAIL")', center)
+    TEC_BASE = 40
+    sheet.write("G4", TEC_BASE, value1)
 
-    sheet.write_formula("H4", '=IF(EXACT(H2, "B"), 53, "")', value1)
-    sheet.write_formula("H5", '=IF(EXACT(H2, "B"), G5, "")', value1)
-    sheet.write_formula("H6", '=IF(EXACT(H2,"B"), IF(EXACT(B12, "< 64-bit"), 0, 3), "")', value1)
-    sheet.write_formula("H7", '=IF(EXACT(H2, "B"), G7, "")', value2)
-    sheet.write_formula("H8", '=IF(EXACT(H2, "B"), H4+H5+H6+H7, "")', result_value)
-    sheet.write_formula("H9", '=IF(EXACT(H2, "B"),IF(E8<=H8, "PASS", "FAIL"), "")', center)
+    if sysinfo.mem_size > 4:
+        TEC_MEMORY = 0.4 * (sysinfo.mem_size - 4)
+    else:
+        TEC_MEMORY = 0
+    sheet.write_formula("G5", "=IF(B6>4, 0.4*(B6-4), 0)", value1, TEC_MEMORY)
 
-    sheet.write_formula("I4", '=IF(EXACT(I2, "C"), 88.5, "")', value1)
-    sheet.write_formula("I5", '=IF(EXACT(I2, "C"), G5, "")', value1)
-    sheet.write_formula("I6", '=IF(EXACT(I2, "C"), 0, "")', value1)
-    sheet.write_formula("I7", '=IF(EXACT(I2, "C"), G7, "")', value2)
-    sheet.write_formula("I8", '=IF(EXACT(I2, "C"), I4+I5+I6+I7, "")', result_value)
-    sheet.write_formula("I9", '=IF(EXACT(I2, "C"), IF(E8<=I8, "PASS", "FAIL"), "")', center)
+    TEC_GRAPHICS = 0
+    sheet.write("G6", TEC_GRAPHICS, value1)
+
+    if sysinfo.disk_num > 1:
+        TEC_STORAGE = 3.0 * (sysinfo.disk_num - 1)
+    else:
+        TEC_STORAGE = 0
+    sheet.write_formula("G7", "=IF(B7>1, 3*(B7-1), 0)", value2, TEC_STORAGE)
+
+    E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+    sheet.write_formula("G8", "=G4+G5+G6+G7", result_value, E_TEC_MAX)
+
+    if E_TEC <= E_TEC_MAX:
+        RESULT = "PASS"
+    else:
+        RESULT = "FAIL"
+    sheet.write_formula("G9", '=IF(E8<=G8, "PASS", "FAIL")', center, RESULT)
+
+    if sysinfo.discrete:
+        TEC_BASE = 53
+        TEC_GRAPHICS = 0
+        E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+        if E_TEC <= E_TEC_MAX:
+            RESULT = "PASS"
+        else:
+            RESULT = "FAIL"
+    else:
+        TEC_BASE = ""
+        TEC_MEMORY = ""
+        TEC_GRAPHICS = ""
+        TEC_STORAGE = ""
+        E_TEC_MAX = ""
+        RESULT = ""
+
+    sheet.write_formula("H4", '=IF(EXACT(H2, "B"), 53, "")', value1, TEC_BASE)
+    sheet.write_formula("H5", '=IF(EXACT(H2, "B"), G5, "")', value1, TEC_MEMORY)
+    sheet.write_formula("H6", '=IF(EXACT(H2,"B"), IF(EXACT(B12, "<= 64-bit"), 0, 3), "")', value1, TEC_GRAPHICS)
+    sheet.write_formula("H7", '=IF(EXACT(H2, "B"), G7, "")', value2, TEC_STORAGE)
+    sheet.write_formula("H8", '=IF(EXACT(H2, "B"), H4+H5+H6+H7, "")', result_value, E_TEC_MAX)
+    sheet.write_formula("H9", '=IF(EXACT(H2, "B"),IF(E8<=H8, "PASS", "FAIL"), "")', center, RESULT)
+
+    TEC_BASE = ""
+    TEC_MEMORY = ""
+    TEC_GRAPHICS = ""
+    TEC_STORAGE = ""
+    E_TEC_MAX = ""
+    RESULT = ""
+
+    sheet.write_formula("I4", '=IF(EXACT(I2, "C"), 88.5, "")', value1, TEC_BASE)
+    sheet.write_formula("I5", '=IF(EXACT(I2, "C"), G5, "")', value1, TEC_MEMORY)
+    sheet.write_formula("I6", '=IF(EXACT(I2, "C"), 0, "")', value1, TEC_GRAPHICS)
+    sheet.write_formula("I7", '=IF(EXACT(I2, "C"), G7, "")', value2, TEC_STORAGE)
+    sheet.write_formula("I8", '=IF(EXACT(I2, "C"), I4+I5+I6+I7, "")', result_value, E_TEC_MAX)
+    sheet.write_formula("I9", '=IF(EXACT(I2, "C"), IF(E8<=I8, "PASS", "FAIL"), "")', center, RESULT)
 
     sheet.merge_range("D10:G10", "Energy Star 6.0", header)
 
