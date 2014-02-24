@@ -537,18 +537,18 @@ class EnergyStar60:
         else:
             if P <= 2:
                 TEC_BASE = 14.0
-            elif self.sysinfo.switchable or self.sysinfo.discrete:
+            elif self.sysinfo.discrete:
+                if P <= 9:
+                    TEC_BASE = 16.0
+                else:
+                    TEC_BASE = 18.0
+            else:
                 if P <= 5.2:
                     TEC_BASE = 22.0
                 elif P <= 8:
                     TEC_BASE = 24.0
                 else:
                     TEC_BASE = 28.0
-            else:
-                if P <= 9:
-                    TEC_BASE = 16.0
-                else:
-                    TEC_BASE = 18.0
 
         TEC_MEMORY = 0.8 * memory
 
@@ -816,7 +816,6 @@ def qualifying(sysinfo):
                     result = 'FAIL'
                     operator = '>'
                 print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
-
     elif sysinfo.product_type == 2:
         # Energy Star 5.2
         print("Energy Star 5.2:")
@@ -1039,7 +1038,9 @@ def main():
         sysinfo = SysInfo()
 
     qualifying(sysinfo)
+    generate_excel(sysinfo, version)
 
+def generate_excel(sysinfo, version):
     if not args.output:
         return
 
@@ -1076,6 +1077,7 @@ def main():
         'right': 1,
         'bottom': 1,
         'fg_color': '#F3F3F3'})
+    value0 = book.add_format({'border': 1, 'fg_color': '#D9EAD3'})
     value = book.add_format({'border': 1})
     value1 = book.add_format({
         'left': 1,
@@ -1122,12 +1124,6 @@ def main():
         sheet.write("B3", "Integrated Desktop", value)
     else:
         sheet.write("B3", "Notebook", value)
-    sheet.data_validation('B3', {
-        'validate': 'list',
-        'source': [
-            'Desktop',
-            'Integrated Desktop',
-            'Notebook']})
 
     sheet.write("A4", "CPU cores", field)
     sheet.write("B4", sysinfo.cpu_core, value)
@@ -1153,24 +1149,19 @@ def main():
         sheet.write("B11", "Discrete", value)
     else:
         sheet.write("B11", "Integrated", value)
-    sheet.data_validation('B11', {
-        'validate': 'list',
-        'source': [
-            'Switchable',
-            'Discrete',
-            'Integrated']})
 
-    sheet.write_formula("A12", '=IF(EXACT(B3,"Notebook"), "GPU Frame Buffer Width > 64 bits", "GPU Frame Buffer Width > 128 bits")', field, "GPU Frame Buffer Width > 64 bits")
+    sheet.write("A12", "GPU Frame Buffer Width", field)
 
-    sheet.write("B12", "No", value)
+    sheet.write("B12", "<= 64-bit", value0)
     sheet.data_validation('B12', {
         'validate': 'list',
         'source': [
-            'Yes',
-            'No']})
+            '<= 64-bit',
+            '> 64-bit and <= 128-bit',
+            '> 128-bit']})
 
     sheet.write("A13", "Graphics Category", field)
-    sheet.write("B13", "G1 (FB_BW <= 16)", value)
+    sheet.write("B13", "G1 (FB_BW <= 16)", value0)
     sheet.data_validation('B13', {
         'validate': 'list',
         'source': [
@@ -1185,7 +1176,7 @@ def main():
     sheet.merge_range("A15:B15", "Display", header)
 
     sheet.write("A16", "Enhanced-performance Integrated Display", field)
-    sheet.write("B16", "No", value)
+    sheet.write("B16", "No", value0)
     sheet.data_validation('B16', {
         'validate': 'list',
         'source': [
@@ -1210,7 +1201,7 @@ def main():
         sheet.write("B22", "Internal", value)
 
     sheet.write("A23", "Meet the requirements of Power Supply Efficiency Allowance", field)
-    sheet.write("B23", "None", value)
+    sheet.write("B23", "None", value0)
     sheet.data_validation('B23', {
         'validate': 'list',
         'source': [
