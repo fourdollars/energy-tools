@@ -711,9 +711,9 @@ def qualifying(sysinfo):
         over_128 = estar52.equation_two(True, True)
         over_64 = estar52.equation_two(False, True)
         under_64 = estar52.equation_two(False, False)
-        print(over_128)
-        print(over_64)
-        print(under_64)
+        debug(over_128)
+        debug(over_64)
+        debug(under_64)
         different=False
 
         for i,j,k in zip(over_128, over_64, under_64):
@@ -724,19 +724,9 @@ def qualifying(sysinfo):
                 different=True
         else:
             if different is True:
-                print("\n  If GPU Frame Buffer Width is greater than 128 bits, (X > 128)")
-                for i in over_128:
-                    (category, E_TEC_MAX) = i
-                    if E_TEC <= E_TEC_MAX:
-                        result = 'PASS'
-                        operator = '<='
-                    else:
-                        result = 'FAIL'
-                        operator = '>'
-                    print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
                 if sysinfo.computer_type == 3:
-                    print("\n  If GPU Frame Buffer Width between 64 and 128 bits, (64 < X <= 128)")
-                    for i in over_64:
+                    print("\n  If GPU Frame Buffer Width is less than or equal to 64 bits, (X <= 64)")
+                    for i in under_64:
                         (category, E_TEC_MAX) = i
                         if E_TEC <= E_TEC_MAX:
                             result = 'PASS'
@@ -745,8 +735,8 @@ def qualifying(sysinfo):
                             result = 'FAIL'
                             operator = '>'
                         print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
-                    print("\n  If GPU Frame Buffer Width is less than or equal to 64 bits, (X <= 64)")
-                    for i in under_64:
+                    print("\n  If GPU Frame Buffer Width between 64 and 128 bits, (64 < X <= 128)")
+                    for i in over_64:
                         (category, E_TEC_MAX) = i
                         if E_TEC <= E_TEC_MAX:
                             result = 'PASS'
@@ -766,6 +756,16 @@ def qualifying(sysinfo):
                             result = 'FAIL'
                             operator = '>'
                         print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+                print("\n  If GPU Frame Buffer Width is greater than 128 bits, (X > 128)")
+                for i in over_128:
+                    (category, E_TEC_MAX) = i
+                    if E_TEC <= E_TEC_MAX:
+                        result = 'PASS'
+                        operator = '<='
+                    else:
+                        result = 'FAIL'
+                        operator = '>'
+                    print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
             else:
                 for i in under_64:
                     (category, E_TEC_MAX) = i
