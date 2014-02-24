@@ -1057,20 +1057,28 @@ def generate_excel(sysinfo, version):
     sheet.set_column('A:A', 60)
     sheet.set_column('B:B', 46)
     sheet.set_column('C:C', 1)
-    sheet.set_column('D:D', 15)
+    sheet.set_column('D:D', 13)
     sheet.set_column('E:E', 8)
+    sheet.set_column('F:F', 15)
 
     header = book.add_format({
         'bold': 1,
         'border': 1,
         'align': 'center',
         'fg_color': '#CFE2F3'})
+    right = book.add_format({'align': 'right'})
+    center = book.add_format({'align': 'center'})
     field = book.add_format({
         'border': 1,
         'fg_color': '#F3F3F3'})
     field1 = book.add_format({
         'left': 1,
         'right': 1,
+        'fg_color': '#F3F3F3'})
+    fieldC = book.add_format({
+        'border': 1,
+        'align': 'center',
+        'valign': 'vcenter',
         'fg_color': '#F3F3F3'})
     field2 = book.add_format({
         'left': 1,
@@ -1149,6 +1157,12 @@ def generate_excel(sysinfo, version):
         sheet.write("B11", "Discrete", value)
     else:
         sheet.write("B11", "Integrated", value)
+    sheet.data_validation('B11', {
+        'validate': 'list',
+        'source': [
+            'Integrated',
+            'Switchable',
+            'Discrete']})
 
     sheet.write("A12", "GPU Frame Buffer Width", field)
 
@@ -1200,6 +1214,13 @@ def generate_excel(sysinfo, version):
     else:
         sheet.write("B22", "Internal", value)
 
+    if sysinfo.computer_type != 3:
+        sheet.data_validation('B22', {
+            'validate': 'list',
+            'source': [
+                'Internal',
+                'External']})
+
     sheet.write("A23", "Meet the requirements of Power Supply Efficiency Allowance", field)
     sheet.write("B23", "None", value0)
     sheet.data_validation('B23', {
@@ -1219,7 +1240,7 @@ def generate_excel(sysinfo, version):
     sheet.write("A29", "Short idle mode (W)", field)
     sheet.write("B29", sysinfo.short_idle, float2)
 
-    sheet.merge_range("D1:E1", "Energy Star 5.2", header)
+    sheet.merge_range("D1:I1", "Energy Star 5.2", header)
 
     if sysinfo.computer_type == 3:
         (T_OFF, T_SLEEP, T_IDLE) = (0.6, 0.1, 0.3)
@@ -1244,66 +1265,99 @@ def generate_excel(sysinfo, version):
     sheet.write_formula("E8", "=(E2*E5+E3*E6+E4*E7)*8760/1000", result_value,
             (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_IDLE * sysinfo.short_idle) * 8760 / 1000)
 
-    sheet.write("D9", "TEC_BASE", field1)
-    sheet.write("E9", "", value1)
-    sheet.write("D10", "TEC_MEMORY", field1)
-    sheet.write("E10", "", value1)
-    sheet.write("D11", "TEC_GRAPHICS", field1)
-    sheet.write("E11", "", value1)
-    sheet.write("D12", "TEC_STORAGE", field1)
-    sheet.write("E12", "", value2)
+    sheet.merge_range("F2:F3", "Category", fieldC)
+    sheet.merge_range("G2:G3", "A", fieldC)
+    sheet.merge_range("H2:H3", "B", fieldC)
+    sheet.write_formula("H2:H3", '=IF(EXACT(B11,"Discrete"), "B", "")', fieldC, "B")
+    sheet.merge_range("I2:I3", "C", fieldC)
+    sheet.write_formula("I2:I3", '=IF(AND(EXACT(B11,"Discrete"), EXACT(B12, "> 128-bit"), B4>=2, B6>=2), "C", "")', fieldC, "C")
 
-    sheet.write("D13", "E_TEC_MAX", result)
-    sheet.write_formula("E13", "=TEC_BASE+TEC_MEMORY+TEC_GRAPHICS+TEC_STORAGE", result_value)
+    sheet.write("F4", "TEC_BASE", field1)
+    sheet.write("F5", "TEC_MEMORY", field1)
+    sheet.write("F6", "TEC_GRAPHICS", field1)
+    sheet.write("F7", "TEC_STORAGE", field1)
+    sheet.write("F8", "E_TEC_MAX", result)
 
-    sheet.merge_range("D15:E15", "Energy Star 6.0", header)
+    sheet.write("G4", 40, value1)
+    sheet.write_formula("G5", "=IF(B6>4, 0.4*(B6-4), 0)", value1)
+    sheet.write("G6", 0, value1)
+    sheet.write_formula("G7", "=IF(B7>1, 3*(B7-1), 0)", value2)
+    sheet.write_formula("G8", "=G4+G5+G6+G7", result_value)
+    sheet.write_formula("G9", '=IF(E8<=G8, "PASS", "FAIL")', center)
+
+    sheet.write_formula("H4", '=IF(EXACT(H2, "B"), 53, "")', value1)
+    sheet.write_formula("H5", '=IF(EXACT(H2, "B"), G5, "")', value1)
+    sheet.write_formula("H6", '=IF(EXACT(H2,"B"), IF(EXACT(B12, "< 64-bit"), 0, 3), "")', value1)
+    sheet.write_formula("H7", '=IF(EXACT(H2, "B"), G7, "")', value2)
+    sheet.write_formula("H8", '=IF(EXACT(H2, "B"), H4+H5+H6+H7, "")', result_value)
+    sheet.write_formula("H9", '=IF(EXACT(H2, "B"),IF(E8<=H8, "PASS", "FAIL"), "")', center)
+
+    sheet.write_formula("I4", '=IF(EXACT(I2, "C"), 88.5, "")', value1)
+    sheet.write_formula("I5", '=IF(EXACT(I2, "C"), G5, "")', value1)
+    sheet.write_formula("I6", '=IF(EXACT(I2, "C"), 0, "")', value1)
+    sheet.write_formula("I7", '=IF(EXACT(I2, "C"), G7, "")', value2)
+    sheet.write_formula("I8", '=IF(EXACT(I2, "C"), I4+I5+I6+I7, "")', result_value)
+    sheet.write_formula("I9", '=IF(EXACT(I2, "C"), IF(E8<=I8, "PASS", "FAIL"), "")', center)
+
+    sheet.merge_range("D10:G10", "Energy Star 6.0", header)
 
     if sysinfo.computer_type == 3:
         (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.25, 0.35, 0.1, 0.3)
     else:
         (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.45, 0.05, 0.15, 0.35)
 
-    sheet.write("D16", "T_OFF", field1)
-    sheet.write_formula("E16", '=IF(EXACT(B3,"Notebook"),0.25,0.45', value3, T_OFF)
-    sheet.write("D17", "T_SLEEP", field1)
-    sheet.write_formula("E17", '=IF(EXACT(B3,"Notebook"),0.35,0.05', value3, T_SLEEP)
-    sheet.write("D18", "T_LONG_IDLE", field1)
-    sheet.write_formula("E18", '=IF(EXACT(B3,"Notebook"),0.1,0.15', value3, T_LONG_IDLE)
-    sheet.write("D19", "T_SHORT_IDLE", field2)
-    sheet.write_formula("E19", '=IF(EXACT(B3,"Notebook"),0.3,0.35', value4, T_SHORT_IDLE)
+    sheet.write("D11", "T_OFF", field1)
+    sheet.write_formula("E11", '=IF(EXACT(B3,"Notebook"),0.25,0.45', value3, T_OFF)
+    sheet.write("D12", "T_SLEEP", field1)
+    sheet.write_formula("E12", '=IF(EXACT(B3,"Notebook"),0.35,0.05', value3, T_SLEEP)
+    sheet.write("D13", "T_LONG_IDLE", field1)
+    sheet.write_formula("E13", '=IF(EXACT(B3,"Notebook"),0.1,0.15', value3, T_LONG_IDLE)
+    sheet.write("D14", "T_SHORT_IDLE", field2)
+    sheet.write_formula("E14", '=IF(EXACT(B3,"Notebook"),0.3,0.35', value4, T_SHORT_IDLE)
 
-    sheet.write("D20", "P_OFF", field1)
-    sheet.write_formula("E20", "=B26", value1, sysinfo.off)
-    sheet.write("D21", "P_SLEEP", field1)
-    sheet.write_formula("E21", "=B27", value1, sysinfo.sleep)
-    sheet.write("D22", "P_LONG_IDLE", field1)
-    sheet.write_formula("E22", "=B29", value1, sysinfo.long_idle)
-    sheet.write("D23", "P_SHORT_IDLE", field2)
-    sheet.write_formula("E23", "=B29", value2, sysinfo.short_idle)
+    sheet.write("D15", "P_OFF", field1)
+    sheet.write_formula("E15", "=B26", value1, sysinfo.off)
+    sheet.write("D16", "P_SLEEP", field1)
+    sheet.write_formula("E16", "=B27", value1, sysinfo.sleep)
+    sheet.write("D17", "P_LONG_IDLE", field1)
+    sheet.write_formula("E17", "=B29", value1, sysinfo.long_idle)
+    sheet.write("D18", "P_SHORT_IDLE", field2)
+    sheet.write_formula("E18", "=B29", value2, sysinfo.short_idle)
 
-    sheet.write("D24", "E_TEC", result)
-    sheet.write_formula("E24", "=T_OFF*P_OFF+T_SLEEP*P_SLEEP+T_LONG_IDLE*P_LONG_IDLE+T_SHORT_IDLE*P_SHORT_IDLE", result_value,
+    sheet.write("D19", "E_TEC", result)
+    sheet.write_formula("E19", "=T_OFF*P_OFF+T_SLEEP*P_SLEEP+T_LONG_IDLE*P_LONG_IDLE+T_SHORT_IDLE*P_SHORT_IDLE", result_value,
             (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_LONG_IDLE * sysinfo.long_idle + T_SHORT_IDLE * sysinfo.short_idle) * 8760 / 1000)
 
-    sheet.write("D25", "ALLOWANCE_PSU", field1)
-    sheet.write_formula("E25", '=IF(EXACT(B23, "Higher"), 0.03, IF(EXACT(B23, "Lower"), 0.015, 0))', float3)
-    sheet.write("D26", "TEC_BASE", field1)
-    sheet.write("E26", "", value1)
-    sheet.write("D27", "TEC_MEMORY", field1)
-    sheet.write("E27", "", value1)
-    sheet.write("D28", "TEC_GRAPHICS", field1)
-    sheet.write("E28", "", value1)
-    sheet.write("D29", "TEC_STORAGE", field1)
-    sheet.write("E29", "", value1)
-    sheet.write("D30", "TEC_INT_DISPLAY", field1)
-    sheet.write("E30", "", value1)
-    sheet.write("D31", "TEC_SWITCHABLE", field1)
-    sheet.write("E31", "", value1)
-    sheet.write("D32", "TEC_EEE", field1)
-    sheet.write("E32", "", value1)
+    sheet.write("F11", "ALLOWANCE_PSU", field1)
+    sheet.write_formula("G11", '=IF(EXACT(B23, "Higher"), 0.03, IF(EXACT(B23, "Lower"), 0.015, 0))', float3)
+    sheet.write("F12", "TEC_BASE", field1)
+    sheet.write_formula("G12", '=IF(EXACT(B11,"Discrete"), IF(I11>9, 18, IF(AND(I11<=9, I11>2), 16, 14)), IF(I11>8, 28, IF(AND(I11<=8, I11>5.2), 24, IF(AND(I11<=5.2, I11>2), 22, 14))))', value1)
+    sheet.write("F13", "TEC_MEMORY", field1)
+    sheet.write_formula("G13", '=B6*0.8', value1)
+    sheet.write("F14", "TEC_GRAPHICS", field1)
+    sheet.write_formula("G14", '=IF(EXACT(B11, "Discrete"), IF(EXACT(B13, "G1 (FB_BW <= 16)"), 14, IF(EXACT(B13, "G2 (16 < FB_BW <= 32)"), 20, IF(EXACT(B13, "G2 (16 < FB_BW <= 32)"), 20, IF(EXACT(B13, "G3 (32 < FB_BW <= 64)"), 26, IF(EXACT(B13, "G4 (64 < FB_BW <= 96)"), 32, IF(EXACT(B13, "G5 (96 < FB_BW <= 128)"), 42, IF(EXACT(B13, "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"), 48, 60))))))), 0)', value1)
+    sheet.write("F15", "TEC_STORAGE", field1)
+    sheet.write_formula("G15", '=IF(B7>1,2.6*(B7-1),0)', value1)
+    sheet.write("F16", "TEC_INT_DISPLAY", field1)
+    sheet.write_formula("G16", '=8.76 * 0.3 * (1+I12) * (2*I13 + 0.02*I14)', value1)
+    sheet.write("F17", "TEC_SWITCHABLE", field1)
+    sheet.write("G17", 0, value1)
+    sheet.write("F18", "TEC_EEE", field1)
+    sheet.write_formula("G18", '=8.76 * 0.2 * (0.1 + 0.3) * B8', value1)
 
-    sheet.write("D33", "E_TEC_MAX", result)
-    sheet.write_formula("E33", "=(1+B56)*(B57+B58+B59+B60+B61+B62+B63)", result_value)
+    sheet.write("F19", "E_TEC_MAX", result)
+    sheet.write_formula("G19", "=(1+G11)*(G12+G13+G14+G15+G16+G17+G18)", result_value)
+
+    sheet.write_formula("G20", '=IF(E19<=G19, "PASS", "FAIL")', center)
+
+    sheet.write("H11", "P:", right)
+    sheet.write_formula("I11", '=B4*B5')
+    sheet.write("H12", "EP:", right)
+    sheet.write_formula("I12", '=IF(EXACT(B16,"Yes"), IF(B17>=27, 0.75, 0.3), 0)')
+    sheet.write("H13", "r:", right)
+    sheet.write_formula("I13", '=B18*B19/1000000')
+    sheet.write("H14", "A:", right)
+    sheet.write_formula("I14", '=B17 * B17 * B18 * B19 / (B18 * B18 + B19 * B19)')
 
     book.close()
 
