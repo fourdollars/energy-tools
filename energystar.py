@@ -1084,12 +1084,16 @@ def generate_excel(sysinfo, version):
     book.set_properties({'comments':"Created by Energy Star 5.2/6.0 calculator %s from Canonical Ltd." % (version)})
 
     sheet = book.add_worksheet()
-    sheet.set_column('A:A', 60)
-    sheet.set_column('B:B', 46)
+    sheet.set_column('A:A', 38)
+    sheet.set_column('B:B', 37)
     sheet.set_column('C:C', 1)
     sheet.set_column('D:D', 13)
-    sheet.set_column('E:E', 8)
+    sheet.set_column('E:E', 6)
     sheet.set_column('F:F', 15)
+    sheet.set_column('G:G', 6)
+    sheet.set_column('H:H', 6)
+    sheet.set_column('I:I', 6)
+    sheet.set_column('J:J', 6)
 
     header = book.add_format({
         'bold': 1,
@@ -1154,7 +1158,7 @@ def generate_excel(sysinfo, version):
 
     sheet.write("A2", "Product Type", field)
     if sysinfo.product_type == 1:
-        sheet.write("B2", "Desktop, Integrated Desktop, and Notebook Computers", value)
+        sheet.write("B2", "Desktop, Integrated Desktop, and Notebook", value)
 
     sheet.write("A3", "Computer Type", field)
     if sysinfo.computer_type == 1:
@@ -1176,7 +1180,7 @@ def generate_excel(sysinfo, version):
     sheet.write("A7", "Number of Hard Drives", field)
     sheet.write("B7", sysinfo.disk_num, value)
 
-    sheet.write("A8", "IEEE 802.3az compliant (Energy Efficient Ethernet) Gigabit Ethernet ports", field)
+    sheet.write("A8", "IEEE 802.3az compliant Gigabit Ethernet ports", field)
     sheet.write("B8", sysinfo.eee, value)
 
     sheet.merge_range("A10:B10", "Graphics", header)
@@ -1245,26 +1249,24 @@ def generate_excel(sysinfo, version):
     sheet.write("A19", "Screen Height (px)", field)
     sheet.write("B19", sysinfo.height, value)
 
-    sheet.merge_range("A21:B21", "Power Supply", header)
-
-    sheet.write("A22", "Meet the requirements of Power Supply Efficiency Allowance", field)
-    sheet.write("B22", "None", value0)
-    sheet.data_validation('B22', {
+    sheet.merge_range("D21:G21", "Power Supply Efficiency Allowance requirements:", field)
+    sheet.write("H21", "None", value0)
+    sheet.data_validation('H21', {
         'validate': 'list',
         'source': [
             'None',
             'Lower',
             'Higher']})
 
-    sheet.merge_range("A25:B25", "Power Consumption", header)
-    sheet.write("A26", "Off mode (W)", field)
-    sheet.write("B26", sysinfo.off, float2)
-    sheet.write("A27", "Sleep mode (W)", field)
-    sheet.write("B27", sysinfo.sleep, float2)
-    sheet.write("A28", "Long idle mode (W)", field)
-    sheet.write("B28", sysinfo.long_idle, float2)
-    sheet.write("A29", "Short idle mode (W)", field)
-    sheet.write("B29", sysinfo.short_idle, float2)
+    sheet.merge_range("A21:B21", "Power Consumption", header)
+    sheet.write("A22", "Off mode (W)", field)
+    sheet.write("B22", sysinfo.off, float2)
+    sheet.write("A23", "Sleep mode (W)", field)
+    sheet.write("B23", sysinfo.sleep, float2)
+    sheet.write("A24", "Long idle mode (W)", field)
+    sheet.write("B24", sysinfo.long_idle, float2)
+    sheet.write("A25", "Short idle mode (W)", field)
+    sheet.write("B25", sysinfo.short_idle, float2)
 
     if sysinfo.computer_type == 3:
         sheet.merge_range("D1:I1", "Energy Star 5.2", header)
@@ -1286,9 +1288,9 @@ def generate_excel(sysinfo, version):
     sheet.write("D5", "P_OFF", field1)
     sheet.write("D6", "P_SLEEP", field1)
     sheet.write("D7", "P_IDLE", field2)
-    sheet.write_formula("E5", "=B26", value1, sysinfo.off)
-    sheet.write_formula("E6", "=B27", value1, sysinfo.sleep)
-    sheet.write_formula("E7", "=B29", value2, sysinfo.short_idle)
+    sheet.write_formula("E5", "=B22", value1, sysinfo.off)
+    sheet.write_formula("E6", "=B23", value1, sysinfo.sleep)
+    sheet.write_formula("E7", "=B25", value2, sysinfo.short_idle)
 
     E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_IDLE * sysinfo.short_idle) * 8760 / 1000
     sheet.write("D8", "E_TEC", result)
@@ -1525,20 +1527,20 @@ def generate_excel(sysinfo, version):
     sheet.write_formula("E14", '=IF(EXACT(B3,"Notebook"),0.3,0.35', value4, T_SHORT_IDLE)
 
     sheet.write("D15", "P_OFF", field1)
-    sheet.write_formula("E15", "=B26", value1, sysinfo.off)
+    sheet.write_formula("E15", "=B22", value1, sysinfo.off)
     sheet.write("D16", "P_SLEEP", field1)
-    sheet.write_formula("E16", "=B27", value1, sysinfo.sleep)
+    sheet.write_formula("E16", "=B23", value1, sysinfo.sleep)
     sheet.write("D17", "P_LONG_IDLE", field1)
-    sheet.write_formula("E17", "=B29", value1, sysinfo.long_idle)
+    sheet.write_formula("E17", "=B24", value1, sysinfo.long_idle)
     sheet.write("D18", "P_SHORT_IDLE", field2)
-    sheet.write_formula("E18", "=B29", value2, sysinfo.short_idle)
+    sheet.write_formula("E18", "=B25", value2, sysinfo.short_idle)
 
     E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_LONG_IDLE * sysinfo.long_idle + T_SHORT_IDLE * sysinfo.short_idle) * 8760 / 1000
     sheet.write("D19", "E_TEC", result)
     sheet.write_formula("E19", "=T_OFF*P_OFF+T_SLEEP*P_SLEEP+T_LONG_IDLE*P_LONG_IDLE+T_SHORT_IDLE*P_SHORT_IDLE", result_value, E_TEC)
 
     sheet.write("F11", "ALLOWANCE_PSU", field1)
-    sheet.write_formula("G11", '=IF(OR(EXACT(B3, "Notebook"), EXACT(B3, "Desktop")), IF(EXACT(B22, "Higher"), 0.03, IF(EXACT(B22, "Lower"), 0.015, 0)), IF(EXACT(B22, "Higher"), 0.04, IF(EXACT(B22, "Lower"), 0.015, 0)))', float3)
+    sheet.write_formula("G11", '=IF(OR(EXACT(B3, "Notebook"), EXACT(B3, "Desktop")), IF(EXACT(H21, "Higher"), 0.03, IF(EXACT(H21, "Lower"), 0.015, 0)), IF(EXACT(H21, "Higher"), 0.04, IF(EXACT(H21, "Lower"), 0.015, 0)))', float3)
 
     P = sysinfo.cpu_core * sysinfo.cpu_clock
     if sysinfo.computer_type == 3:
@@ -1631,6 +1633,7 @@ def generate_excel(sysinfo, version):
 
     sheet.write("H14", "A:", right)
     A =  1.0 * sysinfo.diagonal * sysinfo.diagonal * sysinfo.width * sysinfo.height / (sysinfo.width ** 2 + sysinfo.height ** 2)
+    sheet.merge_range("I14:J14", A, left)
     sheet.write_formula("I14", '=B17 * B17 * B18 * B19 / (B18 * B18 + B19 * B19)', left, A)
 
     sheet.write("F16", "TEC_INT_DISPLAY", field1)
