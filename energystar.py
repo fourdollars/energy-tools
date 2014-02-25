@@ -1566,45 +1566,78 @@ def generate_excel(sysinfo, version):
     sheet.write_formula("E19", "=T_OFF*P_OFF+T_SLEEP*P_SLEEP+T_LONG_IDLE*P_LONG_IDLE+T_SHORT_IDLE*P_SHORT_IDLE", result_value, E_TEC)
 
     sheet.write("F11", "ALLOWANCE_PSU", field1)
-    sheet.write_formula("G11", '=IF(EXACT(B23, "Higher"), 0.03, IF(EXACT(B23, "Lower"), 0.015, 0))', float3)
+    sheet.write_formula("G11", '=IF(OR(EXACT(B3, "Notebook"), EXACT(B3, "Desktop")), IF(EXACT(B23, "Higher"), 0.03, IF(EXACT(B23, "Lower"), 0.015, 0)), IF(EXACT(B23, "Higher"), 0.04, IF(EXACT(B23, "Lower"), 0.015, 0)))', float3)
 
     P = sysinfo.cpu_core * sysinfo.cpu_clock
-    if sysinfo.discrete:
-        if P > 9:
-            TEC_BASE = 18
-        elif P > 2:
-            TEC_BASE = 16
+    if sysinfo.computer_type == 3:
+        if sysinfo.discrete:
+            if P > 9:
+                TEC_BASE = 18
+            elif P > 2:
+                TEC_BASE = 16
+            else:
+                TEC_BASE = 14
         else:
-            TEC_BASE = 14
+            if P > 8:
+                TEC_BASE = 28
+            elif P > 5.2:
+                TEC_BASE = 24
+            elif P > 2:
+                TEC_BASE = 22
+            else:
+                TEC_BASE = 14
     else:
-        if P > 8:
-            TEC_BASE = 28
-        elif P > 5.2:
-            TEC_BASE = 24
-        elif P > 2:
-            TEC_BASE = 22
+        if sysinfo.discrete:
+            if P > 9:
+                TEC_BASE = 135
+            elif P > 3:
+                TEC_BASE = 115 
+            else:
+                TEC_BASE = 69
         else:
-            TEC_BASE = 14
+            if P > 7:
+                TEC_BASE = 135
+            elif P > 6:
+                TEC_BASE = 120
+            elif P > 3:
+                TEC_BASE = 112
+            else:
+                TEC_BASE = 69
     sheet.write("F12", "TEC_BASE", field1)
-    sheet.write_formula("G12", '=IF(EXACT(B11,"Discrete"), IF(I11>9, 18, IF(AND(I11<=9, I11>2), 16, 14)), IF(I11>8, 28, IF(AND(I11<=8, I11>5.2), 24, IF(AND(I11<=5.2, I11>2), 22, 14))))', value1, TEC_BASE)
+    if sysinfo.computer_type == 3:
+        sheet.write_formula("G12", '=IF(EXACT(B11,"Discrete"), IF(I11>9, 18, IF(AND(I11<=9, I11>2), 16, 14)), IF(I11>8, 28, IF(AND(I11<=8, I11>5.2), 24, IF(AND(I11<=5.2, I11>2), 22, 14))))', value1, TEC_BASE)
+    else:
+        sheet.write_formula("G12", '=IF(EXACT(B11,"Discrete"), IF(I11>9, 135, IF(AND(I11<=9, I11>3), 115, 69)), IF(I11>7, 135, IF(AND(I11<=7, I11>6), 120, IF(AND(I11<=6, I11>3), 112, 69))))', value1, TEC_BASE)
 
     TEC_MEMORY = 0.8 * sysinfo.mem_size
     sheet.write("F13", "TEC_MEMORY", field1)
     sheet.write_formula("G13", '=B6*0.8', value1, TEC_MEMORY)
 
     if sysinfo.discrete:
-        TEC_GRAPHICS = 14
+        if sysinfo.computer_type == 3:
+            TEC_GRAPHICS = 14
+        else:
+            TEC_GRAPHICS = 36
     else:
         TEC_GRAPHICS = 0
     sheet.write("F14", "TEC_GRAPHICS", field1)
-    sheet.write_formula("G14", '=IF(EXACT(B11, "Discrete"), IF(EXACT(B13, "G1 (FB_BW <= 16)"), 14, IF(EXACT(B13, "G2 (16 < FB_BW <= 32)"), 20, IF(EXACT(B13, "G2 (16 < FB_BW <= 32)"), 20, IF(EXACT(B13, "G3 (32 < FB_BW <= 64)"), 26, IF(EXACT(B13, "G4 (64 < FB_BW <= 96)"), 32, IF(EXACT(B13, "G5 (96 < FB_BW <= 128)"), 42, IF(EXACT(B13, "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"), 48, 60))))))), 0)', value1, TEC_GRAPHICS)
+    if sysinfo.computer_type == 3:
+        sheet.write_formula("G14", '=IF(EXACT(B11, "Discrete"), IF(EXACT(B13, "G1 (FB_BW <= 16)"), 14, IF(EXACT(B13, "G2 (16 < FB_BW <= 32)"), 20, IF(EXACT(B13, "G3 (32 < FB_BW <= 64)"), 26, IF(EXACT(B13, "G4 (64 < FB_BW <= 96)"), 32, IF(EXACT(B13, "G5 (96 < FB_BW <= 128)"), 42, IF(EXACT(B13, "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"), 48, 60)))))), 0)', value1, TEC_GRAPHICS)
+    else:
+        sheet.write_formula("G14", '=IF(EXACT(B11, "Discrete"), IF(EXACT(B13, "G1 (FB_BW <= 16)"), 36, IF(EXACT(B13, "G2 (16 < FB_BW <= 32)"), 51, IF(EXACT(B13, "G3 (32 < FB_BW <= 64)"), 64, IF(EXACT(B13, "G4 (64 < FB_BW <= 96)"), 83, IF(EXACT(B13, "G5 (96 < FB_BW <= 128)"), 105, IF(EXACT(B13, "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"), 115, 130)))))), 0)', value1, TEC_GRAPHICS)
     
     if sysinfo.disk_num > 1:
-        TEC_STORAGE = 2.6 * (TEC_STORAGE - 1)
+        if sysinfo.computer_type == 3:
+            TEC_STORAGE = 2.6 * (TEC_STORAGE - 1)
+        else:
+            TEC_STORAGE = 26 * (TEC_STORAGE - 1)
     else:
         TEC_STORAGE = 0
     sheet.write("F15", "TEC_STORAGE", field1)
-    sheet.write_formula("G15", '=IF(B7>1,2.6*(B7-1),0)', value1, TEC_STORAGE)
+    if sysinfo.computer_type == 3:
+        sheet.write_formula("G15", '=IF(B7>1,2.6*(B7-1),0)', value1, TEC_STORAGE)
+    else:
+        sheet.write_formula("G15", '=IF(B7>1,26*(B7-1),0)', value1, TEC_STORAGE)
 
     sheet.write("H11", "P:", right)
     sheet.write_formula("I11", '=B4*B5', left, P)
@@ -1615,29 +1648,43 @@ def generate_excel(sysinfo, version):
             EP = 0.75
         else:
             EP = 0.3
+        sheet.write("B16", "Yes", value0)
     else:
         EP = 0
     sheet.write_formula("I12", '=IF(EXACT(B16,"Yes"), IF(B17>=27, 0.75, 0.3), 0)', left, EP)
 
-    r = 1.0 * sysinfo.width * sysinfo.height / 1000000
     sheet.write("H13", "r:", right)
+    r = 1.0 * sysinfo.width * sysinfo.height / 1000000
     sheet.write_formula("I13", '=B18*B19/1000000', left, r)
 
-    A =  1.0 * sysinfo.diagonal * sysinfo.diagonal * sysinfo.width * sysinfo.height / (sysinfo.width ** 2 + sysinfo.height ** 2)
     sheet.write("H14", "A:", right)
+    A =  1.0 * sysinfo.diagonal * sysinfo.diagonal * sysinfo.width * sysinfo.height / (sysinfo.width ** 2 + sysinfo.height ** 2)
     sheet.write_formula("I14", '=B17 * B17 * B18 * B19 / (B18 * B18 + B19 * B19)', left, A)
 
-    TEC_INT_DISPLAY = 8.76 * 0.3 * (1+EP) * (2*r + 0.02*A)
     sheet.write("F16", "TEC_INT_DISPLAY", field1)
-    sheet.write_formula("G16", '=8.76 * 0.3 * (1+I12) * (2*I13 + 0.02*I14)', value1, TEC_INT_DISPLAY)
+    if sysinfo.computer_type == 3:
+        TEC_INT_DISPLAY = 8.76 * 0.3 * (1+EP) * (2*r + 0.02*A)
+    elif sysinfo.computer_type == 2:
+        TEC_INT_DISPLAY = 8.76 * 0.35 * (1+EP) * (4*r + 0.05*A)
+    else:
+        TEC_INT_DISPLAY = 0
+    sheet.write_formula("G16", '=IF(EXACT(B3, "Notebook"), 8.76 * 0.3 * (1+I12) * (2*I13 + 0.02*I14), IF(EXACT(B3, "Integrated Desktop"), 8.76 * 0.35 * (1+I12) * (4*I13 + 0.05*I14), 0))', value1, TEC_INT_DISPLAY)
 
-    TEC_SWITCHABLE = 0
     sheet.write("F17", "TEC_SWITCHABLE", field1)
-    sheet.write("G17", TEC_SWITCHABLE, value1)
+    if sysinfo.computer_type == 3:
+        TEC_SWITCHABLE = 0
+    elif sysinfo.switchable:
+        TEC_SWITCHABLE = 0.5 * 36
+    else:
+        TEC_SWITCHABLE = 0
+    sheet.write_formula("G17", '=IF(EXACT(B3, "Notebook"), 0, IF(EXACT(B11, "Switchable"), 0.5 * 36, 0))', value1, TEC_SWITCHABLE)
 
-    TEC_EEE = 8.76 * 0.2 * (0.1 + 0.3) * sysinfo.eee
     sheet.write("F18", "TEC_EEE", field1)
-    sheet.write_formula("G18", '=8.76 * 0.2 * (0.1 + 0.3) * B8', value1, TEC_EEE)
+    if sysinfo.computer_type == 3:
+        TEC_EEE = 8.76 * 0.2 * (0.1 + 0.3) * sysinfo.eee
+    else:
+        TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * sysinfo.eee
+    sheet.write_formula("G18", '=IF(EXACT(B3, "Notebook"), 8.76 * 0.2 * (0.1 + 0.3) * B8, 8.76 * 0.2 * (0.15 + 0.35) * B8)', value1, TEC_EEE)
 
     E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE + TEC_INT_DISPLAY + TEC_SWITCHABLE + TEC_EEE
     sheet.write("F19", "E_TEC_MAX", result)
