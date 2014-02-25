@@ -90,7 +90,6 @@ class SysInfo:
             eee=0,
             discrete=False,
             switchable=False,
-            power_supply='',
             max_power=0,
             more_discrete=False,
             media_codec=False,
@@ -113,7 +112,6 @@ class SysInfo:
         self.short_idle = short_idle
         self.discrete = discrete
         self.switchable = switchable
-        self.power_supply = power_supply
         self.max_power = max_power
         self.more_discrete = more_discrete
         self.media_codec = media_codec
@@ -153,12 +151,6 @@ class SysInfo:
 
                 # Gigabit Ethernet
                 self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
-
-                # Power Supply
-                if self.computer_type != 3:
-                    self.power_supply = question_str("Does it use external power supply or internal power supply? [e/i]", 1, "ei")
-                else:
-                    self.power_supply = 'e'
 
                 # Power Consumption
                 self.off = question_num("What is the power consumption in Off Mode?")
@@ -782,18 +774,11 @@ def qualifying(sysinfo):
         estar60 = EnergyStar60(sysinfo)
         E_TEC = estar60.equation_one()
 
-        if sysinfo.power_supply == 'i':
-            lower = 1.015
-            if sysinfo.computer_type == 1:
-                higher = 1.03
-            else:
-                higher = 1.04
-        elif sysinfo.power_supply == 'e':
-            lower = 1.015
-            if sysinfo.computer_type != 2:
-                higher = 1.03
-            else:
-                higher = 1.04
+        lower = 1.015
+        if sysinfo.computer_type == 2:
+            higher = 1.04
+        else:
+            higher = 1.03
 
         if sysinfo.discrete:
             for AllowancePSU in (1, lower, higher):
@@ -1012,7 +997,7 @@ def main():
                 product_type=1, computer_type=3,
                 cpu_core=2, cpu_clock=2.0,
                 mem_size=8, disk_num=1,
-                width=1366, height=768, eee=1, power_supply='e',
+                width=1366, height=768, eee=1,
                 diagonal=14, ep=False,
                 discrete=False, switchable=True,
                 off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
@@ -1024,7 +1009,7 @@ def main():
                 product_type=1, computer_type=3,
                 cpu_core=2, cpu_clock=1.8,
                 mem_size=16, disk_num=1,
-                width=1366, height=768, eee=1, power_supply='e',
+                width=1366, height=768, eee=1,
                 diagonal=14, ep=False,
                 discrete=True, switchable=False,
                 off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
@@ -1055,7 +1040,7 @@ def main():
                 product_type=1, computer_type=2,
                 cpu_core=2, cpu_clock=2.4,
                 mem_size=4, disk_num=1,
-                width=1680, height=1050, eee=1, power_supply='e',
+                width=1680, height=1050, eee=1,
                 diagonal=27, ep=True,
                 discrete=False, switchable=True,
                 off=12, sleep=23, long_idle=34, short_idle=45)
@@ -1065,7 +1050,7 @@ def main():
                 product_type=1, computer_type=3,
                 cpu_core=2, cpu_clock=2.0,
                 mem_size=8, disk_num=1,
-                width=1366, height=768, eee=1, power_supply='e',
+                width=1366, height=768, eee=1,
                 diagonal=14, ep=False,
                 discrete=True, switchable=False,
                 off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
@@ -1075,7 +1060,7 @@ def main():
                 product_type=1, computer_type=2,
                 cpu_core=4, cpu_clock=2.4,
                 mem_size=4, disk_num=1,
-                width=1680, height=1050, eee=1, power_supply='e',
+                width=1680, height=1050, eee=1,
                 diagonal=27, ep=True,
                 discrete=False, switchable=True,
                 off=12, sleep=23, long_idle=34, short_idle=45)
@@ -1262,22 +1247,9 @@ def generate_excel(sysinfo, version):
 
     sheet.merge_range("A21:B21", "Power Supply", header)
 
-    sheet.write("A22", "Power Supply Type", field)
-    if sysinfo.power_supply == 'e':
-        sheet.write("B22", "External", value)
-    else:
-        sheet.write("B22", "Internal", value)
-
-    if sysinfo.computer_type != 3:
-        sheet.data_validation('B22', {
-            'validate': 'list',
-            'source': [
-                'Internal',
-                'External']})
-
-    sheet.write("A23", "Meet the requirements of Power Supply Efficiency Allowance", field)
-    sheet.write("B23", "None", value0)
-    sheet.data_validation('B23', {
+    sheet.write("A22", "Meet the requirements of Power Supply Efficiency Allowance", field)
+    sheet.write("B22", "None", value0)
+    sheet.data_validation('B22', {
         'validate': 'list',
         'source': [
             'None',
@@ -1566,7 +1538,7 @@ def generate_excel(sysinfo, version):
     sheet.write_formula("E19", "=T_OFF*P_OFF+T_SLEEP*P_SLEEP+T_LONG_IDLE*P_LONG_IDLE+T_SHORT_IDLE*P_SHORT_IDLE", result_value, E_TEC)
 
     sheet.write("F11", "ALLOWANCE_PSU", field1)
-    sheet.write_formula("G11", '=IF(OR(EXACT(B3, "Notebook"), EXACT(B3, "Desktop")), IF(EXACT(B23, "Higher"), 0.03, IF(EXACT(B23, "Lower"), 0.015, 0)), IF(EXACT(B23, "Higher"), 0.04, IF(EXACT(B23, "Lower"), 0.015, 0)))', float3)
+    sheet.write_formula("G11", '=IF(OR(EXACT(B3, "Notebook"), EXACT(B3, "Desktop")), IF(EXACT(B22, "Higher"), 0.03, IF(EXACT(B22, "Lower"), 0.015, 0)), IF(EXACT(B22, "Higher"), 0.04, IF(EXACT(B22, "Lower"), 0.015, 0)))', float3)
 
     P = sysinfo.cpu_core * sysinfo.cpu_clock
     if sysinfo.computer_type == 3:
