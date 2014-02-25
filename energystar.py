@@ -271,7 +271,7 @@ class EnergyStar52:
                 elif over_frame_buffer_width_128:
                     return True
         elif category == 'C':
-            if core >= 2:
+            if core > 2:
                 if memory >= 2:
                     return True
                 elif discrete:
@@ -725,7 +725,7 @@ def qualifying(sysinfo):
         else:
             if different is True:
                 if sysinfo.computer_type == 3:
-                    print("\n  If GPU Frame Buffer Width is less than or equal to 64 bits, (X <= 64)")
+                    print("\n  If GPU Frame Buffer Width <= 64 bits,")
                     for i in under_64:
                         (category, E_TEC_MAX) = i
                         if E_TEC <= E_TEC_MAX:
@@ -735,7 +735,7 @@ def qualifying(sysinfo):
                             result = 'FAIL'
                             operator = '>'
                         print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
-                    print("\n  If GPU Frame Buffer Width between 64 and 128 bits, (64 < X <= 128)")
+                    print("\n  If 64 bits < GPU Frame Buffer Width <= 128 bits,")
                     for i in over_64:
                         (category, E_TEC_MAX) = i
                         if E_TEC <= E_TEC_MAX:
@@ -746,7 +746,7 @@ def qualifying(sysinfo):
                             operator = '>'
                         print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
                 else:
-                    print("\n  If GPU Frame Buffer Width is less than or equal to 128 bits, (X <= 128)")
+                    print("\n  If GPU Frame Buffer Width <= 128 bits,")
                     for i in over_64:
                         (category, E_TEC_MAX) = i
                         if E_TEC <= E_TEC_MAX:
@@ -756,7 +756,7 @@ def qualifying(sysinfo):
                             result = 'FAIL'
                             operator = '>'
                         print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
-                print("\n  If GPU Frame Buffer Width is greater than 128 bits, (X > 128)")
+                print("\n  If GPU Frame Buffer Width > 128 bits,")
                 for i in over_128:
                     (category, E_TEC_MAX) = i
                     if E_TEC <= E_TEC_MAX:
@@ -1069,6 +1069,16 @@ def main():
                 diagonal=14, ep=False,
                 discrete=True, switchable=False,
                 off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
+    elif args.test == 8:
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=1, computer_type=2,
+                cpu_core=4, cpu_clock=2.4,
+                mem_size=4, disk_num=1,
+                width=1680, height=1050, eee=1, power_supply='e',
+                diagonal=27, ep=True,
+                discrete=False, switchable=True,
+                off=12, sleep=23, long_idle=34, short_idle=45)
     else:
         sysinfo = SysInfo()
 
@@ -1202,13 +1212,21 @@ def generate_excel(sysinfo, version):
 
     sheet.write("A12", "GPU Frame Buffer Width", field)
 
-    sheet.write("B12", "<= 64-bit", value0)
-    sheet.data_validation('B12', {
-        'validate': 'list',
-        'source': [
-            '<= 64-bit',
-            '> 64-bit and <= 128-bit',
-            '> 128-bit']})
+    if sysinfo.computer_type == 3:
+        sheet.write("B12", "<= 64-bit", value0)
+        sheet.data_validation('B12', {
+            'validate': 'list',
+            'source': [
+                '<= 64-bit',
+                '> 64-bit and <= 128-bit',
+                '> 128-bit']})
+    else:
+        sheet.write("B12", "<= 128-bit", value0)
+        sheet.data_validation('B12', {
+            'validate': 'list',
+            'source': [
+                '<= 128-bit',
+                '> 128-bit']})
 
     sheet.write("A13", "Graphics Category", field)
     sheet.write("B13", "G1 (FB_BW <= 16)", value0)
@@ -1276,7 +1294,10 @@ def generate_excel(sysinfo, version):
     sheet.write("A29", "Short idle mode (W)", field)
     sheet.write("B29", sysinfo.short_idle, float2)
 
-    sheet.merge_range("D1:I1", "Energy Star 5.2", header)
+    if sysinfo.computer_type == 3:
+        sheet.merge_range("D1:I1", "Energy Star 5.2", header)
+    else:
+        sheet.merge_range("D1:J1", "Energy Star 5.2", header)
 
     if sysinfo.computer_type == 3:
         (T_OFF, T_SLEEP, T_IDLE) = (0.6, 0.1, 0.3)
@@ -1284,17 +1305,17 @@ def generate_excel(sysinfo, version):
         (T_OFF, T_SLEEP, T_IDLE) = (0.55, 0.05, 0.4)
 
     sheet.write("D2", "T_OFF", field1)
-    sheet.write_formula("E2", '=IF(EXACT(E,"Notebook"),0.6,0.55', value3, T_OFF)
     sheet.write("D3", "T_SLEEP", field1)
-    sheet.write_formula("E3", '=IF(EXACT(E,"Notebook"),0.1,0.05', value3, T_SLEEP)
     sheet.write("D4", "T_IDLE", field2)
+    sheet.write_formula("E2", '=IF(EXACT(E,"Notebook"),0.6,0.55', value3, T_OFF)
+    sheet.write_formula("E3", '=IF(EXACT(E,"Notebook"),0.1,0.05', value3, T_SLEEP)
     sheet.write_formula("E4", '=IF(EXACT(E,"Notebook"),0.3,0.4', value4, T_IDLE)
 
     sheet.write("D5", "P_OFF", field1)
-    sheet.write_formula("E5", "=B26", value1, sysinfo.off)
     sheet.write("D6", "P_SLEEP", field1)
-    sheet.write_formula("E6", "=B27", value1, sysinfo.sleep)
     sheet.write("D7", "P_IDLE", field2)
+    sheet.write_formula("E5", "=B26", value1, sysinfo.off)
+    sheet.write_formula("E6", "=B27", value1, sysinfo.sleep)
     sheet.write_formula("E7", "=B29", value2, sysinfo.short_idle)
 
     E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_IDLE * sysinfo.short_idle) * 8760 / 1000
@@ -1304,9 +1325,17 @@ def generate_excel(sysinfo, version):
     sheet.merge_range("F2:F3", "Category", fieldC)
     sheet.merge_range("G2:G3", "A", fieldC)
     sheet.merge_range("H2:H3", "B", fieldC)
-    sheet.write_formula("H2:H3", '=IF(EXACT(B11,"Discrete"), "B", "")', fieldC, "B")
     sheet.merge_range("I2:I3", "C", fieldC)
-    sheet.write_formula("I2:I3", '=IF(AND(EXACT(B11,"Discrete"), EXACT(B12, "> 128-bit"), B4>=2, B6>=2), "C", "")', fieldC, "C")
+    if sysinfo.computer_type != 3:
+        sheet.merge_range("J2:J3", "D", fieldC)
+
+    if sysinfo.computer_type == 3:
+        sheet.write_formula("H2:H3", '=IF(EXACT(B11,"Discrete"), "B", "")', fieldC, "B")
+        sheet.write_formula("I2:I3", '=IF(AND(EXACT(B11,"Discrete"), EXACT(B12, "> 128-bit"), B4>=2, B6>=2), "C", "")', fieldC, "C")
+    else:
+        sheet.write_formula("H2:H3", '=IF(AND(B4=2,B6>=2), "B", "")', fieldC, "B")
+        sheet.write_formula("I2:I3", '=IF(AND(B4>2,OR(B6>=2,EXACT(B11,"Discrete"))), "C", "")', fieldC, "C")
+        sheet.write_formula("J2:J3", '=IF(AND(B4>=4,OR(B6>=4,AND(EXACT(B11,"Discrete"),EXACT(B12,"> 128-bit")))), "D", "")', fieldC, "D")
 
     sheet.write("F4", "TEC_BASE", field1)
     sheet.write("F5", "TEC_MEMORY", field1)
@@ -1314,23 +1343,45 @@ def generate_excel(sysinfo, version):
     sheet.write("F7", "TEC_STORAGE", field1)
     sheet.write("F8", "E_TEC_MAX", result)
 
-    TEC_BASE = 40
-    sheet.write("G4", TEC_BASE, value1)
+    # Category A
+    if sysinfo.computer_type == 3:
+        TEC_BASE = 40
 
-    if sysinfo.mem_size > 4:
-        TEC_MEMORY = 0.4 * (sysinfo.mem_size - 4)
+        if sysinfo.mem_size > 4:
+            TEC_MEMORY = 0.4 * (sysinfo.mem_size - 4)
+        else:
+            TEC_MEMORY = 0
+
+        TEC_GRAPHICS = 0
+
+        if sysinfo.disk_num > 1:
+            TEC_STORAGE = 3.0 * (sysinfo.disk_num - 1)
+        else:
+            TEC_STORAGE = 0
+
+        sheet.write("G4", TEC_BASE, value1)
+        sheet.write_formula("G5", "=IF(B6>4, 0.4*(B6-4), 0)", value1, TEC_MEMORY)
+        sheet.write("G6", TEC_GRAPHICS, value1)
+        sheet.write_formula("G7", "=IF(B7>1, 3*(B7-1), 0)", value2, TEC_STORAGE)
     else:
-        TEC_MEMORY = 0
-    sheet.write_formula("G5", "=IF(B6>4, 0.4*(B6-4), 0)", value1, TEC_MEMORY)
+        TEC_BASE = 148
 
-    TEC_GRAPHICS = 0
-    sheet.write("G6", TEC_GRAPHICS, value1)
+        if sysinfo.mem_size > 2:
+            TEC_MEMORY = 1.0 * (sysinfo.mem_size - 2)
+        else:
+            TEC_MEMORY = 0
 
-    if sysinfo.disk_num > 1:
-        TEC_STORAGE = 3.0 * (sysinfo.disk_num - 1)
-    else:
-        TEC_STORAGE = 0
-    sheet.write_formula("G7", "=IF(B7>1, 3*(B7-1), 0)", value2, TEC_STORAGE)
+        TEC_GRAPHICS = 35
+
+        if sysinfo.disk_num > 1:
+            TEC_STORAGE = 25 * (sysinfo.disk_num - 1)
+        else:
+            TEC_STORAGE = 0
+
+        sheet.write("G4", TEC_BASE, value1)
+        sheet.write_formula("G5", "=IF(B6>2, 1.0*(B6-2), 0)", value1, TEC_MEMORY)
+        sheet.write_formula("G6", '=IF(EXACT(B12,"> 128-bit"), 50, 35)', value1, TEC_GRAPHICS)
+        sheet.write_formula("G7", "=IF(B7>1, 25*(B7-1), 0)", value2, TEC_STORAGE)
 
     E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
     sheet.write_formula("G8", "=G4+G5+G6+G7", result_value, E_TEC_MAX)
@@ -1341,42 +1392,149 @@ def generate_excel(sysinfo, version):
         RESULT = "FAIL"
     sheet.write_formula("G9", '=IF(E8<=G8, "PASS", "FAIL")', center, RESULT)
 
-    if sysinfo.discrete:
-        TEC_BASE = 53
-        TEC_GRAPHICS = 0
-        E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
-        if E_TEC <= E_TEC_MAX:
-            RESULT = "PASS"
+    # Category B
+    if sysinfo.computer_type == 3:
+        # Notebook
+        if sysinfo.discrete:
+            TEC_BASE = 53
+
+            if sysinfo.mem_size > 4:
+                TEC_MEMORY = 0.4 * (sysinfo.mem_size - 4)
+            else:
+                TEC_MEMORY = 0
+
+            TEC_GRAPHICS = 0
+
+            if sysinfo.disk_num > 1:
+                TEC_STORAGE = 3.0 * (sysinfo.disk_num - 1)
+            else:
+                TEC_STORAGE = 0
+
+            E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+
+            if E_TEC <= E_TEC_MAX:
+                RESULT = "PASS"
+            else:
+                RESULT = "FAIL"
         else:
-            RESULT = "FAIL"
+            TEC_BASE = ""
+            TEC_MEMORY = ""
+            TEC_GRAPHICS = ""
+            TEC_STORAGE = ""
+            E_TEC_MAX = ""
+            RESULT = ""
+        sheet.write_formula("H4", '=IF(EXACT(H2,"B"), 53, "")', value1, TEC_BASE)
+        sheet.write_formula("H5", '=IF(EXACT(H2,"B"), G5, "")', value1, TEC_MEMORY)
+        sheet.write_formula("H6", '=IF(EXACT(H2,"B"), IF(EXACT(B12, "<= 64-bit"), 0, 3), "")', value1, TEC_GRAPHICS)
+        sheet.write_formula("H7", '=IF(EXACT(H2, "B"), G7, "")', value2, TEC_STORAGE)
     else:
+        # Desktop
+        if sysinfo.cpu_core == 2 and sysinfo.mem_size >= 2:
+            TEC_BASE = 175
+            E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+        else:
+            TEC_BASE = ""
+            TEC_MEMORY = ""
+            TEC_GRAPHICS = ""
+            TEC_STORAGE = ""
+            E_TEC_MAX = ""
+            RESULT = ""
+        sheet.write_formula("H4", '=IF(EXACT(H2, "B"), 175, "")', value1, TEC_BASE)
+        sheet.write_formula("H5", '=IF(EXACT(H2,"B"), G5, "")', value1, TEC_MEMORY)
+        sheet.write_formula("H6", '=IF(EXACT(H2,"B"), IF(EXACT(B12, "<= 128-bit"), 35, 50), "")', value1, TEC_GRAPHICS)
+        sheet.write_formula("H7", '=IF(EXACT(H2, "B"), G7, "")', value2, TEC_STORAGE)
+
+    sheet.write_formula("H8", '=IF(EXACT(H2, "B"), H4+H5+H6+H7, "")', result_value, E_TEC_MAX)
+    sheet.write_formula("H9", '=IF(EXACT(H2, "B"),IF(E8<=H8, "PASS", "FAIL"), "")', center, RESULT)
+
+    # Category C
+    if sysinfo.computer_type == 3:
+        # Notebook
         TEC_BASE = ""
         TEC_MEMORY = ""
         TEC_GRAPHICS = ""
         TEC_STORAGE = ""
         E_TEC_MAX = ""
         RESULT = ""
+        sheet.write_formula("I4", '=IF(EXACT(I2, "C"), 88.5, "")', value1, TEC_BASE)
+        sheet.write_formula("I5", '=IF(EXACT(I2, "C"), G5, "")', value1, TEC_MEMORY)
+        sheet.write_formula("I6", '=IF(EXACT(I2, "C"), 0, "")', value1, TEC_GRAPHICS)
+        sheet.write_formula("I7", '=IF(EXACT(I2, "C"), G7, "")', value2, TEC_STORAGE)
+    else:
+        # Desktop
+        if sysinfo.cpu_core > 2 and (sysinfo.mem_size >= 2 or sysinfo.discrete):
+            TEC_BASE = 209
 
-    sheet.write_formula("H4", '=IF(EXACT(H2, "B"), 53, "")', value1, TEC_BASE)
-    sheet.write_formula("H5", '=IF(EXACT(H2, "B"), G5, "")', value1, TEC_MEMORY)
-    sheet.write_formula("H6", '=IF(EXACT(H2,"B"), IF(EXACT(B12, "<= 64-bit"), 0, 3), "")', value1, TEC_GRAPHICS)
-    sheet.write_formula("H7", '=IF(EXACT(H2, "B"), G7, "")', value2, TEC_STORAGE)
-    sheet.write_formula("H8", '=IF(EXACT(H2, "B"), H4+H5+H6+H7, "")', result_value, E_TEC_MAX)
-    sheet.write_formula("H9", '=IF(EXACT(H2, "B"),IF(E8<=H8, "PASS", "FAIL"), "")', center, RESULT)
+            if sysinfo.mem_size > 2:
+                TEC_MEMORY = sysinfo.mem_size - 2
+            else:
+                TEC_MEMORY = 0
 
-    TEC_BASE = ""
-    TEC_MEMORY = ""
-    TEC_GRAPHICS = ""
-    TEC_STORAGE = ""
-    E_TEC_MAX = ""
-    RESULT = ""
+            TEC_GRAPHICS = 0 
 
-    sheet.write_formula("I4", '=IF(EXACT(I2, "C"), 88.5, "")', value1, TEC_BASE)
-    sheet.write_formula("I5", '=IF(EXACT(I2, "C"), G5, "")', value1, TEC_MEMORY)
-    sheet.write_formula("I6", '=IF(EXACT(I2, "C"), 0, "")', value1, TEC_GRAPHICS)
-    sheet.write_formula("I7", '=IF(EXACT(I2, "C"), G7, "")', value2, TEC_STORAGE)
+            if sysinfo.disk_num > 1:
+                TEC_STORAGE = 25 * (sysinfo.disk_num - 1)
+            else:
+                TEC_STORAGE = 0
+
+            E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+
+            if E_TEC <= E_TEC_MAX:
+                RESULT = "PASS"
+            else:
+                RESULT = "FAIL"
+        else:
+            TEC_BASE = ""
+            TEC_MEMORY = ""
+            TEC_GRAPHICS = ""
+            TEC_STORAGE = ""
+            E_TEC_MAX = ""
+            RESULT = ""
+        sheet.write_formula("I4", '=IF(EXACT(I2, "C"), 209, "")', value1, TEC_BASE)
+        sheet.write_formula("I5", '=IF(EXACT(I2, "C"), IF(B6>2, 1.0*(B6-2), 0), "")', value1, TEC_MEMORY)
+        sheet.write_formula("I6", '=IF(EXACT(I2, "C"), IF(EXACT(B12,"> 128-bit"), 50, 0), "")', value1, TEC_GRAPHICS)
+        sheet.write_formula("I7", '=IF(EXACT(I2, "C"), G7, "")', value2, TEC_STORAGE)
+
     sheet.write_formula("I8", '=IF(EXACT(I2, "C"), I4+I5+I6+I7, "")', result_value, E_TEC_MAX)
     sheet.write_formula("I9", '=IF(EXACT(I2, "C"), IF(E8<=I8, "PASS", "FAIL"), "")', center, RESULT)
+
+    # Category D
+    if sysinfo.computer_type != 3:
+        # Desktop
+        if sysinfo.cpu_core >= 4 and sysinfo.mem_size >= 4:
+            TEC_BASE = 234
+
+            if sysinfo.mem_size > 4:
+                TEC_MEMORY = 1.0 * (sysinfo.mem_size - 4)
+            else:
+                TEC_MEMORY = 0
+
+            TEC_GRAPHICS = 0 
+
+            if sysinfo.disk_num > 1:
+                TEC_STORAGE = 25 * (sysinfo.disk_num - 1)
+            else:
+                TEC_STORAGE = 0
+
+            E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
+
+            if E_TEC <= E_TEC_MAX:
+                RESULT = "PASS"
+            else:
+                RESULT = "FAIL"
+        else:
+            TEC_BASE = ""
+            TEC_MEMORY = ""
+            TEC_GRAPHICS = ""
+            TEC_STORAGE = ""
+            E_TEC_MAX = ""
+            RESULT = ""
+        sheet.write_formula("J4", '=IF(EXACT(J2, "D"), 234, "")', value1, TEC_BASE)
+        sheet.write_formula("J5", '=IF(EXACT(J2, "D"), IF(B6>4, B6-4, 0), "")', value1, TEC_MEMORY)
+        sheet.write_formula("J6", '=IF(EXACT(J2, "D"), IF(EXACT(B12,"> 128-bit"), 50, 0), "")', value1, TEC_GRAPHICS)
+        sheet.write_formula("J7", '=IF(EXACT(J2, "D"), G7, "")', value2, TEC_STORAGE)
+        sheet.write_formula("J8", '=IF(EXACT(J2, "D"), J4+J5+J6+J7, "")', result_value, E_TEC_MAX)
+        sheet.write_formula("J9", '=IF(EXACT(J2, "D"), IF(E8<=J8, "PASS", "FAIL"), "")', center, RESULT)
 
     sheet.merge_range("D10:G10", "Energy Star 6.0", header)
 
