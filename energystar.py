@@ -1083,7 +1083,14 @@ def generate_excel(sysinfo, version):
     book = Workbook(args.output)
     book.set_properties({'comments':"Created by Energy Star 5.2/6.0 calculator %s from Canonical Ltd." % (version)})
 
+    if sysinfo.product_type == 1:
+        generate_excel_for_computers(book, sysinfo, version)
+
+    book.close()
+
+def generate_excel_for_computers(book, sysinfo, version):
     sheet = book.add_worksheet()
+
     sheet.set_column('A:A', 38)
     sheet.set_column('B:B', 37)
     sheet.set_column('C:C', 1)
@@ -1230,24 +1237,34 @@ def generate_excel(sysinfo, version):
             'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)',
             'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)']})
 
-    sheet.merge_range("A15:B15", "Display", header)
+    sheet.merge_range("A15:B15", "Power Consumption", header)
+    sheet.write("A16", "Off mode (W)", field)
+    sheet.write("B16", sysinfo.off, float2)
+    sheet.write("A17", "Sleep mode (W)", field)
+    sheet.write("B17", sysinfo.sleep, float2)
+    sheet.write("A18", "Long idle mode (W)", field)
+    sheet.write("B18", sysinfo.long_idle, float2)
+    sheet.write("A19", "Short idle mode (W)", field)
+    sheet.write("B19", sysinfo.short_idle, float2)
 
-    sheet.write("A16", "Enhanced-performance Integrated Display", field)
-    sheet.write("B16", "No", value0)
-    sheet.data_validation('B16', {
+    sheet.merge_range("A21:B21", "Display", header)
+
+    sheet.write("A22", "Enhanced-performance Integrated Display", field)
+    sheet.write("B22", "No", value0)
+    sheet.data_validation('B22', {
         'validate': 'list',
         'source': [
             'Yes',
             'No']})
 
-    sheet.write("A17", "Physical Diagonal (inch)", field)
-    sheet.write("B17", sysinfo.diagonal, value)
+    sheet.write("A23", "Physical Diagonal (inch)", field)
+    sheet.write("B23", sysinfo.diagonal, value)
 
-    sheet.write("A18", "Screen Width (px)", field)
-    sheet.write("B18", sysinfo.width, value)
+    sheet.write("A24", "Screen Width (px)", field)
+    sheet.write("B24", sysinfo.width, value)
 
-    sheet.write("A19", "Screen Height (px)", field)
-    sheet.write("B19", sysinfo.height, value)
+    sheet.write("A25", "Screen Height (px)", field)
+    sheet.write("B25", sysinfo.height, value)
 
     sheet.merge_range("D21:G21", "Power Supply Efficiency Allowance requirements:", field)
     sheet.write("H21", "None", value0)
@@ -1257,16 +1274,6 @@ def generate_excel(sysinfo, version):
             'None',
             'Lower',
             'Higher']})
-
-    sheet.merge_range("A21:B21", "Power Consumption", header)
-    sheet.write("A22", "Off mode (W)", field)
-    sheet.write("B22", sysinfo.off, float2)
-    sheet.write("A23", "Sleep mode (W)", field)
-    sheet.write("B23", sysinfo.sleep, float2)
-    sheet.write("A24", "Long idle mode (W)", field)
-    sheet.write("B24", sysinfo.long_idle, float2)
-    sheet.write("A25", "Short idle mode (W)", field)
-    sheet.write("B25", sysinfo.short_idle, float2)
 
     if sysinfo.computer_type == 3:
         sheet.merge_range("D1:I1", "Energy Star 5.2", header)
@@ -1288,9 +1295,9 @@ def generate_excel(sysinfo, version):
     sheet.write("D5", "P_OFF", field1)
     sheet.write("D6", "P_SLEEP", field1)
     sheet.write("D7", "P_IDLE", field2)
-    sheet.write_formula("E5", "=B22", value1, sysinfo.off)
-    sheet.write_formula("E6", "=B23", value1, sysinfo.sleep)
-    sheet.write_formula("E7", "=B25", value2, sysinfo.short_idle)
+    sheet.write_formula("E5", "=B16", value1, sysinfo.off)
+    sheet.write_formula("E6", "=B17", value1, sysinfo.sleep)
+    sheet.write_formula("E7", "=B19", value2, sysinfo.short_idle)
 
     E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_IDLE * sysinfo.short_idle) * 8760 / 1000
     sheet.write("D8", "E_TEC", result)
@@ -1527,17 +1534,17 @@ def generate_excel(sysinfo, version):
     sheet.write_formula("E14", '=IF(EXACT(B3,"Notebook"),0.3,0.35', value4, T_SHORT_IDLE)
 
     sheet.write("D15", "P_OFF", field1)
-    sheet.write_formula("E15", "=B22", value1, sysinfo.off)
+    sheet.write_formula("E15", "=B16", value1, sysinfo.off)
     sheet.write("D16", "P_SLEEP", field1)
-    sheet.write_formula("E16", "=B23", value1, sysinfo.sleep)
+    sheet.write_formula("E16", "=B17", value1, sysinfo.sleep)
     sheet.write("D17", "P_LONG_IDLE", field1)
-    sheet.write_formula("E17", "=B24", value1, sysinfo.long_idle)
-    sheet.write("D18", "P_SHORT_IDLE", field2)
-    sheet.write_formula("E18", "=B25", value2, sysinfo.short_idle)
+    sheet.write_formula("E17", "=B18", value1, sysinfo.long_idle)
+    sheet.write("D18", "P_SHORT_IDLE", field1)
+    sheet.write_formula("E18", "=B19", value2, sysinfo.short_idle)
 
     E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_LONG_IDLE * sysinfo.long_idle + T_SHORT_IDLE * sysinfo.short_idle) * 8760 / 1000
     sheet.write("D19", "E_TEC", result)
-    sheet.write_formula("E19", "=T_OFF*P_OFF+T_SLEEP*P_SLEEP+T_LONG_IDLE*P_LONG_IDLE+T_SHORT_IDLE*P_SHORT_IDLE", result_value, E_TEC)
+    sheet.write_formula("E19", "=(E11*E15+E12*E16+E13*E17+E14*E18)*8760/1000", result_value, E_TEC)
 
     sheet.write("F11", "ALLOWANCE_PSU", field1)
     sheet.write_formula("G11", '=IF(OR(EXACT(B3, "Notebook"), EXACT(B3, "Desktop")), IF(EXACT(H21, "Higher"), 0.03, IF(EXACT(H21, "Lower"), 0.015, 0)), IF(EXACT(H21, "Higher"), 0.04, IF(EXACT(H21, "Lower"), 0.015, 0)))', float3)
@@ -1622,19 +1629,25 @@ def generate_excel(sysinfo, version):
             EP = 0.75
         else:
             EP = 0.3
-        sheet.write("B16", "Yes", value0)
+        sheet.write("B22", "Yes", value0)
     else:
         EP = 0
-    sheet.write_formula("I12", '=IF(EXACT(B16,"Yes"), IF(B17>=27, 0.75, 0.3), 0)', left, EP)
+    sheet.write_formula("I12", '=IF(EXACT(B22,"Yes"), IF(B17>=27, 0.75, 0.3), 0)', left, EP)
 
     sheet.write("H13", "r:", right)
-    r = 1.0 * sysinfo.width * sysinfo.height / 1000000
-    sheet.write_formula("I13", '=B18*B19/1000000', left, r)
+    if sysinfo.computer_type != 1:
+        r = 1.0 * sysinfo.width * sysinfo.height / 1000000
+    else:
+        r = 0
+    sheet.write_formula("I13", '=IF(EXACT(B3, "Desktop"), 0, B18 * B19 / 1000000)', left, r)
 
     sheet.write("H14", "A:", right)
-    A =  1.0 * sysinfo.diagonal * sysinfo.diagonal * sysinfo.width * sysinfo.height / (sysinfo.width ** 2 + sysinfo.height ** 2)
+    if sysinfo.computer_type != 1:
+        A =  1.0 * sysinfo.diagonal * sysinfo.diagonal * sysinfo.width * sysinfo.height / (sysinfo.width ** 2 + sysinfo.height ** 2)
+    else:
+        A = 0
     sheet.merge_range("I14:J14", A, left)
-    sheet.write_formula("I14", '=B17 * B17 * B18 * B19 / (B18 * B18 + B19 * B19)', left, A)
+    sheet.write_formula("I14", '=IF(EXACT(B3, "Desktop"), 0, B17 * B17 * B18 * B19 / (B18 * B18 + B19 * B19))', left, A)
 
     sheet.write("F16", "TEC_INT_DISPLAY", field1)
     if sysinfo.computer_type == 3:
@@ -1670,8 +1683,6 @@ def generate_excel(sysinfo, version):
     else:
         RESULT = "FAIL"
     sheet.write_formula("G20", '=IF(E19<=G19, "PASS", "FAIL")', center, RESULT)
-
-    book.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
