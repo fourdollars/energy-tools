@@ -1064,6 +1064,14 @@ def main():
                 diagonal=27, ep=True,
                 discrete=False, switchable=True,
                 off=12, sleep=23, long_idle=34, short_idle=45)
+    elif args.test == 9:
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=1, computer_type=1,
+                cpu_core=4, cpu_clock=2.4,
+                mem_size=4, disk_num=1, eee=1,
+                discrete=False, switchable=True,
+                off=12, sleep=23, long_idle=34, short_idle=45)
     else:
         sysinfo = SysInfo()
 
@@ -1247,24 +1255,25 @@ def generate_excel_for_computers(book, sysinfo, version):
     sheet.write("A19", "Short idle mode (W)", field)
     sheet.write("B19", sysinfo.short_idle, float2)
 
-    sheet.merge_range("A21:B21", "Display", header)
+    if sysinfo.computer_type != 1:
+        sheet.merge_range("A21:B21", "Display", header)
 
-    sheet.write("A22", "Enhanced-performance Integrated Display", field)
-    sheet.write("B22", "No", value0)
-    sheet.data_validation('B22', {
-        'validate': 'list',
-        'source': [
-            'Yes',
-            'No']})
+        sheet.write("A22", "Enhanced-performance Integrated Display", field)
+        sheet.write("B22", "No", value0)
+        sheet.data_validation('B22', {
+            'validate': 'list',
+            'source': [
+                'Yes',
+                'No']})
 
-    sheet.write("A23", "Physical Diagonal (inch)", field)
-    sheet.write("B23", sysinfo.diagonal, value)
+        sheet.write("A23", "Physical Diagonal (inch)", field)
+        sheet.write("B23", sysinfo.diagonal, value)
 
-    sheet.write("A24", "Screen Width (px)", field)
-    sheet.write("B24", sysinfo.width, value)
+        sheet.write("A24", "Screen Width (px)", field)
+        sheet.write("B24", sysinfo.width, value)
 
-    sheet.write("A25", "Screen Height (px)", field)
-    sheet.write("B25", sysinfo.height, value)
+        sheet.write("A25", "Screen Height (px)", field)
+        sheet.write("B25", sysinfo.height, value)
 
     sheet.merge_range("D21:G21", "Power Supply Efficiency Allowance requirements:", field)
     sheet.write("H21", "None", value0)
@@ -1623,7 +1632,7 @@ def generate_excel_for_computers(book, sysinfo, version):
     sheet.write("H11", "P:", right)
     sheet.write_formula("I11", '=B4*B5', left, P)
 
-    sheet.write("H12", "EP:", right)
+    EP_LABEL = "EP:"
     if sysinfo.ep:
         if sysinfo.diagonal >= 27:
             EP = 0.75
@@ -1631,23 +1640,38 @@ def generate_excel_for_computers(book, sysinfo, version):
             EP = 0.3
         sheet.write("B22", "Yes", value0)
     else:
-        EP = 0
-    sheet.write_formula("I12", '=IF(EXACT(B22,"Yes"), IF(B17>=27, 0.75, 0.3), 0)', left, EP)
+        if sysinfo.computer_type == 1:
+            EP = ""
+            EP_LABEL = ""
+        else:
+            EP = 0
+    sheet.write_formula("H12", '=IF(EXACT(B3, "Desktop"), "", "EP:")', right, EP_LABEL)
+    sheet.write_formula("I12", '=IF(EXACT(B22,"Yes"), IF(B17>=27, 0.75, 0.3), "")', left, EP)
 
-    sheet.write("H13", "r:", right)
+    r_label = "r:"
     if sysinfo.computer_type != 1:
         r = 1.0 * sysinfo.width * sysinfo.height / 1000000
     else:
-        r = 0
-    sheet.write_formula("I13", '=IF(EXACT(B3, "Desktop"), 0, B18 * B19 / 1000000)', left, r)
+        if sysinfo.computer_type == 1:
+            r = ""
+            r_label = ""
+        else:
+            r = 0
+    sheet.write_formula("H13", '=IF(EXACT(B3, "Desktop"), "", "r:"', right, r_label)
+    sheet.write_formula("I13", '=IF(EXACT(B3, "Desktop"), "", B18 * B19 / 1000000)', left, r)
 
-    sheet.write("H14", "A:", right)
+    A_LABEL = "A:"
     if sysinfo.computer_type != 1:
         A =  1.0 * sysinfo.diagonal * sysinfo.diagonal * sysinfo.width * sysinfo.height / (sysinfo.width ** 2 + sysinfo.height ** 2)
     else:
-        A = 0
+        if sysinfo.computer_type == 1:
+            A = ""
+            A_LABEL = ""
+        else:
+            A = 0
+    sheet.write_formula("H14", '=IF(EXACT(B3, "Desktop"), "", "A:"', right, A_LABEL)
     sheet.merge_range("I14:J14", A, left)
-    sheet.write_formula("I14", '=IF(EXACT(B3, "Desktop"), 0, B17 * B17 * B18 * B19 / (B18 * B18 + B19 * B19))', left, A)
+    sheet.write_formula("I14", '=IF(EXACT(B3, "Desktop"), "", B17 * B17 * B18 * B19 / (B18 * B18 + B19 * B19))', left, A)
 
     sheet.write("F16", "TEC_INT_DISPLAY", field1)
     if sysinfo.computer_type == 3:
