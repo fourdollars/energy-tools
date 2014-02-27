@@ -1841,7 +1841,164 @@ def generate_excel_for_workstations(book, sysinfo, version):
     sheet.write('B35', '=IF(B33 <= B34, "PASS", "FAIL")', center, RESULT)
 
 def generate_excel_for_small_scale_servers(book, sysinfo, version):
-    pass
+
+    sheet = book.add_worksheet()
+
+    sheet.set_column('A:A', 45)
+    sheet.set_column('B:B', 15)
+
+    header = book.add_format({
+        'bold': 1,
+        'border': 1,
+        'align': 'center',
+        'fg_color': '#CFE2F3'})
+
+    field = book.add_format({
+        'border': 1,
+        'fg_color': '#F3F3F3'})
+
+    value = book.add_format({'border': 1})
+    center = book.add_format({'align': 'center'})
+
+    float2 = book.add_format({'border': 1})
+    float2.set_num_format('0.00')
+
+    result = book.add_format({
+        'border': 1,
+        'fg_color': '#F4CCCC'})
+    result_value = book.add_format({
+        'border': 1,
+        'fg_color': '#FFF2CC'})
+    result_value.set_num_format('0.00')
+
+    sheet.merge_range("A1:B1", "General", header)
+
+    sheet.write('A2', "Product Type", field)
+    sheet.write('B2', "Small-scale Servers", value)
+
+    sheet.write("A3", "Wake-On-LAN (WOL) by default upon shipment", field)
+    sheet.write("B3", 'Enabled', value)
+    sheet.data_validation('B3', {
+        'validate': 'list',
+        'source': [
+            'Enabled',
+            'Disabled']})
+
+    sheet.write("A4", "More than one physical core?", field)
+    if sysinfo.cpu_core > 1:
+        sheet.write("B4", 'Yes', value)
+    else:
+        sheet.write("B4", 'No', value)
+    sheet.data_validation('B4', {
+        'validate': 'list',
+        'source': [
+            'Yes',
+            'No']})
+
+    sheet.write("A5", "More than one discrete processor?", field)
+    if sysinfo.more_discrete:
+        sheet.write("B5", 'Yes', value)
+    else:
+        sheet.write("B5", 'No', value)
+    sheet.data_validation('B5', {
+        'validate': 'list',
+        'source': [
+            'Yes',
+            'No']})
+
+    sheet.write("A6", "More than or equal to one gigabyte of system memory?", field)
+    if sysinfo.mem_size >= 1:
+        sheet.write("B6", 'Yes', value)
+    else:
+        sheet.write("B6", 'No', value)
+    sheet.data_validation('B6', {
+        'validate': 'list',
+        'source': [
+            'Yes',
+            'No']})
+
+    sheet.write("A7", "IEEE 802.3az compliant Gigabit Ethernet ports", field)
+    sheet.write("B7", sysinfo.eee, value)
+
+    sheet.write("A8", "Number of Hard Drives", field)
+    sheet.write("B8", sysinfo.disk_num, value)
+
+    sheet.merge_range("A10:B10", "Power Consumption", header)
+    sheet.write("A11", "Off mode (W)", field)
+    sheet.write("B11", sysinfo.off, float2)
+    sheet.write("A12", "Short idle mode (W)", field)
+    sheet.write("B12", sysinfo.short_idle, float2)
+
+    sheet.merge_range("A14:B14", "Energy Star 5.2", header)
+
+    P_OFF_BASE = 2
+    P_OFF_WOL = 0.7
+    P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
+
+    sheet.write('A15', 'P_OFF_BASE', field)
+    sheet.write('B15', P_OFF_BASE, value)
+
+    sheet.write('A16', 'P_OFF_WOL', field)
+    sheet.write('B16', '=IF(EXACT(B3, "Enabled"), 0.7, 0)', value, "Enabled")
+
+    sheet.write('A17', 'P_OFF_MAX', result)
+    sheet.write('B17', '=B15+B16', result_value, P_OFF_MAX)
+
+    if (sysinfo.cpu_core > 1 or sysinfo.more_discrete) and sysinfo.mem_size >= 1:
+        P_IDLE_MAX = 65
+        category = 'A'
+    else:
+        P_IDLE_MAX = 50
+        category = 'B'
+
+    sheet.write('A18', "Product Category", field)
+    sheet.write('B18', '=IF(AND(OR(EXACT(B4, "Yes"), EXACT(B5, "Yes")), EXACT(B6, "Yes")), "B", "A")', value, category)
+
+    sheet.write('A19', 'P_IDLE_MAX', result)
+    sheet.write('B19', '=IF(EXACT(B18, "B"), 65, 50)', result_value, P_IDLE_MAX)
+
+    if sysinfo.off <= P_OFF_MAX and sysinfo.short_idle <= P_IDLE_MAX:
+        RESULT = 'PASS'
+    else:
+        RESULT = 'FAIL'
+    sheet.write('B20', '=IF(AND(B11 <= B18, B12 <= B19), "PASS", "FAIL")', center, RESULT)
+
+    sheet.merge_range("A21:B21", "Energy Star 6.0", header)
+
+    P_OFF_BASE = 1
+    P_OFF_WOL = 0.4
+    P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
+
+    sheet.write('A22', 'P_OFF_BASE', field)
+    sheet.write('B22', P_OFF_BASE, value)
+
+    sheet.write('A23', 'P_OFF_WOL', field)
+    sheet.write('B23', '=IF(EXACT(B3, "Enabled"), 0.4, 0)', value, "Enabled")
+
+    sheet.write('A24', 'P_OFF_MAX', result)
+    sheet.write('B24', '=B22+B23', result_value, P_OFF_MAX)
+
+    P_IDLE_BASE = 24
+    sheet.write('A25', 'P_IDLE_BASE', field)
+    sheet.write('B25', P_IDLE_BASE, value)
+
+    P_IDLE_HDD = 8
+    sheet.write('A26', 'P_IDLE_HDD', field)
+    sheet.write('B26', P_IDLE_HDD, value)
+
+    P_EEE = 0.2 * sysinfo.eee
+    sheet.write('A27', 'P_EEE', field)
+    sheet.write('B27', '=0.2*B7', value, P_EEE)
+
+    P_IDLE_MAX = P_IDLE_BASE + (sysinfo.disk_num - 1) * P_IDLE_HDD + P_EEE
+    sheet.write('A28', 'P_IDLE_MAX', result)
+    sheet.write('B28', '=B25 + (B8 - 1) * B26 + B27', result_value, P_IDLE_MAX)
+
+    if sysinfo.off <= P_OFF_MAX and sysinfo.short_idle <= P_IDLE_MAX:
+        RESULT = 'PASS'
+    else:
+        RESULT = 'FAIL'
+    sheet.write('B29', '=IF(AND(B11 <= B24, B12 <= B28), "PASS", "FAIL")', center, RESULT)
 
 def generate_excel_for_thin_clients(book, sysinfo, version):
     pass
