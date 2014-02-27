@@ -1002,6 +1002,27 @@ def main():
                 discrete=False, switchable=True,
                 off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
     elif args.test == 2:
+        # Test case for Workstations
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=2, disk_num=2, eee=0,
+                off=2, sleep=4, long_idle=50, short_idle=80, max_power=180)
+    elif args.test == 3:
+        # Test case for Small-scale Servers 
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=3, mem_size=4,
+                cpu_core=1, more_discrete=False,
+                eee=1, disk_num=1,
+                off=2.7, short_idle=65.0)
+    elif args.test == 4:
+        # Test case for Thin Clients
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=4, computer_type=2,
+                integrated_display=True, width=1366, height=768, diagonal=14, ep=True,
+                off=2.7, sleep=2.7, long_idle=15.0, short_idle=15.0, media_codec=True)
+    elif args.test == 5:
         # Test case from OEM/ODM only for Energy Star 5.2
         # Category B: 19.16688 (E_TEC) <= 60.8 (E_TEC_MAX), PASS
         sysinfo = SysInfo(
@@ -1013,27 +1034,6 @@ def main():
                 diagonal=14, ep=False,
                 discrete=True, switchable=False,
                 off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
-    elif args.test == 3:
-        # Test case from Energy Star 5.2/6.0 for Workstations
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=2, disk_num=2, eee=0,
-                off=2, sleep=4, long_idle=50, short_idle=80, max_power=180)
-    elif args.test == 4:
-        # Test case from Energy Star 5.2/6.0 for Small-scale Servers 
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=3,
-                cpu_core=1, more_discrete=False,
-                eee=1, disk_num=1,
-                off=2.7, short_idle=65.0)
-    elif args.test == 5:
-        # Test case from Energy Star 5.2/6.0 for Thin Clients
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=4, computer_type=2,
-                integrated_display=True, width=1366, height=768, diagonal=14, ep=True,
-                off=2.7, sleep=2.7, long_idle=15.0, short_idle=15.0, media_codec=True)
     elif args.test == 6:
         sysinfo = SysInfo(
                 auto=True,
@@ -1093,6 +1093,12 @@ def generate_excel(sysinfo, version):
 
     if sysinfo.product_type == 1:
         generate_excel_for_computers(book, sysinfo, version)
+    elif sysinfo.product_type == 2:
+        generate_excel_for_workstations(book, sysinfo, version)
+    elif sysinfo.product_type == 3:
+        generate_excel_for_small_scale_servers(book, sysinfo, version)
+    elif sysinfo.product_type == 4:
+        generate_excel_for_thin_clients(book, sysinfo, version)
 
     book.close()
 
@@ -1707,6 +1713,138 @@ def generate_excel_for_computers(book, sysinfo, version):
     else:
         RESULT = "FAIL"
     sheet.write_formula("G20", '=IF(E19<=G19, "PASS", "FAIL")', center, RESULT)
+
+def generate_excel_for_workstations(book, sysinfo, version):
+
+    sheet = book.add_worksheet()
+
+    sheet.set_column('A:A', 38)
+    sheet.set_column('B:B', 12)
+
+    center = book.add_format({'align': 'center'})
+
+    header = book.add_format({
+        'bold': 1,
+        'border': 1,
+        'align': 'center',
+        'fg_color': '#CFE2F3'})
+
+    field = book.add_format({
+        'border': 1,
+        'fg_color': '#F3F3F3'})
+
+    float2 = book.add_format({'border': 1})
+    float2.set_num_format('0.00')
+
+    result = book.add_format({
+        'border': 1,
+        'fg_color': '#F4CCCC'})
+    result_value = book.add_format({
+        'border': 1,
+        'fg_color': '#FFF2CC'})
+    result_value.set_num_format('0.00')
+
+    value = book.add_format({'border': 1})
+
+    sheet.merge_range("A1:B1", "General", header)
+    sheet.write('A2', "Product Type", field)
+    sheet.write('B2', "Workstations", value)
+    sheet.write("A3", "Number of Hard Drives", field)
+    sheet.write("B3", sysinfo.disk_num, value)
+    sheet.write("A4", "IEEE 802.3az compliant Gigabit Ethernet ports", field)
+    sheet.write("B4", sysinfo.eee, value)
+
+    sheet.merge_range("A6:B6", "Power Consumption", header)
+    sheet.write("A7", "Off mode (W)", field)
+    sheet.write("B7", sysinfo.off, float2)
+    sheet.write("A8", "Sleep mode (W)", field)
+    sheet.write("B8", sysinfo.sleep, float2)
+    sheet.write("A9", "Long idle mode (W)", field)
+    sheet.write("B9", sysinfo.long_idle, float2)
+    sheet.write("A10", "Short idle mode (W)", field)
+    sheet.write("B10", sysinfo.short_idle, float2)
+    sheet.write("A11", "Max Power (W)", field)
+    sheet.write("B11", sysinfo.max_power, float2)
+
+    sheet.merge_range("A13:B13", "Energy Star 5.2", header)
+
+    sheet.write('A14', 'T_OFF', field)
+    sheet.write('B14', 0.35, float2)
+
+    sheet.write('A15', 'T_SLEEP', field)
+    sheet.write('B15', 0.1, float2)
+
+    sheet.write('A16', 'T_IDLE', field)
+    sheet.write('B16', 0.55, float2)
+
+    sheet.write('A17', 'P_OFF', field)
+    sheet.write('B17', '=B7', float2, sysinfo.off)
+
+    sheet.write('A18', 'P_SLEEP', field)
+    sheet.write('B18', '=B8', float2, sysinfo.sleep)
+
+    sheet.write('A19', 'P_IDLE', field)
+    sheet.write('B19', '=B10', float2, sysinfo.short_idle)
+
+    P_TEC = 0.35 * sysinfo.off + 0.1 * sysinfo.sleep + 0.55 * sysinfo.short_idle
+    sheet.write('A20', 'P_TEC', result)
+    sheet.write('B20', '=(B14*B17+B15*B18+B16*B19)', result_value, P_TEC)
+
+    P_MAX = 0.28 * (sysinfo.max_power + sysinfo.disk_num * 5)
+    sheet.write('A21', 'P_MAX', result)
+    sheet.write('B21', '=0.28*(B11+B3*5)', result_value, P_MAX)
+
+    if P_TEC <= P_MAX:
+        RESULT = 'PASS'
+    else:
+        RESULT = 'FAIL'
+    sheet.write('B22', '=IF(B20 <= B21, "PASS", "FAIL")', center, RESULT)
+
+    sheet.merge_range("A24:B24", "Energy Star 6.0", header)
+
+    sheet.write('A25', 'T_OFF', field)
+    sheet.write('B25', 0.35, float2)
+
+    sheet.write('A26', 'T_SLEEP', field)
+    sheet.write('B26', 0.1, float2)
+
+    sheet.write('A27', 'T_LONG_IDLE', field)
+    sheet.write('B27', 0.15, float2)
+
+    sheet.write('A28', 'T_SHORT_IDLE', field)
+    sheet.write('B28', 0.4, float2)
+
+    sheet.write('A29', 'P_OFF', field)
+    sheet.write('B29', '=B7', float2, sysinfo.off)
+
+    sheet.write('A30', 'P_SLEEP', field)
+    sheet.write('B30', '=B8', float2, sysinfo.sleep)
+
+    sheet.write('A31', 'P_LONG_IDLE', field)
+    sheet.write('B31', '=B9', float2, sysinfo.long_idle)
+
+    sheet.write('A32', 'P_SHORT_IDLE', field)
+    sheet.write('B32', '=B10', float2, sysinfo.short_idle)
+
+    P_TEC = 0.35 * sysinfo.off + 0.1 * sysinfo.sleep + 0.15 * sysinfo.long_idle + 0.4 * sysinfo.short_idle
+    sheet.write('A33', 'P_TEC', result)
+    sheet.write('B33', '=(B25*B29+B26*B30+B27*B31+B28*B32)', result_value, P_TEC)
+
+    P_MAX = 0.28 * (sysinfo.max_power + sysinfo.disk_num * 5) + 8.76 * sysinfo.eee * (sysinfo.sleep + sysinfo.long_idle + sysinfo.short_idle)
+    sheet.write('A34', 'P_MAX', result)
+    sheet.write('B34', '=0.28*(B11+B3*5) + 8.76*B4*(B26 + B27 + B28)', result_value, P_MAX)
+
+    if P_TEC <= P_MAX:
+        RESULT = 'PASS'
+    else:
+        RESULT = 'FAIL'
+    sheet.write('B35', '=IF(B33 <= B34, "PASS", "FAIL")', center, RESULT)
+
+def generate_excel_for_small_scale_servers(book, sysinfo, version):
+    pass
+
+def generate_excel_for_thin_clients(book, sysinfo, version):
+    pass
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
