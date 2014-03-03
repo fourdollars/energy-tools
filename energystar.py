@@ -139,10 +139,7 @@ class SysInfo:
                     self.discrete = False
                 else:
                     self.switchable = False
-                    if question_bool("Is there a discrete graphics device?"):
-                        self.discrete = True
-                    else:
-                        self.discrete = False
+                    self.discrete = question_bool("Does it have discrete graphics?")
 
                 # Screen size
                 if self.computer_type != 1:
@@ -176,6 +173,7 @@ class SysInfo:
                 self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
                 self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
                 self.media_codec = question_bool("Does it support local multimedia encode/decode?")
+                self.discrete = question_bool("Does it have discrete graphics?")
                 self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
                 self.integrated_display = question_bool("Does it have integrated display?")
                 if self.integrated_display:
@@ -1858,6 +1856,7 @@ def generate_excel_for_small_scale_servers(book, sysinfo, version):
         'fg_color': '#F3F3F3'})
 
     value = book.add_format({'border': 1})
+    value0 = book.add_format({'border': 1, 'fg_color': '#D9EAD3'})
     center = book.add_format({'align': 'center'})
 
     float2 = book.add_format({'border': 1})
@@ -1877,7 +1876,7 @@ def generate_excel_for_small_scale_servers(book, sysinfo, version):
     sheet.write('B2', "Small-scale Servers", value)
 
     sheet.write("A3", "Wake-On-LAN (WOL) by default upon shipment", field)
-    sheet.write("B3", 'Enabled', value)
+    sheet.write("B3", 'Enabled', value0)
     sheet.data_validation('B3', {
         'validate': 'list',
         'source': [
@@ -1939,7 +1938,7 @@ def generate_excel_for_small_scale_servers(book, sysinfo, version):
     sheet.write('B15', P_OFF_BASE, value)
 
     sheet.write('A16', 'P_OFF_WOL', field)
-    sheet.write('B16', '=IF(EXACT(B3, "Enabled"), 0.7, 0)', value, "Enabled")
+    sheet.write('B16', '=IF(EXACT(B3, "Enabled"), 0.7, 0)', value, P_OFF_WOL)
 
     sheet.write('A17', 'P_OFF_MAX', result)
     sheet.write('B17', '=B15+B16', result_value, P_OFF_MAX)
@@ -1973,7 +1972,7 @@ def generate_excel_for_small_scale_servers(book, sysinfo, version):
     sheet.write('B22', P_OFF_BASE, value)
 
     sheet.write('A23', 'P_OFF_WOL', field)
-    sheet.write('B23', '=IF(EXACT(B3, "Enabled"), 0.4, 0)', value, "Enabled")
+    sheet.write('B23', '=IF(EXACT(B3, "Enabled"), 0.4, 0)', value, P_OFF_WOL)
 
     sheet.write('A24', 'P_OFF_MAX', result)
     sheet.write('B24', '=B22+B23', result_value, P_OFF_MAX)
@@ -2022,6 +2021,7 @@ def generate_excel_for_thin_clients(book, sysinfo, version):
         'fg_color': '#F3F3F3'})
 
     value = book.add_format({'border': 1})
+    value0 = book.add_format({'border': 1, 'fg_color': '#D9EAD3'})
     center = book.add_format({'align': 'center'})
     left = book.add_format({'align': 'left'})
     right = book.add_format({'align': 'right'})
@@ -2043,7 +2043,7 @@ def generate_excel_for_thin_clients(book, sysinfo, version):
     sheet.write('B2', "Thin Clients", value)
 
     sheet.write("A3", "Wake-On-LAN (WOL) by default upon shipment", field)
-    sheet.write("B3", 'Enabled', value)
+    sheet.write("B3", 'Enabled', value0)
     sheet.data_validation('B3', {
         'validate': 'list',
         'source': [
@@ -2062,7 +2062,10 @@ def generate_excel_for_thin_clients(book, sysinfo, version):
             'No']})
 
     sheet.write("A5", "Discrete Graphics", field)
-    sheet.write("B5", 'Yes', value)
+    if sysinfo.discrete:
+        sheet.write("B5", 'Yes', value)
+    else:
+        sheet.write("B5", 'No', value)
     sheet.data_validation('B5', {
         'validate': 'list',
         'source': [
@@ -2087,7 +2090,7 @@ def generate_excel_for_thin_clients(book, sysinfo, version):
         sheet.merge_range("A14:B14", "Display", header)
 
         sheet.write("A15", "Enhanced-performance Integrated Display", field)
-        sheet.write("B15", "No", value)
+        sheet.write("B15", "No", value0)
         sheet.data_validation('B15', {
             'validate': 'list',
             'source': [
@@ -2179,7 +2182,7 @@ def generate_excel_for_thin_clients(book, sysinfo, version):
     EP_LABEL = "EP:"
     if sysinfo.integrated_display:
         if sysinfo.ep:
-            sheet.write("B15", "Yes", value)
+            sheet.write("B15", "Yes", value0)
             if sysinfo.diagonal >= 27:
                 EP = 0.75
             else:
