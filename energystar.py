@@ -117,69 +117,71 @@ class SysInfo:
         self.media_codec = media_codec
         self.integrated_display = integrated_display
 
-        if not auto:
-            # Product type
-            self.product_type = question_int("""Which product type would you like to verify?
- [1] Desktop, Integrated Desktop, and Notebook Computers
- [2] Workstations
- [3] Small-scale Servers
- [4] Thin Clients""", 4)
+        if auto:
+            return
 
-            if self.product_type == 1:
-                # Computer type
-                self.computer_type = question_int("""Which type of computer do you use?
- [1] Desktop
- [2] Integrated Desktop
- [3] Notebook""", 3)
+        # Product type
+        self.product_type = question_int("""Which product type would you like to verify?
+[1] Desktop, Integrated Desktop, and Notebook Computers
+[2] Workstations
+[3] Small-scale Servers
+[4] Thin Clients""", 4)
 
-                # GPU Information
-                if question_bool("Does it have switchable graphics and automated switching enabled by default?"):
-                    self.switchable = True
-                    # Those with switchable graphics may not apply the Discrete Graphics allowance.
-                    self.discrete = False
-                else:
-                    self.switchable = False
-                    self.discrete = question_bool("Does it have discrete graphics?")
+        if self.product_type == 1:
+            # Computer type
+            self.computer_type = question_int("""Which type of computer do you use?
+[1] Desktop
+[2] Integrated Desktop
+[3] Notebook""", 3)
 
-                # Screen size
-                if self.computer_type != 1:
-                    self.diagonal = question_num("What is the display diagonal in inches?")
-                    self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
-
-                # Gigabit Ethernet
-                self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
-
-                # Power Consumption
-                self.off = question_num("What is the power consumption in Off Mode?")
-                self.sleep = question_num("What is the power consumption in Sleep Mode?")
-                self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
-                self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
-            elif self.product_type == 2:
-                self.off = question_num("What is the power consumption in Off Mode?")
-                self.sleep = question_num("What is the power consumption in Sleep Mode?")
-                self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
-                self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
-                self.max_power = question_num("What is the maximum power consumption?")
-                self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
-            elif self.product_type == 3:
-                self.off = question_num("What is the power consumption in Off Mode?")
-                self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
-                self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
-                if self.get_cpu_core() < 2:
-                    self.more_discrete = question_bool("Does it have more than one discrete graphics device?")
-            elif self.product_type == 4:
-                self.off = question_num("What is the power consumption in Off Mode?")
-                self.sleep = question_num("What is the power consumption in Sleep Mode?\n(You can input the power consumption in Long Idle Mode, if it lacks a discrete System Sleep Mode)")
-                self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
-                self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
-                self.media_codec = question_bool("Does it support local multimedia encode/decode?")
+            # GPU Information
+            if question_bool("Does it have switchable graphics and automated switching enabled by default?"):
+                self.switchable = True
+                # Those with switchable graphics may not apply the Discrete Graphics allowance.
+                self.discrete = False
+            else:
+                self.switchable = False
                 self.discrete = question_bool("Does it have discrete graphics?")
-                self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
-                self.integrated_display = question_bool("Does it have integrated display?")
-                if self.integrated_display:
-                    self.computer_type = 2
-                    self.diagonal = question_num("What is the display diagonal in inches?")
-                    self.ep = question_bool("Is it an Enhanced-perforcemance Integrated Display?")
+
+            # Screen size
+            if self.computer_type != 1:
+                self.diagonal = question_num("What is the display diagonal in inches?")
+                self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
+
+            # Gigabit Ethernet
+            self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
+
+            # Power Consumption
+            self.off = question_num("What is the power consumption in Off Mode?")
+            self.sleep = question_num("What is the power consumption in Sleep Mode?")
+            self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
+            self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+        elif self.product_type == 2:
+            self.off = question_num("What is the power consumption in Off Mode?")
+            self.sleep = question_num("What is the power consumption in Sleep Mode?")
+            self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
+            self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+            self.max_power = question_num("What is the maximum power consumption?")
+            self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
+        elif self.product_type == 3:
+            self.off = question_num("What is the power consumption in Off Mode?")
+            self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+            self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
+            if self.get_cpu_core() < 2:
+                self.more_discrete = question_bool("Does it have more than one discrete graphics device?")
+        elif self.product_type == 4:
+            self.off = question_num("What is the power consumption in Off Mode?")
+            self.sleep = question_num("What is the power consumption in Sleep Mode?\n(You can input the power consumption in Long Idle Mode, if it lacks a discrete System Sleep Mode)")
+            self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
+            self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+            self.media_codec = question_bool("Does it support local multimedia encode/decode?")
+            self.discrete = question_bool("Does it have discrete graphics?")
+            self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
+            self.integrated_display = question_bool("Does it have integrated display?")
+            if self.integrated_display:
+                self.computer_type = 2
+                self.diagonal = question_num("What is the display diagonal in inches?")
+                self.ep = question_bool("Is it an Enhanced-perforcemance Integrated Display?")
 
     def get_cpu_core(self):
         if self.cpu_core:
@@ -692,11 +694,6 @@ def qualifying(sysinfo):
         print("Energy Star 5.2:")
         estar52 = EnergyStar52(sysinfo)
         E_TEC = estar52.equation_one()
-
-        if sysinfo.computer_type == 3:
-            gpu_bit = '64'
-        else:
-            gpu_bit = '128'
 
         over_128 = estar52.equation_two(True, True)
         over_64 = estar52.equation_two(False, True)
