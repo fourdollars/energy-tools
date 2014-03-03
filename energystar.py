@@ -986,7 +986,7 @@ def qualifying(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = "v1.1"
+    version = "v1.2"
     print("Energy Star 5.2/6.0 calculator %s\n" % (version)+ '=' * 80)
     if args.test == 1:
         # Test case from Energy Star 5.2/6.0 for Notebooks
