@@ -599,7 +599,7 @@ class EnergyStar60:
         if self.sysinfo.computer_type != 1:
             (EP, r, A) = self.equation_three()
 
-        if self.sysinfo.computer_type == 2:
+        if self.sysinfo.computer_type == 2 or self.sysinfo.product_type == 4:
             TEC_INT_DISPLAY = 8.76 * 0.35 * (1 + EP) * (4 * r + 0.05 * A)
         elif self.sysinfo.computer_type == 3:
             TEC_INT_DISPLAY = 8.76 * 0.30 * (1 + EP) * (2 * r + 0.02 * A)
@@ -1019,7 +1019,7 @@ def main():
         # Test case for Thin Clients
         sysinfo = SysInfo(
                 auto=True,
-                product_type=4, computer_type=2,
+                product_type=4,
                 integrated_display=True, width=1366, height=768, diagonal=14, ep=True,
                 off=2.7, sleep=2.7, long_idle=15.0, short_idle=15.0, media_codec=True)
     elif args.test == 5:
@@ -2001,7 +2001,236 @@ def generate_excel_for_small_scale_servers(book, sysinfo, version):
     sheet.write('B29', '=IF(AND(B11 <= B24, B12 <= B28), "PASS", "FAIL")', center, RESULT)
 
 def generate_excel_for_thin_clients(book, sysinfo, version):
-    pass
+
+    sheet = book.add_worksheet()
+
+    sheet.set_column('A:A', 45)
+    sheet.set_column('B:B', 10)
+    sheet.set_column('C:C', 1)
+    sheet.set_column('D:D', 15)
+    sheet.set_column('E:E', 8)
+    sheet.set_column('F:F', 5)
+
+    header = book.add_format({
+        'bold': 1,
+        'border': 1,
+        'align': 'center',
+        'fg_color': '#CFE2F3'})
+
+    field = book.add_format({
+        'border': 1,
+        'fg_color': '#F3F3F3'})
+
+    value = book.add_format({'border': 1})
+    center = book.add_format({'align': 'center'})
+    left = book.add_format({'align': 'left'})
+    right = book.add_format({'align': 'right'})
+
+    float2 = book.add_format({'border': 1})
+    float2.set_num_format('0.00')
+
+    result = book.add_format({
+        'border': 1,
+        'fg_color': '#F4CCCC'})
+    result_value = book.add_format({
+        'border': 1,
+        'fg_color': '#FFF2CC'})
+    result_value.set_num_format('0.00')
+
+    sheet.merge_range("A1:B1", "General", header)
+
+    sheet.write('A2', "Product Type", field)
+    sheet.write('B2', "Thin Clients", value)
+
+    sheet.write("A3", "Wake-On-LAN (WOL) by default upon shipment", field)
+    sheet.write("B3", 'Enabled', value)
+    sheet.data_validation('B3', {
+        'validate': 'list',
+        'source': [
+            'Enabled',
+            'Disabled']})
+
+    sheet.write("A4", "Local multimedia encode/decode support", field)
+    if sysinfo.media_codec:
+        sheet.write("B4", 'Yes', value)
+    else:
+        sheet.write("B4", 'No', value)
+    sheet.data_validation('B4', {
+        'validate': 'list',
+        'source': [
+            'Yes',
+            'No']})
+
+    sheet.write("A5", "Discrete Graphics", field)
+    sheet.write("B5", 'Yes', value)
+    sheet.data_validation('B5', {
+        'validate': 'list',
+        'source': [
+            'Yes',
+            'No']})
+
+    sheet.write("A6", "IEEE 802.3az compliant Gigabit Ethernet ports", field)
+    sheet.write("B6", sysinfo.eee, value)
+
+    sheet.merge_range("A8:B8", "Power Consumption", header)
+    sheet.write("A9", "Off mode (W)", field)
+    sheet.write("B9", sysinfo.off, float2)
+    sheet.write("A10", "Sleep mode (W)", field)
+    sheet.write("B10", sysinfo.sleep, float2)
+    sheet.write("A11", "Long idle mode (W)", field)
+    sheet.write("B11", sysinfo.long_idle, float2)
+    sheet.write("A12", "Short idle mode (W)", field)
+    sheet.write("B12", sysinfo.short_idle, float2)
+
+
+    if sysinfo.integrated_display:
+        sheet.merge_range("A14:B14", "Display", header)
+
+        sheet.write("A15", "Enhanced-performance Integrated Display", field)
+        sheet.write("B15", "No", value)
+        sheet.data_validation('B15', {
+            'validate': 'list',
+            'source': [
+                'Yes',
+                'No']})
+
+        sheet.write("A16", "Physical Diagonal (inch)", field)
+        sheet.write("B16", sysinfo.diagonal, value)
+
+        sheet.write("A17", "Screen Width (px)", field)
+        sheet.write("B17", sysinfo.width, value)
+
+        sheet.write("A18", "Screen Height (px)", field)
+        sheet.write("B18", sysinfo.height, value)
+
+    sheet.merge_range("D1:E1", "Energy Star 5.2", header)
+
+    sheet.write("D2", "Product Category", field)
+    sheet.write("E2", '=IF(EXACT(B4, "Yes"), "B", "A")', value, "B")
+
+    P_OFF_BASE = 2
+    P_OFF_WOL = 0.7
+    P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
+
+    sheet.write("D3", "P_OFF_BASE", field)
+    sheet.write("E3", P_OFF_BASE, float2)
+
+    sheet.write("D4", "P_WOL_BASE", field)
+    sheet.write("E4", '=IF(EXACT(B3, "Enabled"), 0.7, 0)', float2, P_OFF_WOL)
+
+    sheet.write("D5", "P_OFF_MAX", result)
+    sheet.write("E5", '=E3+E4', result_value, P_OFF_MAX)
+
+    P_SLEEP_BASE = 2
+    P_SLEEP_WOL = 0.7
+    P_SLEEP_MAX = P_SLEEP_BASE + P_SLEEP_WOL
+
+    sheet.write("D6", "P_SLEEP_BASE", field)
+    sheet.write("E6", P_SLEEP_BASE, float2)
+
+    sheet.write("D7", "P_WOL_BASE", field)
+    sheet.write("E7", '=IF(EXACT(B3, "Enabled"), 0.7, 0)', float2, P_SLEEP_WOL)
+
+    sheet.write("D8", "P_SLEEP_MAX", result)
+    sheet.write("E8", '=B19+B20', result_value, P_SLEEP_MAX)
+
+    P_IDLE_MAX = 15
+    sheet.write("D9", "P_IDLE_MAX", result)
+    sheet.write("E9", '=IF(EXACT(B4, "Yes"), 15, 12)', result_value, P_IDLE_MAX)
+
+    if sysinfo.off <= P_OFF_MAX and sysinfo.sleep <= P_SLEEP_MAX and sysinfo.short_idle <= P_IDLE_MAX:
+        RESULT = 'PASS'
+    else:
+        RESULT = 'FAIL'
+    sheet.write('E10', '=IF(AND(B9 <= E5, B10 <= E8, B12 <= E9), "PASS", "FAIL")', center, RESULT)
+
+    sheet.merge_range("D11:E11", "Energy Star 6.0", header)
+
+    (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.45, 0.05, 0.15, 0.35)
+
+    sheet.write("D12", "T_OFF", field)
+    sheet.write("E12", T_OFF, value)
+
+    sheet.write("D13", "T_SLEEP", field)
+    sheet.write("E13", T_SLEEP, value)
+
+    sheet.write("D14", "T_LONG_IDLE", field)
+    sheet.write("E14", T_LONG_IDLE, value)
+
+    sheet.write("D15", "T_SHORT_IDLE", field)
+    sheet.write("E15", T_SHORT_IDLE, value)
+
+    E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_LONG_IDLE * sysinfo.long_idle + T_SHORT_IDLE * sysinfo.short_idle) * 8760 / 1000
+    sheet.write("D16", "E_TEC", result)
+    sheet.write("E16", "=(B9*E12+B10*E13+B11*E14+B12*E15)*8760/1000", result_value, E_TEC)
+
+    TEC_BASE = 60
+    sheet.write("D17", "TEC_BASE", field)
+    sheet.write("E17", TEC_BASE, value)
+
+    TEC_GRAPHICS = 36
+    sheet.write("D18", "TEC_GRAPHICS", field)
+    sheet.write("E18", '=IF(EXACT(B5, "Yes"), 36, 0)', value, TEC_GRAPHICS)
+
+    TEC_WOL = 2
+    sheet.write("D19", "TEC_WOL", field)
+    sheet.write("E19", '=IF(EXACT(B3, "Enabled"), 2, 0)', value, TEC_WOL)
+
+    EP_LABEL = "EP:"
+    if sysinfo.integrated_display:
+        if sysinfo.ep:
+            sheet.write("B15", "Yes", value)
+            if sysinfo.diagonal >= 27:
+                EP = 0.75
+            else:
+                EP = 0.3
+        else:
+            EP = 0
+    else:
+        EP = ""
+        EP_LABEL = ""
+    sheet.write("F12", '=IF(EXACT(A14, "Display"), "EP:", "")', right, EP_LABEL)
+    sheet.write("G12", '=IF(EXACT(A14, "Display"), IF(EXACT(B15, "Yes"), IF(B16 >= 27, 0.75, 0.3), 0), "")', left, EP)
+
+    r_label = "r:"
+    if sysinfo.integrated_display:
+        r = 1.0 * sysinfo.width * sysinfo.height / 1000000
+    else:
+        r = ""
+        r_label = ""
+    sheet.write_formula("F13", '=IF(EXACT(A14, "Display"), "r:", ""', right, r_label)
+    sheet.write_formula("G13", '=IF(EXACT(A14, "Display"), B17 * B18 / 1000000, "")', left, r)
+
+    A_LABEL = "A:"
+    if sysinfo.integrated_display:
+        A =  1.0 * sysinfo.diagonal * sysinfo.diagonal * sysinfo.width * sysinfo.height / (sysinfo.width ** 2 + sysinfo.height ** 2)
+    else:
+        A = ""
+        A_LABEL = ""
+    sheet.write_formula("F14", '=IF(EXACT(A14, "Display"), "A:", "")', right, A_LABEL)
+    sheet.merge_range("G14:H14", A, left)
+    sheet.write_formula("G14", '=IF(EXACT(A14, "Display"), B16 * B16 * B17 * B18 / (B17 * B17 + B18 * B18), "")', left, A)
+
+    if sysinfo.integrated_display:
+        TEC_INT_DISPLAY = 8.76 * 0.35 * (1+EP) * (4*r + 0.05*A)
+    else:
+        TEC_INT_DISPLAY = 0
+    sheet.write("D20", "TEC_INT_DISPLAY", field)
+    sheet.write("E20", '=IF(EXACT(A14, "Display"), 8.76 * 0.35 * (1+G12) * (4*G13 + 0.05*G14), 0)', value, TEC_INT_DISPLAY)
+
+    TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * sysinfo.eee
+    sheet.write("D21", "TEC_EEE", field)
+    sheet.write("E21", '=8.76 * 0.2 * (0.15 + 0.35) * B6', value, TEC_EEE)
+
+    E_TEC_MAX = TEC_BASE + TEC_GRAPHICS + TEC_WOL + TEC_INT_DISPLAY + TEC_EEE
+    sheet.write("D22", "E_TEC_MAX", result)
+    sheet.write("E22", '=E17 + E18 + E19 + E20 + E21', result_value, E_TEC_MAX)
+
+    if E_TEC <= E_TEC_MAX:
+        RESULT = "PASS"
+    else:
+        RESULT = "FAIL"
+    sheet.write_formula("E23", '=IF(E16<=E22, "PASS", "FAIL")', center, RESULT)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
