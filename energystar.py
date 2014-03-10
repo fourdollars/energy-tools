@@ -179,7 +179,6 @@ class SysInfo:
             self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
             self.integrated_display = question_bool("Does it have integrated display?")
             if self.integrated_display:
-                self.computer_type = 2
                 self.diagonal = question_num("What is the display diagonal in inches?")
                 self.ep = question_bool("Is it an Enhanced-perforcemance Integrated Display?")
 
@@ -454,13 +453,15 @@ class EnergyStar52:
             P_OFF_WOL = 0.7
         else:
             P_OFF_WOL = 0
+        P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
+
         if (core > 1 or self.sysinfo.more_discrete) and memory >= 1:
             category = 'B'
             P_IDLE_MAX = 65.0
         else:
             category = 'A'
             P_IDLE_MAX = 50.0
-        P_OFF_MAX = P_OFF_BASE + P_OFF_WOL
+
         return (category, P_OFF_MAX, P_IDLE_MAX)
 
     def equation_six(self, wol):
@@ -696,14 +697,14 @@ def qualifying(sysinfo):
         E_TEC = estar52.equation_one()
 
         over_128 = estar52.equation_two(True, True)
-        over_64 = estar52.equation_two(False, True)
+        between_64_and_128 = estar52.equation_two(False, True)
         under_64 = estar52.equation_two(False, False)
         debug(over_128)
-        debug(over_64)
+        debug(between_64_and_128)
         debug(under_64)
         different=False
 
-        for i,j,k in zip(over_128, over_64, under_64):
+        for i,j,k in zip(over_128, between_64_and_128, under_64):
             (cat1, max1) = i
             (cat2, max2) = j
             (cat3, max3) = k
@@ -723,7 +724,7 @@ def qualifying(sysinfo):
                             operator = '>'
                         print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
                     print("\n  If 64 bits < GPU Frame Buffer Width <= 128 bits,")
-                    for i in over_64:
+                    for i in between_64_and_128:
                         (category, E_TEC_MAX) = i
                         if E_TEC <= E_TEC_MAX:
                             result = 'PASS'
@@ -734,7 +735,7 @@ def qualifying(sysinfo):
                         print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
                 else:
                     print("\n  If GPU Frame Buffer Width <= 128 bits,")
-                    for i in over_64:
+                    for i in between_64_and_128:
                         (category, E_TEC_MAX) = i
                         if E_TEC <= E_TEC_MAX:
                             result = 'PASS'
@@ -775,8 +776,8 @@ def qualifying(sysinfo):
         else:
             higher = 1.03
 
-        if sysinfo.discrete:
-            for AllowancePSU in (1, lower, higher):
+        for AllowancePSU in (1, lower, higher):
+            if sysinfo.discrete:
                 if AllowancePSU == 1:
                     print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
                 elif AllowancePSU == lower:
@@ -806,8 +807,7 @@ def qualifying(sysinfo):
                     elif gpu == 'G7':
                         gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
                     print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
-        else:
-            for AllowancePSU in (1, lower, higher):
+            else:
                 if AllowancePSU == 1:
                     print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
                 elif AllowancePSU == lower:
