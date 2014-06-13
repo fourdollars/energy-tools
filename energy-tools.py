@@ -91,7 +91,10 @@ class SysInfo:
             long_idle=0,
             short_idle=0,
             eee=-1,
+            tvtuner=False,
+            audio=False,
             discrete=False,
+            discrete_gpu_num=0,
             switchable=False,
             max_power=0,
             more_discrete=False,
@@ -115,7 +118,8 @@ class SysInfo:
             for eth in os.listdir("/sys/class/net/"):
                 if eth.startswith('eth') and subprocess.check_call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % eth, shell=True) == 0:
                     self.eee = self.eee + 1
-
+        self.tvtuner = tvtuner
+        self.audio = audio
         self.off = off
         self.off_wol = off_wol
         self.sleep = sleep
@@ -123,6 +127,7 @@ class SysInfo:
         self.long_idle = long_idle
         self.short_idle = short_idle
         self.discrete = discrete
+        self.discrete_gpu_num = discrete_gpu_num
         self.switchable = switchable
         self.max_power = max_power
         self.more_discrete = more_discrete
@@ -145,15 +150,23 @@ class SysInfo:
 [1] Desktop
 [2] Integrated Desktop
 [3] Notebook""", 3)
+            self.tvtuner = question_bool("Is there a television tuner?")
+
+            if self.computer_type != 3:
+                self.audio = question_bool("Is there a discrete audio?")
 
             # GPU Information
-            if question_bool("Does it have switchable graphics and automated switching enabled by default?"):
+            self.discrete_gpu_num = question_num("How many discrete graphics cards?")
+            if self.discrete_gpu_num > 0:
+                self.switchable = False
+                self.discrete = True
+            elif question_bool("Does it have switchable graphics and automated switching enabled by default?"):
                 self.switchable = True
                 # Those with switchable graphics may not apply the Discrete Graphics allowance.
                 self.discrete = False
             else:
                 self.switchable = False
-                self.discrete = question_bool("Does it have discrete graphics?")
+                self.discrete = False
 
             # Screen size
             if self.computer_type != 1:
@@ -696,7 +709,7 @@ class EnergyStar60:
 
         return E_TEC_MAX
 
-def qualifying(sysinfo):
+def energystar_calculate(sysinfo):
     if sysinfo.product_type == 1:
 
         # Energy Star 5.2
@@ -990,6 +1003,10 @@ def qualifying(sysinfo):
     else:
         raise Exception('This is a bug when you see this.')
 
+def erplot3_calculate(sysinfo):
+    if sysinfo.product_type != 1:
+        return
+
 def main():
     version = "v0.0"
     print("Energy Tools %s for Energy Star 5.2/6.0 and ErP Lot 3\n" % (version)+ '=' * 80)
@@ -1078,7 +1095,8 @@ def main():
     else:
         sysinfo = SysInfo()
 
-    qualifying(sysinfo)
+    energystar_calculate(sysinfo)
+    erplot3_calculate(sysinfo)
     generate_excel(sysinfo, version)
 
 def generate_excel(sysinfo, version):
