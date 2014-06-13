@@ -85,7 +85,9 @@ class SysInfo:
             product_type=0,
             computer_type=0,
             off=0,
+            off_wol=0,
             sleep=0,
+            sleep_wol=0,
             long_idle=0,
             short_idle=0,
             eee=-1,
@@ -111,11 +113,13 @@ class SysInfo:
         else:
             self.eee = 0
             for eth in os.listdir("/sys/class/net/"):
-                if eth.startswith('eth') and subprocess.check_call('ethtool %s | grep 1000' % eth, shell=True) == 0:
+                if eth.startswith('eth') and subprocess.check_call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % eth, shell=True) == 0:
                     self.eee = self.eee + 1
 
         self.off = off
+        self.off_wol = off_wol
         self.sleep = sleep
+        self.sleep_wol = sleep_wol
         self.long_idle = long_idle
         self.short_idle = short_idle
         self.discrete = discrete
@@ -158,7 +162,9 @@ class SysInfo:
 
             # Power Consumption
             self.off = question_num("What is the power consumption in Off Mode?")
+            self.off_wol = question_num("What is the power consumption in Off Mode with Wake-on-LAN enabled?")
             self.sleep = question_num("What is the power consumption in Sleep Mode?")
+            self.sleep_wol = question_num("What is the power consumption in Sleep Mode with Wake-on-LAN enabled?")
             self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
             self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
         elif self.product_type == 2:
