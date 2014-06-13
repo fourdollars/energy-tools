@@ -983,8 +983,8 @@ def qualifying(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = "v1.2"
-    print("Energy Star 5.2/6.0 calculator %s\n" % (version)+ '=' * 80)
+    version = "v0.0"
+    print("Energy Tools %s for Energy Star 5.2/6.0 and ErP Lot 3\n" % (version)+ '=' * 80)
     if args.test == 1:
         # Test case from Energy Star 5.2/6.0 for Notebooks
         sysinfo = SysInfo(
@@ -1084,7 +1084,7 @@ def generate_excel(sysinfo, version):
         return
 
     book = Workbook(args.output)
-    book.set_properties({'comments':"Created by Energy Star 5.2/6.0 calculator %s from Canonical Ltd." % (version)})
+    book.set_properties({'comments':"Created by Energy Tools %s from Canonical Ltd." % (version)})
 
     if sysinfo.product_type == 1:
         generate_excel_for_computers(book, sysinfo, version)
