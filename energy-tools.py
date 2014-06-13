@@ -19,6 +19,7 @@
 
 import argparse
 import math
+import os
 import subprocess
 
 def debug(msg):
@@ -87,7 +88,7 @@ class SysInfo:
             sleep=0,
             long_idle=0,
             short_idle=0,
-            eee=0,
+            eee=-1,
             discrete=False,
             switchable=False,
             max_power=0,
@@ -105,7 +106,14 @@ class SysInfo:
         self.ep = ep
         self.product_type = product_type
         self.computer_type = computer_type
-        self.eee = eee
+        if eee != -1:
+            self.eee = eee
+        else:
+            self.eee = 0
+            for eth in os.listdir("/sys/class/net/"):
+                if eth.startswith('eth') and subprocess.check_call('ethtool %s | grep 1000' % eth, shell=True) == 0:
+                    self.eee = self.eee + 1
+
         self.off = off
         self.sleep = sleep
         self.long_idle = long_idle
@@ -148,9 +156,6 @@ class SysInfo:
                 self.diagonal = question_num("What is the display diagonal in inches?")
                 self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
 
-            # Gigabit Ethernet
-            self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
-
             # Power Consumption
             self.off = question_num("What is the power consumption in Off Mode?")
             self.sleep = question_num("What is the power consumption in Sleep Mode?")
@@ -162,11 +167,9 @@ class SysInfo:
             self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
             self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
             self.max_power = question_num("What is the maximum power consumption?")
-            self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
         elif self.product_type == 3:
             self.off = question_num("What is the power consumption in Off Mode?")
             self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
-            self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
             if self.get_cpu_core() < 2:
                 self.more_discrete = question_bool("Does it have more than one discrete graphics device?")
         elif self.product_type == 4:
@@ -176,7 +179,6 @@ class SysInfo:
             self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
             self.media_codec = question_bool("Does it support local multimedia encode/decode?")
             self.discrete = question_bool("Does it have discrete graphics?")
-            self.eee = question_num("How many IEEE 802.3az­compliant (Energy Efficient Ethernet) Gigabit Ethernet ports?")
             self.integrated_display = question_bool("Does it have integrated display?")
             if self.integrated_display:
                 self.diagonal = question_num("What is the display diagonal in inches?")
@@ -1196,7 +1198,7 @@ def generate_excel_for_computers(book, sysinfo, version):
     sheet.write("A7", "Number of Hard Drives", field)
     sheet.write("B7", sysinfo.disk_num, value)
 
-    sheet.write("A8", "IEEE 802.3az compliant Gigabit Ethernet ports", field)
+    sheet.write("A8", "IEEE 802.3az compliant Gigabit Ethernet", field)
     sheet.write("B8", sysinfo.eee, value)
 
     sheet.merge_range("A10:B10", "Graphics", header)
@@ -1754,7 +1756,7 @@ def generate_excel_for_workstations(book, sysinfo, version):
     sheet.write('B2', "Workstations", value)
     sheet.write("A3", "Number of Hard Drives", field)
     sheet.write("B3", sysinfo.disk_num, value)
-    sheet.write("A4", "IEEE 802.3az compliant Gigabit Ethernet ports", field)
+    sheet.write("A4", "IEEE 802.3az compliant Gigabit Ethernet", field)
     sheet.write("B4", sysinfo.eee, value)
 
     sheet.merge_range("A6:B6", "Power Consumption", header)
@@ -1914,7 +1916,7 @@ def generate_excel_for_small_scale_servers(book, sysinfo, version):
             'Yes',
             'No']})
 
-    sheet.write("A7", "IEEE 802.3az compliant Gigabit Ethernet ports", field)
+    sheet.write("A7", "IEEE 802.3az compliant Gigabit Ethernet", field)
     sheet.write("B7", sysinfo.eee, value)
 
     sheet.write("A8", "Number of Hard Drives", field)
@@ -2078,7 +2080,7 @@ def generate_excel_for_thin_clients(book, sysinfo, version):
             'Yes',
             'No']})
 
-    sheet.write("A6", "IEEE 802.3az compliant Gigabit Ethernet ports", field)
+    sheet.write("A6", "IEEE 802.3az compliant Gigabit Ethernet", field)
     sheet.write("B6", sysinfo.eee, value)
 
     sheet.merge_range("A8:B8", "Power Consumption", header)
