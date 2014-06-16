@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+from sysinfo import SysInfo as SysInfo
 
 class ErPLot3_2014:
     """ErP Lot 3 calculator from 1 July 2014"""
@@ -162,4 +163,4 @@ class TestErPLot3(unittest.TestCase):
         pass
 
 if __name__ == '__main__':
-    main()
+    unittest.main()
