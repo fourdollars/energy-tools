@@ -123,6 +123,76 @@ class ErPLot3_2014:
                 return 211
         raise Exception("Should not be here.")
 
+    def get_TEC_GRAPHICS(self, category):
+        # Notebook
+        if self.computer_type == 3:
+            if category == 'G1':
+                return 12
+            elif category == 'G2':
+                return 20
+            elif category == 'G3':
+                return 26
+            elif category == 'G4':
+                return 37
+            elif category == 'G5':
+                return 49
+            elif category == 'G6':
+                return 61
+            elif category == 'G7':
+                return 113
+        # Desktop
+        else:
+            if category == 'G1':
+                return 34
+            elif category == 'G2':
+                return 54
+            elif category == 'G3':
+                return 69
+            elif category == 'G4':
+                return 100
+            elif category == 'G5':
+                return 133
+            elif category == 'G6':
+                return 166
+            elif category == 'G7':
+                return 225
+        raise Exception("Should not be here.")
+
+    def additional_TEC_GRAPHICS(self, category):
+        # Notebook
+        if self.computer_type == 3:
+            if category == 'G1':
+                return 7
+            elif category == 'G2':
+                return 12
+            elif category == 'G3':
+                return 15
+            elif category == 'G4':
+                return 22
+            elif category == 'G5':
+                return 29
+            elif category == 'G6':
+                return 36
+            elif category == 'G7':
+                return 66
+        # Desktop
+        else:
+            if category == 'G1':
+                return 20
+            elif category == 'G2':
+                return 32
+            elif category == 'G3':
+                return 41
+            elif category == 'G4':
+                return 59
+            elif category == 'G5':
+                return 78
+            elif category == 'G6':
+                return 98
+            elif category == 'G7':
+                return 133
+        raise Exception("Should not be here.")
+
     def get_TEC_TV_TUNER(self):
         if self.computer_type == 3:
             if self.tv_tuner:
@@ -171,7 +241,97 @@ class ErPLot3_2014:
 
 class ErPLot3_2016(ErPLot3_2014):
     """ErP Lot 3 calculator from 1 January 2016"""
-    pass
+    def get_TEC_BASE(self, category):
+        # Notebook
+        if self.computer_type == 3:
+            if category == 'A':
+                return 27
+            elif category == 'B':
+                return 36
+            elif category == 'C':
+                return 60.5
+        # Desktop
+        else:
+            if category == 'A':
+                return 94
+            elif category == 'B':
+                return 112
+            elif category == 'C':
+                return 134
+            elif category == 'D':
+                return 150
+        raise Exception("Should not be here.")
+
+    def get_TEC_GRAPHICS(self, category):
+        # Notebook
+        if self.computer_type == 3:
+            if category == 'G1':
+                return 7
+            elif category == 'G2':
+                return 11
+            elif category == 'G3':
+                return 13
+            elif category == 'G4':
+                return 20
+            elif category == 'G5':
+                return 27
+            elif category == 'G6':
+                return 33
+            elif category == 'G7':
+                return 61
+        # Desktop
+        else:
+            if category == 'G1':
+                return 18
+            elif category == 'G2':
+                return 30
+            elif category == 'G3':
+                return 38
+            elif category == 'G4':
+                return 54
+            elif category == 'G5':
+                return 72
+            elif category == 'G6':
+                return 90
+            elif category == 'G7':
+                return 122
+        raise Exception("Should not be here.")
+
+    def additional_TEC_GRAPHICS(self, category):
+        # Notebook
+        if self.computer_type == 3:
+            if category == 'G1':
+                return 4
+            elif category == 'G2':
+                return 6
+            elif category == 'G3':
+                return 8
+            elif category == 'G4':
+                return 12
+            elif category == 'G5':
+                return 16
+            elif category == 'G6':
+                return 20
+            elif category == 'G7':
+                return 36
+        # Desktop
+        else:
+            if category == 'G1':
+                return 11
+            elif category == 'G2':
+                return 17
+            elif category == 'G3':
+                return 22
+            elif category == 'G4':
+                return 32
+            elif category == 'G5':
+                return 42
+            elif category == 'G6':
+                return 53
+            elif category == 'G7':
+                return 72
+        raise Exception("Should not be here.")
+
 
 class TestErPLot3(unittest.TestCase):
     def test_desktop_category(self):
