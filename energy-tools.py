@@ -21,9 +21,10 @@ import logging
 from logging import debug, warning
 import argparse
 from excel_output import *
-from energystar52 import EnergyStar52 as EnergyStar52
-from energystar60 import EnergyStar60 as EnergyStar60
-from sysinfo import SysInfo as SysInfo
+from energystar52 import EnergyStar52
+from energystar60 import EnergyStar60
+from sysinfo import SysInfo
+from erplot3 import ErPLot3
 
 def energystar_calculate(sysinfo):
     if sysinfo.product_type == 1:
@@ -404,6 +405,14 @@ def main():
                 mem_size=4, disk_num=1, eee=1,
                 discrete=False, switchable=True,
                 off=12, sleep=23, long_idle=34, short_idle=45)
+    elif args.test == 10:
+        sysinfo = SysInfo(
+                auto=True,
+                product_type=1, computer_type=3,
+                cpu_core=2, cpu_clock=2.26,
+                mem_size=2, disk_num=1, eee=1,
+                discrete=True, discrete_gpu_num=1,
+                off=0.486, off_wol=0.66, sleep=0.74, sleep_wol=0.74, long_idle=10.6, short_idle=15)
     else:
         sysinfo = SysInfo()
 
@@ -414,6 +423,8 @@ def main():
 def erplot3_calculate(sysinfo):
     if sysinfo.product_type != 1:
         return
+    erplot3 = ErPLot3(sysinfo)
+    erplot3.calculate()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

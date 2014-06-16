@@ -18,7 +18,123 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from sysinfo import SysInfo as SysInfo
+from sysinfo import SysInfo
+from logging import debug, warning
+    
+class ErPLot3:
+    """ErP Lot 3 calculator"""
+    def __init__(self, sysinfo):
+        self.sysinfo = sysinfo
+
+    def calculate(self):
+        print("\nErP Lot 3 from 1 July 2014:\n")
+        early = ErPLot3_2014(self.sysinfo)
+        if self._verifying_s3_s4(early):
+            self._calculate(early)
+        print("\nErP Lot 3 from 1 January 2016:\n")
+        late = ErPLot3_2016(self.sysinfo)
+        if self._verifying_s3_s4(late):
+            self._calculate(late)
+
+    def _calculate(self, inst):
+        if self.sysinfo.computer_type == 3:
+            categories = ('C', 'B', 'A')
+        else:
+            categories = ('D', 'C', 'B', 'A')
+        candidates = []
+        for category in categories:
+            ret = inst.category(category)
+            if ret >= 0:
+                candidates.append((category, ret))
+        for cat, meet in candidates:
+            if meet:
+                print("  Category %s:" % cat)
+            else:
+                print("  Category %s if a discrete graphics card (dGfx) meeting the G3 (with FB Data Width > 128-bit), G4, G5, G6 or G7 classification:" % cat)
+            TEC_BASE = inst.get_TEC_BASE(cat)
+            TEC_MEMORY = inst.get_TEC_MEMORY(cat)
+            TEC_STORAGE = inst.get_TEC_STORAGE()
+            TEC_TV_TUNER = inst.get_TEC_TV_TUNER()
+            TEC_AUDIO = inst.get_TEC_AUDIO()
+            debug("TEC_BASE = %s, TEC_MEMORY = %s, TEC_STORAGE = %s, TEC_TV_TUNER = %s, TEC_AUDIO = %s" %
+                (TEC_BASE, TEC_MEMORY, TEC_STORAGE, TEC_TV_TUNER, TEC_AUDIO))
+            if inst.discrete_graphics_cards == 0:
+                TEC_GRAPHICS = 0
+                E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_STORAGE + TEC_TV_TUNER + TEC_AUDIO + TEC_GRAPHICS
+                debug("TEC_GRAPHICS = %s" % TEC_GRAPHICS)
+                self._verifying(inst, E_TEC_MAX)
+            elif inst.discrete_graphics_cards == 1:
+                for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
+                    TEC_GRAPHICS = inst.get_TEC_GRAPHICS(gpu)
+                    E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_STORAGE + TEC_TV_TUNER + TEC_AUDIO + TEC_GRAPHICS
+                    debug("TEC_GRAPHICS = %s" % TEC_GRAPHICS)
+                    self._verifying(inst, E_TEC_MAX, gpu)
+            else:
+                print("    No console output because of too many discrete graphics cards.")
+
+    def _verifying_s3_s4(self, inst):
+        if self.sysinfo.computer_type != 3:
+            if inst.sleep > 5:
+                print("      Fail because P_SLEEP (%s) > 5.0" % inst.sleep)
+                return False
+            elif inst.sleep_wol > 5.7:
+                print("      Fail because P_SLEEP_WOL (%s) > 5.7" % inst.sleep_wol)
+                return False
+        else:
+            if inst.sleep > 3:
+                print("      Fail because P_SLEEP (%s) > 3.0" % inst.sleep)
+                return False
+            elif inst.sleep_wol > 3.7:
+                print("      Fail because P_SLEEP_WOL (%s) > 3.7" % inst.sleep_wol)
+                return False
+
+        if inst.off > 1.0:
+            print("      Fail because P_OFF (%s) > 1.0" % inst.off)
+            return False
+        elif inst.off_wol > 1.7:
+            print("      Fail because P_OFF (%s) > 1.7" % inst.off_wol)
+            return False
+
+        return True
+
+    def _verifying(self, inst, E_TEC_MAX, gpu=None):
+        if gpu:
+            if gpu == 'G1':
+                msg = "G1 (FB_BW <= 16)"
+            elif gpu == 'G2':
+                msg = "G2 (16 < FB_BW <= 32)"
+            elif gpu == 'G3':
+                msg = "G3 (32 < FB_BW <= 64)"
+            elif gpu == 'G4':
+                msg = "G4 (64 < FB_BW <= 96)"
+            elif gpu == 'G5':
+                msg = "G5 (96 < FB_BW <= 128)"
+            elif gpu == 'G6':
+                msg = "G6 (FB_BW > 128 (with FB Data Width < 192-bit))"
+            elif gpu == 'G7':
+                msg = "G7 (FB_BW > 128 (with FB Data Width >= 192-bit))"
+        E_TEC = inst.get_E_TEC()
+        E_TEC_WOL = inst.get_E_TEC_WOL()
+        if E_TEC > E_TEC_MAX:
+            if msg:
+                print("      %s (E_TEC) > %s (E_TEC_MAX) for %s, FAIL" % (E_TEC, E_TEC_MAX, msg))
+            else:
+                print("      %s (E_TEC) > %s (E_TEC_MAX), FAIL" % (E_TEC, E_TEC_MAX))
+            return
+        elif E_TEC_WOL > E_TEC_MAX:
+            if msg:
+                print("      %s (E_TEC_WOL) > %s (E_TEC_MAX) for %s, FAIL" % (E_TEC_WOL, E_TEC_MAX, msg))
+            else:
+                print("      %s (E_TEC_WOL) > %s (E_TEC_MAX), FAIL" % (E_TEC_WOL, E_TEC_MAX))
+            return
+        else:
+            if gpu:
+                print("      %s (E_TEC) > %s (E_TEC_MAX) and %s (E_TEC_WOL) > %s (E_TEC_MAX) for %s, PASS" %
+                        (E_TEC, E_TEC_MAX, E_TEC_WOL, E_TEC_MAX, msg))
+            else:
+                print("      %s (E_TEC) > %s (E_TEC_MAX) and %s (E_TEC_WOL) > %s (E_TEC_MAX), PASS" %
+                        (E_TEC, E_TEC_MAX, E_TEC_WOL, E_TEC_MAX))
+
 
 class ErPLot3_2014:
     """ErP Lot 3 calculator from 1 July 2014"""
@@ -93,7 +209,7 @@ class ErPLot3_2014:
         E_TEC = ((T_OFF * self.off) + (T_SLEEP * self.sleep) + (T_IDLE * self.idle)) * 8760 / 1000
         return E_TEC
 
-    def get_E_TEC_wol(self):
+    def get_E_TEC_WOL(self):
         if self.computer_type == 3:
             (T_OFF, T_SLEEP, T_IDLE) = (0.6, 0.1, 0.3)
         else:
@@ -214,7 +330,7 @@ class ErPLot3_2014:
             else:
                 return 0
 
-    def get_MEMORY(self, category):
+    def get_TEC_MEMORY(self, category):
         # Notebook
         if self.computer_type == 3:
             if self.memory_size > 4:
@@ -447,15 +563,15 @@ class TestErPLot3(unittest.TestCase):
                 computer_type=1,
                 mem_size=8)
         inst = ErPLot3_2014(sysinfo)
-        self.assertEqual(inst.get_MEMORY('A'), 6)
-        self.assertEqual(inst.get_MEMORY('B'), 6)
-        self.assertEqual(inst.get_MEMORY('C'), 6)
-        self.assertEqual(inst.get_MEMORY('D'), 4)
+        self.assertEqual(inst.get_TEC_MEMORY('A'), 6)
+        self.assertEqual(inst.get_TEC_MEMORY('B'), 6)
+        self.assertEqual(inst.get_TEC_MEMORY('C'), 6)
+        self.assertEqual(inst.get_TEC_MEMORY('D'), 4)
         inst.computer_type = 3
-        self.assertEqual(inst.get_MEMORY('A'), 1.6)
-        self.assertEqual(inst.get_MEMORY('B'), 1.6)
-        self.assertEqual(inst.get_MEMORY('C'), 1.6)
-        self.assertEqual(inst.get_MEMORY('D'), 1.6)
+        self.assertEqual(inst.get_TEC_MEMORY('A'), 1.6)
+        self.assertEqual(inst.get_TEC_MEMORY('B'), 1.6)
+        self.assertEqual(inst.get_TEC_MEMORY('C'), 1.6)
+        self.assertEqual(inst.get_TEC_MEMORY('D'), 1.6)
 
     def test_TEC_STORAGE(self):
         sysinfo = SysInfo(
