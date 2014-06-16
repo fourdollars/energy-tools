@@ -1428,6 +1428,7 @@ def generate_excel_for_computers(book, sysinfo, version):
 
     # Category A
     if sysinfo.computer_type == 3:
+        # Notebook
         TEC_BASE = 40
 
         if sysinfo.mem_size > 4:
@@ -1447,6 +1448,7 @@ def generate_excel_for_computers(book, sysinfo, version):
         sheet.write("G6", TEC_GRAPHICS, value1)
         sheet.write("G7", "=IF(B7>1, 3*(B7-1), 0)", value2, TEC_STORAGE)
     else:
+        # Desktop
         TEC_BASE = 148
 
         if sysinfo.mem_size > 2:
@@ -1514,6 +1516,19 @@ def generate_excel_for_computers(book, sysinfo, version):
         # Desktop
         if sysinfo.cpu_core == 2 and sysinfo.mem_size >= 2:
             TEC_BASE = 175
+
+            if sysinfo.mem_size > 2:
+                TEC_MEMORY = 1.0 * (sysinfo.mem_size - 2)
+            else:
+                TEC_MEMORY = 0
+
+            TEC_GRAPHICS = 35
+
+            if sysinfo.disk_num > 1:
+                TEC_STORAGE = 25 * (sysinfo.disk_num - 1)
+            else:
+                TEC_STORAGE = 0
+
             E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
         else:
             TEC_BASE = ""
@@ -1549,7 +1564,7 @@ def generate_excel_for_computers(book, sysinfo, version):
             TEC_BASE = 209
 
             if sysinfo.mem_size > 2:
-                TEC_MEMORY = sysinfo.mem_size - 2
+                TEC_MEMORY = 1.0 * (sysinfo.mem_size - 2)
             else:
                 TEC_MEMORY = 0
 
@@ -1711,9 +1726,9 @@ def generate_excel_for_computers(book, sysinfo, version):
     
     if sysinfo.disk_num > 1:
         if sysinfo.computer_type == 3:
-            TEC_STORAGE = 2.6 * (TEC_STORAGE - 1)
+            TEC_STORAGE = 2.6 * (sysinfo.disk_num - 1)
         else:
-            TEC_STORAGE = 26 * (TEC_STORAGE - 1)
+            TEC_STORAGE = 26 * (sysinfo.disk_num - 1)
     else:
         TEC_STORAGE = 0
     sheet.write("F15", "TEC_STORAGE", field1)
