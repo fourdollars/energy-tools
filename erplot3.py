@@ -29,6 +29,12 @@ class ErPLot3:
     def calculate(self):
         print("\nErP Lot 3 from 1 July 2014:\n")
         early = ErPLot3_2014(self.sysinfo)
+        if early.check_special_case():
+            if early.computer_type == 3:
+                print("\033[1;91mWARNING\033[0m: If discrete graphics card(s) providing total frame buffer bandwidths above 225 GB/s, use the requirement from 1 January 2016 instead.")
+            else:
+                print("\033[1;91mWARNING\033[0m: If discrete graphics card(s) providing total frame buffer bandwidths above 320 GB/s and\n         a PSU with a rated output power of at least 1000W, use the requirement from 1 January 2016 instead.")
+
         if self._verifying_s3_s4(early):
             self._calculate(early)
         print("\nErP Lot 3 from 1 January 2016:\n")
@@ -153,6 +159,16 @@ class ErPLot3_2014:
         self.sleep_wol = sysinfo.sleep_wol
         self.idle = sysinfo.short_idle
 
+    def check_special_case(self):
+        if self.computer_type == 1 or self.computer_type == 2:
+            if self.cpu_core >= 6 and self.memory_size >= 16:
+                return True
+        elif self.computer_type == 3:
+            if self.cpu_core >= 4 and self.memory_size >= 16:
+                return True
+        else:
+            raise Exception("Should not be here.")
+        return False
     def category(self, category):
         if self.computer_type == 1 or self.computer_type == 2:
             if category == 'D':
