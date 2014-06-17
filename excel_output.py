@@ -28,264 +28,406 @@ def generate_excel(sysinfo, version, output):
     if not output:
         return
 
-    try:
-        from xlsxwriter import Workbook
-    except:
-        warning("You need to install Python xlsxwriter module or you can not output Excel format file.")
-        return
-
-    book = Workbook(output)
-    book.set_properties({'comments':"Created by Energy Tools %s from Canonical Ltd." % (version)})
+    excel = ExcelMaker(version, output)
 
     if sysinfo.product_type == 1:
-        generate_excel_for_computers(book, sysinfo, version)
+        generate_excel_for_computers(excel, sysinfo)
     elif sysinfo.product_type == 2:
-        generate_excel_for_workstations(book, sysinfo, version)
+        generate_excel_for_workstations(excel, sysinfo)
     elif sysinfo.product_type == 3:
-        generate_excel_for_small_scale_servers(book, sysinfo, version)
+        generate_excel_for_small_scale_servers(excel, sysinfo)
     elif sysinfo.product_type == 4:
-        generate_excel_for_thin_clients(book, sysinfo, version)
+        generate_excel_for_thin_clients(excel, sysinfo)
 
-    book.close()
+class ExcelMaker:
+    def __init__(self, version, output):
+        try:
+            from xlsxwriter import Workbook
+        except:
+            warning("You need to install Python xlsxwriter module or you can not output Excel format file.")
+            return
+        self.book = Workbook(output)
+        self.book.set_properties({'comments':"Created by Energy Tools %s from Canonical Ltd." % (version)})
+        self.sheet = self.book.add_worksheet()
+        self.adjust_column_width()
+        self.setup_theme()
+        self.row = 1
+        self.column = 'A'
+        self.pos = {}
 
-def generate_excel_for_computers(book, sysinfo, version):
-    sheet = book.add_worksheet()
+    def save(self):
+        self.book.close()
 
-    sheet.set_column('A:A', 38)
-    sheet.set_column('B:B', 37)
-    sheet.set_column('C:C', 1)
-    sheet.set_column('D:D', 13)
-    sheet.set_column('E:E', 6)
-    sheet.set_column('F:F', 15)
-    sheet.set_column('G:G', 6)
-    sheet.set_column('H:H', 6)
-    sheet.set_column('I:I', 6)
-    sheet.set_column('J:J', 6)
+    def adjust_column_width(self):
+        sheet = self.sheet
+        sheet.set_column('A:A', 38)
+        sheet.set_column('B:B', 37)
+        sheet.set_column('C:C', 1)
+        sheet.set_column('D:D', 13)
+        sheet.set_column('E:E', 6)
+        sheet.set_column('F:F', 15)
+        sheet.set_column('G:G', 6)
+        sheet.set_column('H:H', 6)
+        sheet.set_column('I:I', 6)
+        sheet.set_column('J:J', 6)
 
-    header = book.add_format({
-        'bold': 1,
-        'border': 1,
-        'align': 'center',
-        'fg_color': '#CFE2F3'})
-    left = book.add_format({'align': 'left'})
-    right = book.add_format({'align': 'right'})
-    center = book.add_format({'align': 'center'})
-    field = book.add_format({
-        'border': 1,
-        'fg_color': '#F3F3F3'})
-    field1 = book.add_format({
-        'left': 1,
-        'right': 1,
-        'fg_color': '#F3F3F3'})
-    fieldC = book.add_format({
-        'border': 1,
-        'align': 'center',
-        'valign': 'vcenter',
-        'fg_color': '#F3F3F3'})
-    field2 = book.add_format({
-        'left': 1,
-        'right': 1,
-        'bottom': 1,
-        'fg_color': '#F3F3F3'})
-    value0 = book.add_format({'border': 1, 'fg_color': '#D9EAD3'})
-    value = book.add_format({'border': 1})
-    value1 = book.add_format({
-        'left': 1,
-        'right': 1})
-    value1.set_num_format('0.00')
-    value2 = book.add_format({
-        'left': 1,
-        'right': 1,
-        'bottom': 1})
-    value2.set_num_format('0.00')
-    value3 = book.add_format({
-        'left': 1,
-        'right': 1})
-    value3.set_num_format('0%')
-    value4 = book.add_format({
-        'left': 1,
-        'right': 1,
-        'bottom': 1})
-    value4.set_num_format('0%')
-    float2 = book.add_format({'border': 1})
-    float2.set_num_format('0.00')
-    float3 = book.add_format({
-        'left': 1,
-        'right': 1})
-    float3.set_num_format('0.000')
-    result = book.add_format({
-        'border': 1,
-        'fg_color': '#F4CCCC'})
-    result_value = book.add_format({
-        'border': 1,
-        'fg_color': '#FFF2CC'})
-    result_value.set_num_format('0.00')
+    def setup_theme(self):
+        book = self.book
+        theme = {}
+        theme["header"] = book.add_format({
+            'bold': 1,
+            'border': 1,
+            'align': 'center',
+            'fg_color': '#CFE2F3'})
+        theme["left"] = book.add_format({'align': 'left'})
+        theme["right"] = book.add_format({'align': 'right'})
+        theme["center"] = book.add_format({'align': 'center'})
+        theme["field"] = book.add_format({
+            'border': 1,
+            'fg_color': '#F3F3F3'})
+        theme["field1"] = book.add_format({
+            'left': 1,
+            'right': 1,
+            'fg_color': '#F3F3F3'})
+        theme["fieldC"] = book.add_format({
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter',
+            'fg_color': '#F3F3F3'})
+        theme["field2"] = book.add_format({
+            'left': 1,
+            'right': 1,
+            'bottom': 1,
+            'fg_color': '#F3F3F3'})
+        theme["unsure"] = book.add_format({'border': 1, 'fg_color': '#D9EAD3'})
+        theme["value"] = book.add_format({'border': 1})
+        theme["value1"] = book.add_format({
+            'left': 1,
+            'right': 1})
+        theme["value1"].set_num_format('0.00')
+        theme["value2"] = book.add_format({
+            'left': 1,
+            'right': 1,
+            'bottom': 1})
+        theme["value2"].set_num_format('0.00')
+        theme["value3"] = book.add_format({
+            'left': 1,
+            'right': 1})
+        theme["value3"].set_num_format('0%')
+        theme["value4"] = book.add_format({
+            'left': 1,
+            'right': 1,
+            'bottom': 1})
+        theme["value4"].set_num_format('0%')
+        theme["float1"] = book.add_format({'border': 1})
+        theme["float1"].set_num_format('0.0')
+        theme["float2"] = book.add_format({'border': 1})
+        theme["float2"].set_num_format('0.00')
+        theme["float3"] = book.add_format({
+            'left': 1,
+            'right': 1})
+        theme["float3"].set_num_format('0.000')
+        theme["result"] = book.add_format({
+            'border': 1,
+            'fg_color': '#F4CCCC'})
+        theme["result_value"] = book.add_format({
+            'border': 1,
+            'fg_color': '#FFF2CC'})
+        theme["result_value"].set_num_format('0.00')
+        self.theme = theme
 
-    sheet.merge_range("A1:B1", "General", header)
+    def expansion(func):
+        def _hook(*args, **kwargs):
+            new_args = list(args)
+            new_args.insert(1, args[0].row)
+            new_args.insert(1, args[0].column)
+            new_args.insert(1, args[0].theme)
+            new_args.insert(1, args[0].sheet)
+            ret = func(*new_args, **kwargs)
+            args[0].row = args[0].row + 1
+            return ret
+        return _hook
 
-    sheet.write("A2", "Product Type", field)
-    if sysinfo.product_type == 1:
-        sheet.write("B2", "Desktop, Integrated Desktop, and Notebook", value)
+    @expansion
+    def header(self, sheet, theme, column, row, msg, width=2, height=1, name="header"):
+        next_column = chr(ord(column) + width - 1)
+        next_row = row + height - 1
+        if width > 1 or height > 1:
+            sheet.merge_range("%s%s:%s%s" % (column, row, next_column, next_row), msg, theme[name])
+        else:
+            sheet.write("%s%s" % (column, row) , msg, theme[name])
+        self.row = self.row + height - 1
 
-    sheet.write("A3", "Computer Type", field)
+    @expansion
+    def cell(self, sheet, theme, column, row, width, height, formula, value, name, field=None): 
+        next_column = chr(ord(column) + width - 1)
+        next_row = row + height - 1
+        if formula:
+            sheet.write("%s%s" % (column, row), formula, theme[name], value)
+        else:
+            if width > 1 or height > 1:
+                sheet.merge_range("%s%s:%s%s" % (column, row, next_column, next_row), value, theme[name])
+            else:
+                sheet.write("%s%s" % (column, row), value, theme[name])
+        if field:
+            self.pos[field] = "%s%s" % (column, row)
+        self.row = self.row + height - 1
+
+    @expansion
+    def field(self, sheet, theme, column, row, item, field, value, validator=None, width=1):
+        next_column = chr(ord(column) + width)
+        if width > 1:
+            end_column = chr(ord(column) + width - 1)
+            sheet.merge_range("%s%s:%s%s" % (column, row, end_column, row), field, theme["field"])
+        else:
+            sheet.write("%s%s" % (column, row) , field, theme["field"])
+        sheet.write("%s%s" % (next_column, row), value, item)
+        self.pos[field] = "%s%s" % (next_column, row)
+        if validator:
+            sheet.data_validation("%s%s" % (next_column, row), {
+                'validate': 'list',
+                'source': validator})
+    @expansion
+    def field1(self, sheet, theme, column, row, item, field, formula, value):
+        next_column = chr(ord(column) + 1)
+        sheet.write("%s%s" % (column, row) , field, theme["field1"])
+        sheet.write("%s%s" % (next_column, row), formula, item, value)
+        self.pos[field] = "%s%s" % (next_column, row)
+
+    @expansion
+    def field2(self, sheet, theme, column, row, item, field, formula, value):
+        next_column = chr(ord(column) + 1)
+        sheet.write("%s%s" % (column, row) , field, theme["field2"])
+        sheet.write("%s%s" % (next_column, row), formula, item, value)
+        self.pos[field] = "%s%s" % (next_column, row)
+
+    @expansion
+    def result(self, sheet, theme, column, row, item, field, formula, value):
+        next_column = chr(ord(column) + 1)
+        sheet.write("%s%s" % (column, row) , field, theme["result"])
+        sheet.write("%s%s" % (next_column, row), formula, item, value)
+        self.pos[field] = "%s%s" % (next_column, row)
+
+    def theme(func):
+        def _hook(*args, **kwargs):
+            new_args = list(args)
+            new_args.insert(1, args[0].theme[func.func_name])
+            return func(*new_args, **kwargs)
+        return _hook
+
+    @theme
+    def float1(self, theme, field, value):
+        self.field(theme, field, value)
+
+    @theme
+    def float2(self, theme, field, value):
+        self.field(theme, field, value)
+
+    @theme
+    def unsure(self, theme, field, value, validator=None, width=1):
+        self.field(theme, field, value, validator, width)
+
+    @theme
+    def value(self, theme, field, value, validator=None):
+        self.field(theme, field, value, validator)
+
+    @theme
+    def value1(self, theme, field, formula, value):
+        self.field1(theme, field, formula, value)
+
+    @theme
+    def value2(self, theme, field, formula, value):
+        self.field2(theme, field, formula, value)
+
+    @theme
+    def value3(self, theme, field, formula, value):
+        self.field1(theme, field, formula, value)
+
+    @theme
+    def value4(self, theme, field, formula, value):
+        self.field2(theme, field, formula, value)
+
+    @theme
+    def result_value(self, theme, field, formula, value):
+        self.result(theme, field, formula, value)
+
+    def separator(self):
+        self.row = self.row + 1
+
+    def jump(self, column, row):
+        self.column = column
+        self.row = row
+
+def generate_excel_for_computers(excel, sysinfo):
+
+    excel.header("General")
+    excel.value("Product Type", "Desktop, Integrated Desktop, and Notebook")
     if sysinfo.computer_type == 1:
-        sheet.write("B3", "Desktop", value)
+        msg = "Desktop"
     elif sysinfo.computer_type == 2:
-        sheet.write("B3", "Integrated Desktop", value)
+        msg = "Integrated Desktop"
     else:
-        sheet.write("B3", "Notebook", value)
+        msg = "Notebook"
+    excel.value("Computer Type", msg)
+    excel.value("CPU cores", sysinfo.cpu_core)
+    excel.float2("CPU clock (GHz)", sysinfo.cpu_clock)
+    excel.value("Memory size (GB)", sysinfo.mem_size)
+    excel.value("Number of Hard Drives", sysinfo.disk_num)
+    excel.value("Number of Discrete Graphics Cards", sysinfo.discrete_gpu_num)
+    if sysinfo.tvtuner:
+        msg = "Yes"
+    else:
+        msg = "No"
+    excel.value("Discrete television tuner", msg, ["Yes", "No"])
+    if sysinfo.audio:
+        msg = "Yes"
+    else:
+        msg = "No"
+    excel.value("Discrete audio card", msg, ["Yes", "No"])
+    excel.unsure("IEEE 802.3az compliant Gigabit Ethernet", sysinfo.eee)
 
-    sheet.write("A4", "CPU cores", field)
-    sheet.write("B4", sysinfo.cpu_core, value)
+    excel.separator()
 
-    sheet.write("A5", "CPU clock (GHz)", field)
-    sheet.write("B5", sysinfo.cpu_clock, float2)
-
-    sheet.write("A6", "Memory size (GB)", field)
-    sheet.write("B6", sysinfo.mem_size, value)
-
-    sheet.write("A7", "Number of Hard Drives", field)
-    sheet.write("B7", sysinfo.disk_num, value)
-
-    sheet.write("A8", "IEEE 802.3az compliant Gigabit Ethernet", field)
-    sheet.write("B8", sysinfo.eee, value)
-
-    sheet.merge_range("A10:B10", "Graphics", header)
-
-    sheet.write("A11", "Graphics Type", field)
+    excel.header("Graphics")
     if sysinfo.switchable:
-        sheet.write("B11", "Switchable", value)
+        msg = "Switchable"
     elif sysinfo.discrete:
-        sheet.write("B11", "Discrete", value)
+        msg = "Discrete"
     else:
-        sheet.write("B11", "Integrated", value)
-    sheet.data_validation('B11', {
-        'validate': 'list',
-        'source': [
-            'Integrated',
-            'Switchable',
-            'Discrete']})
-
-    sheet.write("A12", "GPU Frame Buffer Width", field)
-
+        msg = "Integrated"
+    excel.value("Graphics Type", msg, ['Integrated', 'Switchable', 'Discrete'])
     if sysinfo.computer_type == 3:
-        sheet.write("B12", "<= 64-bit", value0)
-        sheet.data_validation('B12', {
-            'validate': 'list',
-            'source': [
-                '<= 64-bit',
-                '> 64-bit and <= 128-bit',
-                '> 128-bit']})
+        msg = "<= 64-bit"
+        validator = ['<= 64-bit', '> 64-bit and <= 128-bit', '> 128-bit']
     else:
-        sheet.write("B12", "<= 128-bit", value0)
-        sheet.data_validation('B12', {
-            'validate': 'list',
-            'source': [
-                '<= 128-bit',
-                '> 128-bit']})
+        msg = "<= 128-bit"
+        validator = ['<= 128-bit', '> 128-bit']
+    excel.unsure("GPU Frame Buffer Width", msg, validator)
+    excel.unsure("Graphics Category", "G1 (FB_BW <= 16)", [
+        'G1 (FB_BW <= 16)',
+        'G2 (16 < FB_BW <= 32)',
+        'G3 (32 < FB_BW <= 64)',
+        'G4 (64 < FB_BW <= 96)',
+        'G5 (96 < FB_BW <= 128)',
+        'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)',
+        'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)'])
 
-    sheet.write("A13", "Graphics Category", field)
-    sheet.write("B13", "G1 (FB_BW <= 16)", value0)
-    sheet.data_validation('B13', {
-        'validate': 'list',
-        'source': [
-            'G1 (FB_BW <= 16)',
-            'G2 (16 < FB_BW <= 32)',
-            'G3 (32 < FB_BW <= 64)',
-            'G4 (64 < FB_BW <= 96)',
-            'G5 (96 < FB_BW <= 128)',
-            'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)',
-            'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)']})
+    excel.separator()
 
-    sheet.merge_range("A15:B15", "Power Consumption", header)
-    sheet.write("A16", "Off mode (W)", field)
-    sheet.write("B16", sysinfo.off, float2)
-    sheet.write("A17", "Sleep mode (W)", field)
-    sheet.write("B17", sysinfo.sleep, float2)
-    sheet.write("A18", "Long idle mode (W)", field)
-    sheet.write("B18", sysinfo.long_idle, float2)
-    sheet.write("A19", "Short idle mode (W)", field)
-    sheet.write("B19", sysinfo.short_idle, float2)
+    excel.header("Power Consumption")
+    excel.float2("Off mode (W)", sysinfo.off)
+    excel.float2("Off mode (W) with WOL", sysinfo.off_wol)
+    excel.float2("Sleep mode (W)", sysinfo.sleep)
+    excel.float2("Sleep mode (W) with WOL", sysinfo.sleep_wol)
+    excel.float2("Long idle mode (W)", sysinfo.long_idle)
+    excel.float2("Short idle mode (W)", sysinfo.short_idle)
+
+    excel.separator()
 
     if sysinfo.computer_type != 1:
-        sheet.merge_range("A21:B21", "Display", header)
+        excel.header("Display")
+        if sysinfo.ep:
+            msg = "Yes"
+        else:
+            msg = "No"
+        excel.unsure("Enhanced-performance Integrated Display", msg, ["Yes", "No"])
+        excel.float1("Physical Diagonal (inch)", sysinfo.diagonal)
+        excel.value("Screen Width (px)", sysinfo.width)
+        excel.value("Screen Height (px)", sysinfo.height)
 
-        sheet.write("A22", "Enhanced-performance Integrated Display", field)
-        sheet.write("B22", "No", value0)
-        sheet.data_validation('B22', {
-            'validate': 'list',
-            'source': [
-                'Yes',
-                'No']})
-
-        sheet.write("A23", "Physical Diagonal (inch)", field)
-        sheet.write("B23", sysinfo.diagonal, value)
-
-        sheet.write("A24", "Screen Width (px)", field)
-        sheet.write("B24", sysinfo.width, value)
-
-        sheet.write("A25", "Screen Height (px)", field)
-        sheet.write("B25", sysinfo.height, value)
-
-    sheet.merge_range("D21:G21", "Power Supply Efficiency Allowance requirements:", field)
-    sheet.write("H21", "None", value0)
-    sheet.data_validation('H21', {
-        'validate': 'list',
-        'source': [
-            'None',
-            'Lower',
-            'Higher']})
-
+    excel.jump('D', 1)
     if sysinfo.computer_type == 3:
-        sheet.merge_range("D1:I1", "Energy Star 5.2", header)
+        width = 6
     else:
-        sheet.merge_range("D1:J1", "Energy Star 5.2", header)
+        width = 7
+    excel.header("Energy Star 5.2", width)
 
     if sysinfo.computer_type == 3:
         (T_OFF, T_SLEEP, T_IDLE) = (0.6, 0.1, 0.3)
     else:
         (T_OFF, T_SLEEP, T_IDLE) = (0.55, 0.05, 0.4)
 
-    sheet.write("D2", "T_OFF", field1)
-    sheet.write("D3", "T_SLEEP", field1)
-    sheet.write("D4", "T_IDLE", field2)
-    sheet.write("E2", '=IF(EXACT(E,"Notebook"),0.6,0.55', value3, T_OFF)
-    sheet.write("E3", '=IF(EXACT(E,"Notebook"),0.1,0.05', value3, T_SLEEP)
-    sheet.write("E4", '=IF(EXACT(E,"Notebook"),0.3,0.4', value4, T_IDLE)
+    excel.value3("T_OFF", '=IF(EXACT(%s,"Notebook"),0.6,0.55' % excel.pos["Computer Type"], T_OFF)
+    excel.value3("T_SLEEP", '=IF(EXACT(%s,"Notebook"),0.1,0.05' % excel.pos["Computer Type"], T_SLEEP)
+    excel.value4("T_IDLE", '=IF(EXACT(%s,"Notebook"),0.3,0.4' % excel.pos["Computer Type"], T_IDLE)
 
-    sheet.write("D5", "P_OFF", field1)
-    sheet.write("D6", "P_SLEEP", field1)
-    sheet.write("D7", "P_IDLE", field2)
-    sheet.write("E5", "=B16", value1, sysinfo.off)
-    sheet.write("E6", "=B17", value1, sysinfo.sleep)
-    sheet.write("E7", "=B19", value2, sysinfo.short_idle)
+    excel.value1("P_OFF", '=%s' % excel.pos["Off mode (W)"], sysinfo.off)
+    excel.value1("P_SLEEP", '=%s' % excel.pos["Sleep mode (W)"], sysinfo.sleep)
+    excel.value2("P_IDLE", '=%s' % excel.pos["Short idle mode (W)"], sysinfo.short_idle)
 
     E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_IDLE * sysinfo.short_idle) * 8760 / 1000
-    sheet.write("D8", "E_TEC", result)
-    sheet.write("E8", "=(E2*E5+E3*E6+E4*E7)*8760/1000", result_value, E_TEC)
 
-    sheet.merge_range("F2:F3", "Category", fieldC)
-    sheet.merge_range("G2:G3", "A", fieldC)
-    sheet.merge_range("H2:H3", "B", fieldC)
-    sheet.merge_range("I2:I3", "C", fieldC)
+    excel.result_value("E_TEC", "=(%s*%s+%s*%s+%s*%s)*8760/1000" % (
+        excel.pos["T_OFF"], excel.pos["P_OFF"],
+        excel.pos["T_SLEEP"], excel.pos["P_SLEEP"],
+        excel.pos["T_IDLE"], excel.pos["P_IDLE"]), E_TEC)
+
+    excel.jump('F', 2)
+    excel.cell(1, 2, None, "Category", "fieldC")
+    excel.jump('G', 2)
+    excel.cell(1, 2, None, "A", "fieldC")
+    excel.jump('H', 2)
+    excel.cell(1, 2, None, "B", "fieldC")
+    excel.jump('I', 2)
+    excel.cell(1, 2, None, "C", "fieldC")
     if sysinfo.computer_type != 3:
-        sheet.merge_range("J2:J3", "D", fieldC)
+        excel.jump('J', 2)
+        excel.cell(1, 2, None, "D", "fieldC")
 
     if sysinfo.computer_type == 3:
-        sheet.write("H2:H3", '=IF(EXACT(B11,"Discrete"), "B", "")', fieldC, "B")
-        sheet.write("I2:I3", '=IF(AND(EXACT(B11,"Discrete"), EXACT(B12, "> 128-bit"), B4>=2, B6>=2), "C", "")', fieldC, "C")
-    else:
-        sheet.write("H2:H3", '=IF(AND(B4=2,B6>=2), "B", "")', fieldC, "B")
-        sheet.write("I2:I3", '=IF(AND(B4>2,OR(B6>=2,EXACT(B11,"Discrete"))), "C", "")', fieldC, "C")
-        sheet.write("J2:J3", '=IF(AND(B4>=4,OR(B6>=4,AND(EXACT(B11,"Discrete"),EXACT(B12,"> 128-bit")))), "D", "")', fieldC, "D")
+        excel.jump('H', 2)
+        if sysinfo.discrete:
+            msg = "B"
+        else:
+            msg = ""
+        excel.cell(1, 2, '=IF(EXACT(%s,"Discrete"), "B", "")' % excel.pos["Graphics Type"], msg, "fieldC")
 
-    sheet.write("F4", "TEC_BASE", field1)
-    sheet.write("F5", "TEC_MEMORY", field1)
-    sheet.write("F6", "TEC_GRAPHICS", field1)
-    sheet.write("F7", "TEC_STORAGE", field1)
-    sheet.write("F8", "E_TEC_MAX", result)
+        excel.jump('I', 2)
+        excel.cell(1, 2, '=IF(AND(EXACT(%s,"Discrete"), EXACT(%s, "> 128-bit"), %s>=2, %s>=2), "C", "")' % (
+            excel.pos["Graphics Type"],
+            excel.pos["GPU Frame Buffer Width"],
+            excel.pos["CPU cores"],
+            excel.pos["Memory size (GB)"]), "", "fieldC")
+    else:
+        excel.jump('H', 2)
+        if sysinfo.cpu_core == 2 and sysinfo.mem_size >=2:
+            msg = "B"
+        else:
+            msg = ""
+        excel.cell(1, 2, '=IF(AND(%s=2,%s>=2), "B", "")' % (
+            excel.pos["CPU cores"],
+            excel.pos["Memory size (GB)"]), msg, "fieldC")
+
+        excel.jump('I', 2)
+        if sysinfo.cpu_core > 2 and (sysinfo.mem_size >= 2 or sysinfo.discrete):
+            msg = "C"
+        else:
+            msg = ""
+        excel.cell(1, 2, '=IF(AND(%s>2,OR(%s>=2,EXACT(%s,"Discrete"))), "C", "")' % (
+            excel.pos["CPU cores"],
+            excel.pos["Memory size (GB)"],
+            excel.pos["Graphics Type"]), msg, "fieldC")
+
+        excel.jump('J', 2)
+        if sysinfo.cpu_core >= 4 and sysinfo.mem_size >= 4:
+            msg = "D"
+        else:
+            msg = ""
+        excel.cell(1, 2, '=IF(AND(%s>=4,OR(%s>=4,AND(EXACT(%s,"Discrete"),EXACT(%s,"> 128-bit")))), "D", "")' % (
+            excel.pos["CPU cores"],
+            excel.pos["Memory size (GB)"],
+            excel.pos["Graphics Type"],
+            excel.pos["GPU Frame Buffer Width"]), msg, "fieldC")
+
+    excel.jump('F', 4)
+    excel.cell(1, 1, None, "TEC_BASE", "field1")
+    excel.cell(1, 1, None, "TEC_MEMORY", "field1")
+    excel.cell(1, 1, None, "TEC_GRAPHICS", "field1")
+    excel.cell(1, 1, None, "TEC_STORAGE", "field1")
+    excel.cell(1, 1, None, "E_TEC_MAX", "result")
 
     # Category A
+    excel.jump('G', 4)
     if sysinfo.computer_type == 3:
         # Notebook
         TEC_BASE = 40
@@ -302,10 +444,10 @@ def generate_excel_for_computers(book, sysinfo, version):
         else:
             TEC_STORAGE = 0
 
-        sheet.write("G4", TEC_BASE, value1)
-        sheet.write("G5", "=IF(B6>4, 0.4*(B6-4), 0)", value1, TEC_MEMORY)
-        sheet.write("G6", TEC_GRAPHICS, value1)
-        sheet.write("G7", "=IF(B7>1, 3*(B7-1), 0)", value2, TEC_STORAGE)
+        excel.cell(1, 1, None, TEC_BASE, "value1", "TEC_BASE")
+        excel.cell(1, 1, "=IF(%s>4, 0.4*(%s-4), 0)" % (excel.pos["Memory size (GB)"], excel.pos["Memory size (GB)"]), TEC_MEMORY, "value1", "TEC_MEMORY")
+        excel.cell(1, 1, None, TEC_GRAPHICS, "value1", "TEC_GRAPHICS")
+        excel.cell(1, 1, "=IF(%s>1, 3*(%s-1), 0)" % (excel.pos["Number of Hard Drives"], excel.pos["Number of Hard Drives"]), TEC_STORAGE, "value1", "TEC_STORAGE")
     else:
         # Desktop
         TEC_BASE = 148
@@ -321,22 +463,34 @@ def generate_excel_for_computers(book, sysinfo, version):
             TEC_STORAGE = 25 * (sysinfo.disk_num - 1)
         else:
             TEC_STORAGE = 0
-
-        sheet.write("G4", TEC_BASE, value1)
-        sheet.write("G5", "=IF(B6>2, 1.0*(B6-2), 0)", value1, TEC_MEMORY)
-        sheet.write("G6", '=IF(EXACT(B12,"> 128-bit"), 50, 35)', value1, TEC_GRAPHICS)
-        sheet.write("G7", "=IF(B7>1, 25*(B7-1), 0)", value2, TEC_STORAGE)
+ 
+        excel.cell(1, 1, None, TEC_BASE, "value1", "TEC_BASE")
+        excel.cell(1, 1, "=IF(%s>2, 1.0*(%s-2), 0)" % (excel.pos["Memory size (GB)"], excel.pos["Memory size (GB)"]), TEC_MEMORY, "value1", "TEC_MEMORY")
+        excel.cell(1, 1, '=IF(EXACT(%s,"> 128-bit"), 50, 35)' % excel.pos["GPU Frame Buffer Width"], TEC_GRAPHICS, "value1", "TEC_GRAPHICS")
+        excel.cell(1, 1, "=IF(%s>1, 25*(%s-1), 0)" % (excel.pos["Number of Hard Drives"], excel.pos["Number of Hard Drives"]), TEC_STORAGE, "value2", "TEC_STORAGE")
 
     E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
-    sheet.write("G8", "=G4+G5+G6+G7", result_value, E_TEC_MAX)
-
+    excel.cell(1, 1, "=%s+%s+%s+%s" % (
+        excel.pos["TEC_BASE"],
+        excel.pos["TEC_MEMORY"],
+        excel.pos["TEC_GRAPHICS"],
+        excel.pos["TEC_STORAGE"]), E_TEC_MAX, "result_value", "E_TEC_MAX")
     if E_TEC <= E_TEC_MAX:
         RESULT = "PASS"
     else:
         RESULT = "FAIL"
-    sheet.write("G9", '=IF(E8<=G8, "PASS", "FAIL")', center, RESULT)
+    excel.cell(1, 1, '=IF(%s<=%s, "PASS", "FAIL")' % (
+        excel.pos["E_TEC"],
+        excel.pos["E_TEC_MAX"]), RESULT, "center")
+
+    # XXX TODO
+
+    excel.jump('D', 21)
+    excel.unsure("Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], 4)
+    excel.save()
 
     # Category B
+    excel.jump('H', 4)
     if sysinfo.computer_type == 3:
         # Notebook
         if sysinfo.discrete:
