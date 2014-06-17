@@ -104,6 +104,7 @@ class ErPLot3:
         return True
 
     def _verifying(self, inst, E_TEC_MAX, gpu=None):
+        msg = ''
         if gpu:
             if gpu == 'G1':
                 msg = "G1 (FB_BW <= 16)"
