@@ -31,7 +31,7 @@ class EnergyStar52:
             if core >= 4:
                 if memory >= 4:
                     return True
-                elif over_frame_buffer_width_128:
+                elif discrete and over_frame_buffer_width_128:
                     return True
         elif category == 'C':
             if core > 2:
