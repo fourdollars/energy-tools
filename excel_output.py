@@ -628,11 +628,7 @@ def generate_excel_for_computers(excel, sysinfo):
         excel.pos["E_TEC"],
         excel.pos["E_TEC_MAX"]), RESULT, "center")
 
-    # XXX TODO
-    excel.jump('D', 21)
-    excel.unsure("Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], 4)
-    excel.save()
-
+    excel.jump('J', 4)
     # Category D
     if sysinfo.computer_type != 3:
         # Desktop
@@ -664,12 +660,28 @@ def generate_excel_for_computers(excel, sysinfo):
             TEC_STORAGE = ""
             E_TEC_MAX = ""
             RESULT = ""
-        sheet.write("J4", '=IF(EXACT(J2, "D"), 234, "")', value1, TEC_BASE)
-        sheet.write("J5", '=IF(EXACT(J2, "D"), IF(B6>4, B6-4, 0), "")', value1, TEC_MEMORY)
-        sheet.write("J6", '=IF(EXACT(J2, "D"), IF(EXACT(B12,"> 128-bit"), 50, 0), "")', value1, TEC_GRAPHICS)
-        sheet.write("J7", '=IF(EXACT(J2, "D"), G7, "")', value2, TEC_STORAGE)
-        sheet.write("J8", '=IF(EXACT(J2, "D"), J4+J5+J6+J7, "")', result_value, E_TEC_MAX)
-        sheet.write("J9", '=IF(EXACT(J2, "D"), IF(E8<=J8, "PASS", "FAIL"), "")', center, RESULT)
+        excel.cell('=IF(EXACT(%s, "D"), 234, "")' % excel.pos["D"], TEC_BASE, "value1", "TEC_BASE")
+        excel.cell('=IF(EXACT(%s, "D"), IF(%s>4, %s-4, 0), "")' % (
+            excel.pos["D"],
+            excel.pos["Memory size (GB)"],
+            excel.pos["Memory size (GB)"]), TEC_MEMORY, "value1", "TEC_MEMORY")
+        excel.cell('=IF(EXACT(%s, "D"), %s, "")' % (excel.pos["D"], excel.pos["TEC_GRAPHICS"]), TEC_GRAPHICS, "value1", "TEC_GRAPHICS")
+        excel.cell('=IF(EXACT(%s, "D"), %s, "")' % (excel.pos["D"], excel.pos["TEC_STORAGE"]), TEC_STORAGE, "value1", "TEC_STORAGE")
+        excel.cell('=IF(EXACT(%s, "D"), %s+%s+%s+%s, "")' % (
+            excel.pos["D"],
+            excel.pos["TEC_BASE"],
+            excel.pos["TEC_MEMORY"],
+            excel.pos["TEC_GRAPHICS"],
+            excel.pos["TEC_STORAGE"]), E_TEC_MAX, "result_value", "E_TEC_MAX")
+        excel.cell('=IF(EXACT(%s, "D"), IF(%s<=%s, "PASS", "FAIL"), "")' % (
+            excel.pos["D"],
+            excel.pos["E_TEC"],
+            excel.pos["E_TEC_MAX"]), RESULT, "center")
+
+    # XXX TODO
+    excel.jump('D', 21)
+    excel.unsure("Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], 4)
+    excel.save()
 
     sheet.merge_range("D10:G10", "Energy Star 6.0", header)
 
