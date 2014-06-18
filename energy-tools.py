@@ -408,7 +408,7 @@ def main():
     elif args.test == 10:
         sysinfo = SysInfo(
                 auto=True,
-                product_type=1, computer_type=3,
+                product_type=1, computer_type=2,
                 cpu_core=2, cpu_clock=2.26,
                 mem_size=4, disk_num=1, eee=1,
                 discrete=True, discrete_gpu_num=1, diagonal=12.1,
