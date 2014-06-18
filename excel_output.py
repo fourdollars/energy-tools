@@ -227,6 +227,10 @@ class ExcelMaker:
         self.field(theme, field, value)
 
     @theme
+    def float3(self, theme, field, formula, value):
+        self.field1(theme, field, formula, value)
+
+    @theme
     def unsure(self, theme, field, value, validator=None, width=1):
         self.field(theme, field, value, validator, width)
 
@@ -681,40 +685,43 @@ def generate_excel_for_computers(excel, sysinfo):
     excel.jump('D', 10)
     excel.header("Energy Star 6.0", 4)
 
-    # XXX TODO
-    excel.jump('D', 21)
-    excel.unsure("Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], 4)
-    excel.save()
-
     if sysinfo.computer_type == 3:
         (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.25, 0.35, 0.1, 0.3)
     else:
         (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.45, 0.05, 0.15, 0.35)
 
-    sheet.write("D11", "T_OFF", field1)
-    sheet.write("E11", '=IF(EXACT(B3,"Notebook"),0.25,0.45', value3, T_OFF)
-    sheet.write("D12", "T_SLEEP", field1)
-    sheet.write("E12", '=IF(EXACT(B3,"Notebook"),0.35,0.05', value3, T_SLEEP)
-    sheet.write("D13", "T_LONG_IDLE", field1)
-    sheet.write("E13", '=IF(EXACT(B3,"Notebook"),0.1,0.15', value3, T_LONG_IDLE)
-    sheet.write("D14", "T_SHORT_IDLE", field2)
-    sheet.write("E14", '=IF(EXACT(B3,"Notebook"),0.3,0.35', value4, T_SHORT_IDLE)
+    excel.value3("T_OFF", '=IF(EXACT(%s,"Notebook"),0.25,0.45' % excel.pos["Computer Type"], T_OFF)
+    excel.value3("T_SLEEP", '=IF(EXACT(%s,"Notebook"),0.35,0.05' % excel.pos["Computer Type"], T_SLEEP)
+    excel.value3("T_LONG_IDLE", '=IF(EXACT(%s,"Notebook"),0.1,0.15' % excel.pos["Computer Type"], T_LONG_IDLE)
+    excel.value4("T_SHORT_IDLE", '=IF(EXACT(%s,"Notebook"),0.3,0.35' % excel.pos["Computer Type"], T_SHORT_IDLE)
 
-    sheet.write("D15", "P_OFF", field1)
-    sheet.write("E15", "=B16", value1, sysinfo.off)
-    sheet.write("D16", "P_SLEEP", field1)
-    sheet.write("E16", "=B17", value1, sysinfo.sleep)
-    sheet.write("D17", "P_LONG_IDLE", field1)
-    sheet.write("E17", "=B18", value1, sysinfo.long_idle)
-    sheet.write("D18", "P_SHORT_IDLE", field1)
-    sheet.write("E18", "=B19", value2, sysinfo.short_idle)
+    excel.value1("P_OFF", '=%s' % excel.pos["Off mode (W)"], sysinfo.off)
+    excel.value1("P_SLEEP", '=%s' % excel.pos["Sleep mode (W)"], sysinfo.sleep)
+    excel.value1("P_LONG_IDLE", '=%s' % excel.pos["Long idle mode (W)"], sysinfo.long_idle)
+    excel.value2("P_SHORT_IDLE", '=%s' % excel.pos["Short idle mode (W)"], sysinfo.short_idle)
 
     E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_LONG_IDLE * sysinfo.long_idle + T_SHORT_IDLE * sysinfo.short_idle) * 8760 / 1000
-    sheet.write("D19", "E_TEC", result)
-    sheet.write("E19", "=(E11*E15+E12*E16+E13*E17+E14*E18)*8760/1000", result_value, E_TEC)
 
-    sheet.write("F11", "ALLOWANCE_PSU", field1)
-    sheet.write("G11", '=IF(OR(EXACT(B3, "Notebook"), EXACT(B3, "Desktop")), IF(EXACT(H21, "Higher"), 0.03, IF(EXACT(H21, "Lower"), 0.015, 0)), IF(EXACT(H21, "Higher"), 0.04, IF(EXACT(H21, "Lower"), 0.015, 0)))', float3)
+    excel.result_value("E_TEC", "=(%s*%s+%s*%s+%s*%s+%s*%s)*8760/1000" % (
+        excel.pos["T_OFF"], excel.pos["P_OFF"],
+        excel.pos["T_SLEEP"], excel.pos["P_SLEEP"],
+        excel.pos["T_LONG_IDLE"], excel.pos["P_LONG_IDLE"],
+        excel.pos["T_SHORT_IDLE"], excel.pos["P_SHORT_IDLE"]), E_TEC)
+
+    excel.jump('D', 21)
+    excel.unsure("Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], 4)
+
+    excel.jump('F', 11)
+    excel.float3("ALLOWANCE_PSU", '=IF(OR(EXACT(%s, "Notebook"), EXACT(%s, "Desktop")), IF(EXACT(%s, "Higher"), 0.03, IF(EXACT(%s, "Lower"), 0.015, 0)), IF(EXACT(%s, "Higher"), 0.04, IF(EXACT(%s, "Lower"), 0.015, 0)))' % (
+        excel.pos["Computer Type"],
+        excel.pos["Computer Type"],
+        excel.pos["Power Supply Efficiency Allowance requirements:"],
+        excel.pos["Power Supply Efficiency Allowance requirements:"],
+        excel.pos["Power Supply Efficiency Allowance requirements:"],
+        excel.pos["Power Supply Efficiency Allowance requirements:"]), 0)
+
+    # XXX TODO
+    excel.save()
 
     P = sysinfo.cpu_core * sysinfo.cpu_clock
     if sysinfo.computer_type == 3:
