@@ -678,12 +678,13 @@ def generate_excel_for_computers(excel, sysinfo):
             excel.pos["E_TEC"],
             excel.pos["E_TEC_MAX"]), RESULT, "center")
 
+    excel.jump('D', 10)
+    excel.header("Energy Star 6.0", 4)
+
     # XXX TODO
     excel.jump('D', 21)
     excel.unsure("Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], 4)
     excel.save()
-
-    sheet.merge_range("D10:G10", "Energy Star 6.0", header)
 
     if sysinfo.computer_type == 3:
         (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.25, 0.35, 0.1, 0.3)
