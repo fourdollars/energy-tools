@@ -568,12 +568,8 @@ def generate_excel_for_computers(excel, sysinfo):
         excel.pos["E_TEC"],
         excel.pos["E_TEC_MAX"]), RESULT, "center")
 
-    # XXX TODO
-    excel.jump('D', 21)
-    excel.unsure("Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], 4)
-    excel.save()
-
     # Category C
+    excel.jump('I', 4)
     if sysinfo.computer_type == 3:
         # Notebook
         TEC_BASE = ""
@@ -582,10 +578,10 @@ def generate_excel_for_computers(excel, sysinfo):
         TEC_STORAGE = ""
         E_TEC_MAX = ""
         RESULT = ""
-        sheet.write("I4", '=IF(EXACT(I2, "C"), 88.5, "")', value1, TEC_BASE)
-        sheet.write("I5", '=IF(EXACT(I2, "C"), G5, "")', value1, TEC_MEMORY)
-        sheet.write("I6", '=IF(EXACT(I2, "C"), 0, "")', value1, TEC_GRAPHICS)
-        sheet.write("I7", '=IF(EXACT(I2, "C"), G7, "")', value2, TEC_STORAGE)
+        excel.cell('=IF(EXACT(%s, "C"), 88.5, "")' % excel.pos["C"], TEC_BASE, "value1", "TEC_BASE")
+        excel.cell('=IF(EXACT(%s, "C"), %s, "")' % (excel.pos["C"], excel.pos["TEC_MEMORY"]), TEC_MEMORY, "value1", "TEC_MEMORY")
+        excel.cell('=IF(EXACT(%s, "C"), 0, "")' % excel.pos["C"], TEC_GRAPHICS, "value1", "TEC_GRAPHICS")
+        excel.cell('=IF(EXACT(%s, "C"), %s, "")' % (excel.pos["C"], excel.pos["TEC_STORAGE"]), TEC_STORAGE, "value1", "TEC_STORAGE")
     else:
         # Desktop
         if sysinfo.cpu_core > 2 and (sysinfo.mem_size >= 2 or sysinfo.discrete):
@@ -616,13 +612,26 @@ def generate_excel_for_computers(excel, sysinfo):
             TEC_STORAGE = ""
             E_TEC_MAX = ""
             RESULT = ""
-        sheet.write("I4", '=IF(EXACT(I2, "C"), 209, "")', value1, TEC_BASE)
-        sheet.write("I5", '=IF(EXACT(I2, "C"), IF(B6>2, 1.0*(B6-2), 0), "")', value1, TEC_MEMORY)
-        sheet.write("I6", '=IF(EXACT(I2, "C"), IF(EXACT(B12,"> 128-bit"), 50, 0), "")', value1, TEC_GRAPHICS)
-        sheet.write("I7", '=IF(EXACT(I2, "C"), G7, "")', value2, TEC_STORAGE)
+        excel.cell('=IF(EXACT(%s, "C"), 209, "")' % excel.pos["C"], TEC_BASE, "value1", "TEC_BASE")
+        excel.cell('=IF(EXACT(%s, "C"), G5, "")' % excel.pos["C"], TEC_MEMORY, "value1", "TEC_MEMORY")
+        excel.cell('=IF(EXACT(%s, "C"), IF(EXACT(%s, "> 128-bit"), 50, 0), "")' % (excel.pos["C"], excel.pos["GPU Frame Buffer Width"]), TEC_GRAPHICS, "value1", "TEC_GRAPHICS")
+        excel.cell('=IF(EXACT(%s, "C"), G7, "")' % excel.pos["C"], TEC_STORAGE, "value1", "TEC_STORAGE")
 
-    sheet.write("I8", '=IF(EXACT(I2, "C"), I4+I5+I6+I7, "")', result_value, E_TEC_MAX)
-    sheet.write("I9", '=IF(EXACT(I2, "C"), IF(E8<=I8, "PASS", "FAIL"), "")', center, RESULT)
+    excel.cell('=IF(EXACT(%s, "C"), %s+%s+%s+%s, "")' % (
+        excel.pos["C"],
+        excel.pos["TEC_BASE"],
+        excel.pos["TEC_MEMORY"],
+        excel.pos["TEC_GRAPHICS"],
+        excel.pos["TEC_STORAGE"]), E_TEC_MAX, "result_value", "E_TEC_MAX")
+    excel.cell('=IF(EXACT(%s, "C"), IF(%s<=%s, "PASS", "FAIL"), "")' % (
+        excel.pos["C"],
+        excel.pos["E_TEC"],
+        excel.pos["E_TEC_MAX"]), RESULT, "center")
+
+    # XXX TODO
+    excel.jump('D', 21)
+    excel.unsure("Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], 4)
+    excel.save()
 
     # Category D
     if sysinfo.computer_type != 3:
