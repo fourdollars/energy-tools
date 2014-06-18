@@ -152,7 +152,11 @@ class ExcelMaker:
 
         if field in palette:
             (i, j) = palette[field]
-            theme1 = self.theme[i]
+            debug("Theme: (%s, %s)" % (i, j))
+            if not twin and width == 1 and height == 1 and j:
+                theme1 = self.theme[j]
+            else:
+                theme1 = self.theme[i]
             if j:
                 theme2 = self.theme[j]
             else:
@@ -160,10 +164,13 @@ class ExcelMaker:
         else:
             theme1 = self.theme['field']
             theme2 = self.theme['value']
-        debug("Theme 1: %s, Theme 2: %s" % (theme1, theme2))
+            debug("Theme: (%s, %s)" % ('field', 'value'))
 
         end_column = chr(ord(self.column) + width - 1)
-        next_column = chr(ord(self.column) + 1)
+        if twin:
+            next_column = chr(ord(self.column) + width)
+        else:
+            next_column = chr(ord(self.column) + 1)
         end_row = self.row + height - 1
         start_cell = "%s%s" % (self.column, self.row)
         next_cell = "%s%s" % (next_column, self.row)
@@ -175,21 +182,21 @@ class ExcelMaker:
 
         if width > 1 or height > 1:
             self.sheet.merge_range("%s:%s" % (start_cell, end_cell), value, theme1)
+        if twin:
+            self.sheet.write("%s" % start_cell, field, theme1)
+            if formula:
+                self.sheet.write("%s" % next_cell, formula, theme2, value)
+            else:
+                self.sheet.write("%s" % next_cell, value, theme2)
+            if validator:
+                self.sheet.data_validation("%s" % next_cell, {
+                    'validate': 'list',
+                    'source': validator})
+        else:
             if formula:
                 self.sheet.write("%s" % start_cell, formula, theme1, value)
-        else:
-            if twin:
-                self.sheet.write("%s" % start_cell, field, theme1)
-                self.sheet.write("%s" % next_cell, value, theme2)
-                if validator:
-                    self.sheet.data_validation("%s" % next_cell, {
-                        'validate': 'list',
-                        'source': validator})
             else:
-                if formula:
-                    self.sheet.write("%s" % start_cell, formula, theme1, value)
-                else:
-                    self.sheet.write("%s" % start_cell, value, theme1)
+                self.sheet.write("%s" % start_cell, value, theme1)
         if twin:
             self.pos[field] = next_cell
         else:
@@ -238,10 +245,11 @@ palette = {
         'P_OFF': ('field1', 'value1'),
         'P_SLEEP': ('field1', 'value1'),
         'P_LONG_IDLE': ('field1', 'value1'),
-        'TEC_BASE': ('value1', 'value1'),
-        'TEC_MEMORY': ('value1', 'value1'),
-        'TEC_GRAPHICS': ('value1', 'value1'),
-        'TEC_STORAGE': ('value2', 'value2'),
+        'ALLOWANCE_PSU': ('field1', 'float3'),
+        'TEC_BASE': ('field1', 'value1'),
+        'TEC_MEMORY': ('field1', 'value1'),
+        'TEC_GRAPHICS': ('field1', 'value1'),
+        'TEC_STORAGE': ('field1', 'value1'),
 
         # Cell with different background color and float 1
         'P_IDLE': ('field2', 'value2'),
@@ -252,15 +260,17 @@ palette = {
         'E_TEC_MAX': ('result_value', None),
 
         # Prompt
-        'None': ('center', None),
+        'center': ('center', None),
         'field1': ('field1', None),
         'result': ('result', None),
+        'P:': ('right', 'left'),
 
         # Unsure
         "IEEE 802.3az compliant Gigabit Ethernet": ('field', 'unsure'),
         "GPU Frame Buffer Width": ('field', 'unsure'),
         "Graphics Category": ('field', 'unsure'),
         "Enhanced-performance Integrated Display": ('field', 'unsure'),
+        "Power Supply Efficiency Allowance requirements:": ('field', 'unsure'),
 
         # Float 1
         "Physical Diagonal (inch)": ('field', 'float1'),
@@ -402,7 +412,7 @@ def generate_excel_for_computers(excel, sysinfo):
         if sysinfo.discrete:
             msg = "B"
         else:
-            msg = " "
+            msg = ""
         excel.ncell(1, 2, 'B', '=IF(EXACT(%s,"Discrete"), "B", "")' % excel.pos["Graphics Type"], msg)
 
         excel.jump('I', 2)
@@ -410,7 +420,7 @@ def generate_excel_for_computers(excel, sysinfo):
             excel.pos["Graphics Type"],
             excel.pos["GPU Frame Buffer Width"],
             excel.pos["CPU cores"],
-            excel.pos["Memory size (GB)"]), " ")
+            excel.pos["Memory size (GB)"]), "")
     else:
         excel.jump('H', 2)
         if sysinfo.cpu_core == 2 and sysinfo.mem_size >=2:
@@ -425,7 +435,7 @@ def generate_excel_for_computers(excel, sysinfo):
         if sysinfo.cpu_core > 2 and (sysinfo.mem_size >= 2 or sysinfo.discrete):
             msg = "C"
         else:
-            msg = " "
+            msg = ""
         excel.ncell(1, 2, 'C', '=IF(AND(%s>2,OR(%s>=2,EXACT(%s,"Discrete"))), "C", "")' % (
             excel.pos["CPU cores"],
             excel.pos["Memory size (GB)"],
@@ -435,7 +445,7 @@ def generate_excel_for_computers(excel, sysinfo):
         if sysinfo.cpu_core >= 4 and sysinfo.mem_size >= 4:
             msg = "D"
         else:
-            msg = " "
+            msg = ""
         excel.ncell(1, 2, 'D', '=IF(AND(%s>=4,OR(%s>=4,AND(EXACT(%s,"Discrete"),EXACT(%s,"> 128-bit")))), "D", "")' % (
             excel.pos["CPU cores"],
             excel.pos["Memory size (GB)"],
@@ -725,15 +735,11 @@ def generate_excel_for_computers(excel, sysinfo):
         excel.pos["T_LONG_IDLE"], excel.pos["P_LONG_IDLE"],
         excel.pos["T_SHORT_IDLE"], excel.pos["P_SHORT_IDLE"]), E_TEC)
 
-    # XXX TODO
-    excel.save()
-    return
-
     excel.jump('D', 21)
-    excel.ncell(4, 1, "Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'])
+    excel.ncell(4, 1, "Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], twin=True)
 
     excel.jump('F', 11)
-    excel.float3("ALLOWANCE_PSU", '=IF(OR(EXACT(%s, "Notebook"), EXACT(%s, "Desktop")), IF(EXACT(%s, "Higher"), 0.03, IF(EXACT(%s, "Lower"), 0.015, 0)), IF(EXACT(%s, "Higher"), 0.04, IF(EXACT(%s, "Lower"), 0.015, 0)))' % (
+    excel.tcell("ALLOWANCE_PSU", '=IF(OR(EXACT(%s, "Notebook"), EXACT(%s, "Desktop")), IF(EXACT(%s, "Higher"), 0.03, IF(EXACT(%s, "Lower"), 0.015, 0)), IF(EXACT(%s, "Higher"), 0.04, IF(EXACT(%s, "Lower"), 0.015, 0)))' % (
         excel.pos["Computer Type"],
         excel.pos["Computer Type"],
         excel.pos["Power Supply Efficiency Allowance requirements:"],
@@ -742,6 +748,12 @@ def generate_excel_for_computers(excel, sysinfo):
         excel.pos["Power Supply Efficiency Allowance requirements:"]), 0)
 
     P = sysinfo.cpu_core * sysinfo.cpu_clock
+    excel.jump('H', 11)
+    excel.tcell('P:', '=%s*%s' % (
+        excel.pos["CPU cores"],
+        excel.pos["CPU clock (GHz)"]), P)
+
+    excel.jump('F', 12)
     if sysinfo.computer_type == 3:
         if sysinfo.discrete:
             if P > 9:
@@ -776,11 +788,33 @@ def generate_excel_for_computers(excel, sysinfo):
                 TEC_BASE = 112
             else:
                 TEC_BASE = 69
-    sheet.write("F12", "TEC_BASE", field1)
+
     if sysinfo.computer_type == 3:
-        sheet.write("G12", '=IF(EXACT(B11,"Discrete"), IF(I11>9, 18, IF(AND(I11<=9, I11>2), 16, 14)), IF(I11>8, 28, IF(AND(I11<=8, I11>5.2), 24, IF(AND(I11<=5.2, I11>2), 22, 14))))', value1, TEC_BASE)
+        excel.tcell("TEC_BASE", '=IF(EXACT(%s,"Discrete"), IF(%s>9, 18, IF(AND(%s<=9, %s>2), 16, 14)), IF(%s>8, 28, IF(AND(%s<=8, %s>5.2), 24, IF(AND(%s<=5.2, %s>2), 22, 14))))' % (
+            excel.pos["Graphics Type"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"]), TEC_BASE)
     else:
-        sheet.write("G12", '=IF(EXACT(B11,"Discrete"), IF(I11>9, 135, IF(AND(I11<=9, I11>3), 115, 69)), IF(I11>7, 135, IF(AND(I11<=7, I11>6), 120, IF(AND(I11<=6, I11>3), 112, 69))))', value1, TEC_BASE)
+        excel.tcell("TEC_BASE", '=IF(EXACT(%s,"Discrete"), IF(%s>9, 135, IF(AND(%s<=9, %s>3), 115, 69)), IF(%s>7, 135, IF(AND(%s<=7, %s>6), 120, IF(AND(%s<=6, %s>3), 112, 69))))' % (
+            excel.pos["Graphics Type"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"],
+            excel.pos["P:"]), TEC_BASE)
+
+    # XXX TODO
+    excel.save()
+    return
 
     TEC_MEMORY = 0.8 * sysinfo.mem_size
     sheet.write("F13", "TEC_MEMORY", field1)
@@ -811,9 +845,6 @@ def generate_excel_for_computers(excel, sysinfo):
         sheet.write("G15", '=IF(B7>1,2.6*(B7-1),0)', value1, TEC_STORAGE)
     else:
         sheet.write("G15", '=IF(B7>1,26*(B7-1),0)', value1, TEC_STORAGE)
-
-    sheet.write("H11", "P:", right)
-    sheet.write("I11", '=B4*B5', left, P)
 
     EP_LABEL = "EP:"
     if sysinfo.ep:
