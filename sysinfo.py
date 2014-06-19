@@ -21,6 +21,7 @@ from logging import debug, warning
 
 import math
 import os
+import re
 import subprocess
 
 def question_str(prompt, length, validator):
@@ -199,6 +200,14 @@ class SysInfo:
                 self.diagonal = question_num("What is the display diagonal in inches?")
                 self.ep = question_bool("Is it an Enhanced-perforcemance Integrated Display?")
 
+    def get_cpu_vendor(self):
+        vendor=subprocess.check_output("cat /proc/cpuinfo | grep 'vendor_id' | grep -ioE '(intel|amd)'", shell=True).strip()
+        if re.match("intel", vendor, re.IGNORECASE):
+            return 'intel'
+        if re.match("amd", vendor, re.IGNORECASE):
+            return 'amd'
+        return 'unknown'
+
     def get_cpu_core(self):
         if self.cpu_core:
             return self.cpu_core
@@ -217,7 +226,13 @@ class SysInfo:
         if self.cpu_clock:
             return self.cpu_clock
 
-        self.cpu_clock = float(subprocess.check_output("cat /proc/cpuinfo | grep 'model name' | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'", shell=True).strip())
+        cpu = self.get_cpu_vendor()
+        if cpu == 'intel':
+            self.cpu_clock = float(subprocess.check_output("cat /proc/cpuinfo | grep 'model name' | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'", shell=True).strip())
+        elif cpu == 'amd':
+            self.cpu_clock = float(subprocess.check_output("sudo dmidecode -t processor | grep 'Max Speed' | cut -d: -f2 | xargs | sed 's/MHz//'", shell=True).strip()) / 1000
+        else:
+            raise Exception('Unknown CPU Vendor')
 
         debug("CPU clock: %s GHz" % (self.cpu_clock))
         return self.cpu_clock
