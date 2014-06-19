@@ -18,13 +18,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __all__ = [
-    "generate_excel",
-    "generate_excel_for_computers",
-    "generate_excel_for_workstations",
-    "generate_excel_for_small_scale_servers",
-    "generate_excel_for_thin_clients"]
+        "generate_excel",
+        "generate_excel_for_computers",
+        "generate_excel_for_workstations",
+        "generate_excel_for_small_scale_servers",
+        "generate_excel_for_thin_clients"]
 
 from logging import debug, warning
+from erplot3 import *
 
 def generate_excel(sysinfo, version, output):
     if not output:
@@ -99,6 +100,7 @@ class ExcelMaker:
         theme["left"] = book.add_format({'align': 'left'})
         theme["right"] = book.add_format({'align': 'right'})
         theme["center"] = book.add_format({'align': 'center'})
+        theme["warning"] = book.add_format({'color': '#FF0000'})
         theme["field"] = book.add_format({
             'border': 1,
             'fg_color': '#F3F3F3'})
@@ -224,8 +226,14 @@ class ExcelMaker:
     def tcell(self, label, formula=None, value=None, validator=None):
         self.ncell(1, 1, label, formula, value, validator, True)
 
+    def up(self):
+        self.row = self.row - 1
+
     def down(self):
         self.row = self.row + 1
+
+    def left(self):
+        self.column = chr(ord(self.column) - 1)
 
     def right(self):
         self.column = chr(ord(self.column) + 1)
@@ -241,10 +249,12 @@ palette = {
         # Header
         'General': ('header', None),
         'Graphics': ('header', None),
+        'Additional Discrete Graphics': ('header', None),
         'Power Consumption': ('header', None),
         'Display': ('header', None),
         'Energy Star 5.2': ('header', None),
         'Energy Star 6.0': ('header', None),
+        'ErP Lot 3 from 1 July 2014': ('header', None),
 
         # Inner header
         'Category': ('fieldC', None),
@@ -264,7 +274,9 @@ palette = {
 
         # Cell without ceil and floor and float 1
         'P_OFF': ('field1', 'value1'),
+        'P_OFF_WOL': ('field1', 'value1'),
         'P_SLEEP': ('field1', 'value1'),
+        'P_SLEEP_WOL': ('field1', 'value1'),
         'P_LONG_IDLE': ('field1', 'value1'),
         'ALLOWANCE_PSU': ('field1', 'float3'),
         'TEC_BASE': ('field1', 'value1'),
@@ -281,9 +293,11 @@ palette = {
 
         # Important result
         'E_TEC': ('result', 'result_value'),
+        'E_TEC_WOL': ('result', 'result_value'),
         'E_TEC_MAX': ('result', 'result_value'),
 
         # Prompt
+        'warning': ('warning', None),
         'center': ('center', None),
         'field1': ('field1', None),
         'result': ('result', None),
@@ -395,6 +409,20 @@ def generate_excel_for_computers(excel, sysinfo):
         excel.tcell("Physical Diagonal (inch)", sysinfo.diagonal)
         excel.tcell("Screen Width (px)", sysinfo.width)
         excel.tcell("Screen Height (px)", sysinfo.height)
+
+    if sysinfo.discrete_gpu_num > 1:
+        excel.down()
+        excel.ncell(2, 1, "Additional Discrete Graphics")
+        for i in xrange(sysinfo.discrete_gpu_num - 1):
+            palette["dGfx #%d" % (i+2)] = ('field', 'unsure')
+            excel.tcell("dGfx #%d" % (i+2), "G1 (FB_BW <= 16)", [
+                'G1 (FB_BW <= 16)',
+                'G2 (16 < FB_BW <= 32)',
+                'G3 (32 < FB_BW <= 64)',
+                'G4 (64 < FB_BW <= 96)',
+                'G5 (96 < FB_BW <= 128)',
+                'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)',
+                'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)'])
 
     # Energy Star 5.2
     excel.jump('D', 1)
@@ -1018,6 +1046,86 @@ def generate_excel_for_computers(excel, sysinfo):
     excel.cell('center', '=IF(%s<=%s, "PASS", "FAIL")' % (
         excel.pos["E_TEC"],
         excel.pos["E_TEC_MAX"]), RESULT)
+
+    # ErP Lot 3 from 1 July 2014
+    excel.jump('D', 23)
+    if sysinfo.computer_type == 3:
+        width = 6
+    else:
+        width = 7
+    excel.ncell(width, 1, "ErP Lot 3 from 1 July 2014")
+    early = ErPLot3_2014(sysinfo)
+
+    (T_OFF, T_SLEEP, T_IDLE) = early.get_T_values()
+    E_TEC = early.get_E_TEC()
+    E_TEC_WOL = early.get_E_TEC_WOL()
+
+    excel.tcell("T_OFF", '=IF(EXACT(%s,"Notebook"),0.6,0.55' % excel.pos["Computer Type"], T_OFF)
+    excel.tcell("T_SLEEP", '=IF(EXACT(%s,"Notebook"),0.1,0.05' % excel.pos["Computer Type"], T_SLEEP)
+    excel.tcell("T_IDLE", '=IF(EXACT(%s,"Notebook"),0.3,0.4' % excel.pos["Computer Type"], T_IDLE)
+
+    excel.tcell("P_OFF", '=%s' % excel.pos["Off mode (W)"], sysinfo.off)
+    excel.tcell("P_OFF_WOL", '=%s' % excel.pos["Off mode (W) with WOL"], sysinfo.off_wol)
+    excel.tcell("P_SLEEP", '=%s' % excel.pos["Sleep mode (W)"], sysinfo.sleep)
+    excel.tcell("P_SLEEP_WOL", '=%s' % excel.pos["Sleep mode (W) with WOL"], sysinfo.sleep_wol)
+    excel.tcell("P_IDLE", '=%s' % excel.pos["Short idle mode (W)"], sysinfo.short_idle)
+
+    excel.tcell("E_TEC", "=(%s*%s+%s*%s+%s*%s)*8760/1000" % (
+        excel.pos["T_OFF"], excel.pos["P_OFF"],
+        excel.pos["T_SLEEP"], excel.pos["P_SLEEP"],
+        excel.pos["T_IDLE"], excel.pos["P_IDLE"]), E_TEC)
+
+    excel.tcell("E_TEC_WOL", "=(%s*%s+%s*%s+%s*%s)*8760/1000" % (
+        excel.pos["T_OFF"], excel.pos["P_OFF_WOL"],
+        excel.pos["T_SLEEP"], excel.pos["P_SLEEP_WOL"],
+        excel.pos["T_IDLE"], excel.pos["P_IDLE"]), E_TEC_WOL)
+
+    if sysinfo.computer_type == 3:
+        if sysinfo.sleep > 3 or sysinfo.sleep_wol > 3.7:
+            RESULT = 'FAIL'
+        else:
+            RESULT = 'PASS'
+    else:
+        if sysinfo.sleep > 5 or sysinfo.sleep_wol > 5.7:
+            RESULT = 'FAIL'
+        else:
+            RESULT = 'PASS'
+
+    excel.cell('center', '=IF(OR(%s>1.0,%s>1.7), "FAIL", "PASS")' % (
+        excel.pos["Off mode (W)"],
+        excel.pos["Off mode (W) with WOL"]), RESULT)
+
+    excel.up()
+    excel.right()
+    excel.cell('center', '=IF(EXACT(%s,"Notebook"), IF(OR(%s>3.0,%s>3.7), "FAIL", "PASS"), IF(OR(%s>5.0,%s>5.7), "FAIL", "PASS")' % (
+        excel.pos["Computer Type"],
+        excel.pos["Sleep mode (W)"],
+        excel.pos["Sleep mode (W) with WOL"],
+        excel.pos["Sleep mode (W)"],
+        excel.pos["Sleep mode (W) with WOL"]), RESULT)
+
+    if sysinfo.off > 1 or sysinfo.off_wol > 1.7:
+        RESULT = 'FAIL'
+    else:
+        RESULT = 'PASS'
+
+    # TODO
+    if early.check_special_case():
+        notebook_msg = "If discrete graphics card(s) providing total frame buffer bandwidths above 225 GB/s, use the requirement from 1 January 2016 instead."
+        desktop_msg = "If discrete graphics card(s) providing total frame buffer bandwidths above 320 GB/s and a PSU with a rated output power of at least 1000W, use the requirement from 1 January 2016 instead."
+        if early.computer_type == 3:
+            msg = notebook_msg
+        else:
+            msg = desktop_msg
+        excel.cell('warning', '=IF(EXACT(%s, "Notebook"), IF(AND(%s >= 4, %s >=16), "%s", ""), IF(AND(%s >= 6, %s >=16), "%s", "") )' % (
+            excel.pos["Computer Type"],
+            excel.pos["CPU cores"],
+            excel.pos["Memory size (GB)"],
+            notebook_msg,
+            excel.pos["CPU cores"],
+            excel.pos["Memory size (GB)"],
+            desktop_msg), msg)
+    # TODO
 
 def generate_excel_for_workstations(book, sysinfo, version):
 

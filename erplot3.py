@@ -20,6 +20,11 @@
 import unittest
 from sysinfo import SysInfo
 from logging import debug, warning
+
+__all__ = [
+        "ErPLot3",
+        "ErPLot3_2014",
+        "ErPLot3_2016"]
     
 class ErPLot3:
     """ErP Lot 3 calculator"""
@@ -35,18 +40,18 @@ class ErPLot3:
             else:
                 print("\033[1;91mWARNING\033[0m: If discrete graphics card(s) providing total frame buffer bandwidths above 320 GB/s and\n         a PSU with a rated output power of at least 1000W, use the requirement from 1 January 2016 instead.")
 
-        if self._verifying_s3_s4(early):
+        if self._verify_s3_s4(early):
             self._calculate(early)
         print("\nErP Lot 3 from 1 January 2016:\n")
         late = ErPLot3_2016(self.sysinfo)
-        if self._verifying_s3_s4(late):
+        if self._verify_s3_s4(late):
             self._calculate(late)
 
     def _calculate(self, inst):
         if self.sysinfo.computer_type == 3:
-            categories = ('C', 'B', 'A')
+            categories = ('A', 'B', 'C')
         else:
-            categories = ('D', 'C', 'B', 'A')
+            categories = ('A', 'B', 'C', 'D')
         candidates = []
         for category in categories:
             ret = inst.category(category)
@@ -78,7 +83,7 @@ class ErPLot3:
             else:
                 print("    No console output because of too many discrete graphics cards.")
 
-    def _verifying_s3_s4(self, inst):
+    def _verify_s3_s4(self, inst):
         if self.sysinfo.computer_type != 3:
             if inst.sleep > 5:
                 print("      Fail because P_SLEEP (%s) > 5.0" % inst.sleep)
@@ -136,10 +141,10 @@ class ErPLot3:
             return
         else:
             if gpu:
-                print("      %s (E_TEC) > %s (E_TEC_MAX) and %s (E_TEC_WOL) > %s (E_TEC_MAX) for %s, PASS" %
+                print("      %s (E_TEC) <= %s (E_TEC_MAX), and %s (E_TEC_WOL) <= %s (E_TEC_MAX) for %s, PASS" %
                         (E_TEC, E_TEC_MAX, E_TEC_WOL, E_TEC_MAX, msg))
             else:
-                print("      %s (E_TEC) > %s (E_TEC_MAX) and %s (E_TEC_WOL) > %s (E_TEC_MAX), PASS" %
+                print("      %s (E_TEC) <= %s (E_TEC_MAX), and %s (E_TEC_WOL) <= %s (E_TEC_MAX), PASS" %
                         (E_TEC, E_TEC_MAX, E_TEC_WOL, E_TEC_MAX))
 
 
@@ -225,6 +230,13 @@ class ErPLot3_2014:
 
         E_TEC = ((T_OFF * self.off) + (T_SLEEP * self.sleep) + (T_IDLE * self.idle)) * 8760 / 1000
         return E_TEC
+
+    def get_T_values(self):
+        if self.computer_type == 3:
+            (T_OFF, T_SLEEP, T_IDLE) = (0.6, 0.1, 0.3)
+        else:
+            (T_OFF, T_SLEEP, T_IDLE) = (0.55, 0.05, 0.4)
+        return (T_OFF, T_SLEEP, T_IDLE)
 
     def get_E_TEC_WOL(self):
         if self.computer_type == 3:
