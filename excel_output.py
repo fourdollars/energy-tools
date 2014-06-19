@@ -30,18 +30,31 @@ def generate_excel(sysinfo, version, output):
     if not output:
         return
 
-    excel = ExcelMaker(version, output)
+    if sysinfo.product_type == 1:
+        excel = ExcelMaker(version, output)
+    else:
+        try:
+            from xlsxwriter import Workbook
+        except:
+            warning("You need to install Python xlsxwriter module or you can not output Excel format file.")
+            return
+
+        book = Workbook(output)
+        book.set_properties({'comments':"Created by Energy Tools %s from Canonical Ltd." % (version)})
 
     if sysinfo.product_type == 1:
         generate_excel_for_computers(excel, sysinfo)
     elif sysinfo.product_type == 2:
-        generate_excel_for_workstations(excel, sysinfo)
+        generate_excel_for_workstations(book, sysinfo, version)
     elif sysinfo.product_type == 3:
-        generate_excel_for_small_scale_servers(excel, sysinfo)
+        generate_excel_for_small_scale_servers(book, sysinfo, version)
     elif sysinfo.product_type == 4:
-        generate_excel_for_thin_clients(excel, sysinfo)
+        generate_excel_for_thin_clients(book, sysinfo, version)
 
-    excel.save()
+    if sysinfo.product_type == 1:
+        excel.save()
+    else:
+        book.close()
 
 class ExcelMaker:
     def __init__(self, version, output):
@@ -560,7 +573,6 @@ def generate_excel_for_computers(excel, sysinfo):
                 RESULT = "PASS"
             else:
                 RESULT = "FAIL"
-            print('Hello Kitty')
         else:
             TEC_BASE = ""
             TEC_MEMORY = ""
