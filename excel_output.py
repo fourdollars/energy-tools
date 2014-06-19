@@ -413,7 +413,7 @@ def generate_excel_for_computers(excel, sysinfo):
     if sysinfo.discrete_gpu_num > 1:
         excel.down()
         excel.ncell(2, 1, "Additional Discrete Graphics")
-        for i in xrange(sysinfo.discrete_gpu_num - 1):
+        for i in range(int(sysinfo.discrete_gpu_num) - 1):
             palette["dGfx #%d" % (i+2)] = ('field', 'unsure')
             excel.tcell("dGfx #%d" % (i+2), "G1 (FB_BW <= 16)", [
                 'G1 (FB_BW <= 16)',
