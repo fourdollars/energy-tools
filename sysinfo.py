@@ -130,7 +130,7 @@ class SysInfo:
         else:
             self.eee = 0
             for eth in os.listdir("/sys/class/net/"):
-                if eth.startswith('eth') and subprocess.check_call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % eth, shell=True) == 0:
+                if eth.startswith('eth') and subprocess.call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % eth, shell=True) == 0:
                     self.eee = self.eee + 1
 
         # Product type
