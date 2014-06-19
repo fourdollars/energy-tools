@@ -50,16 +50,16 @@ class EnergyStar60:
         if self.sysinfo.computer_type != 3:
             if P <= 3:
                 TEC_BASE = 69.0
-            elif self.sysinfo.switchable or not self.sysinfo.discrete:
+            elif self.sysinfo.discrete:
+                if P <= 9:
+                    TEC_BASE = 115.0
+                else:
+                    TEC_BASE = 135.0
+            else:
                 if P <= 6:
                     TEC_BASE = 112.0
                 elif P <= 7:
                     TEC_BASE = 120.0
-                else:
-                    TEC_BASE = 135.0
-            else:
-                if P <= 9:
-                    TEC_BASE = 115.0
                 else:
                     TEC_BASE = 135.0
         else:
