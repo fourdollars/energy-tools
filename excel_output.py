@@ -83,7 +83,14 @@ class ExcelMaker:
         self.setup_theme()
         self.row = 1
         self.column = 'A'
-        self.pos = {}
+        self.pos = {
+                'g1': G1,
+                'g2': G2,
+                'g3': G3,
+                'g4': G4,
+                'g5': G5,
+                'g6': G6,
+                'g7': G7}
 
     def save(self):
         self.book.close()
@@ -171,7 +178,7 @@ class ExcelMaker:
         theme["result_value"].set_num_format('0.00')
         self.theme = theme
 
-    def ncell(self, width, height, label, formula=None, value=None, validator=None, twin=False):
+    def ncell(self, width, height, label, formula=None, value=None, validator=None, abbr=None, twin=False):
         if type(value) is list:
             validator = value
             value = None
@@ -218,6 +225,7 @@ class ExcelMaker:
         if twin:
             self.sheet.write("%s" % start_cell, label, theme1)
             if formula:
+                formula = formula % self.pos
                 self.sheet.write("%s" % next_cell, formula, theme2, value)
             else:
                 self.sheet.write("%s" % next_cell, value, theme2)
@@ -227,20 +235,27 @@ class ExcelMaker:
                     'source': validator})
         else:
             if formula:
+                formula = formula % self.pos
                 self.sheet.write("%s" % start_cell, formula, theme1, value)
             else:
                 self.sheet.write("%s" % start_cell, value, theme1)
         if twin:
-            self.pos[label] = next_cell
+            if abbr:
+                self.pos[abbr] = next_cell
+            else:
+                self.pos[label] = next_cell
         else:
-            self.pos[label] = start_cell
+            if abbr:
+                self.pos[abbr] = start_cell 
+            else:
+                self.pos[label] = start_cell
         self.row = self.row + height
 
-    def cell(self, label, formula=None, value=None, validator=None):
-        self.ncell(1, 1, label, formula, value, validator)
+    def cell(self, label, formula=None, value=None, validator=None, abbr=None):
+        self.ncell(1, 1, label, formula, value, validator, abbr)
 
-    def tcell(self, label, formula=None, value=None, validator=None):
-        self.ncell(1, 1, label, formula, value, validator, True)
+    def tcell(self, label, formula=None, value=None, validator=None, abbr=None):
+        self.ncell(1, 1, label, formula, value, validator, abbr, True)
 
     def up(self, step=1):
         self.row = self.row - step
@@ -368,24 +383,24 @@ def generate_excel_for_computers(excel, sysinfo):
     else:
         msg = "Notebook"
 
-    excel.tcell("Computer Type", msg)
-    excel.tcell("CPU cores", sysinfo.cpu_core)
+    excel.tcell("Computer Type", msg, abbr='computer')
+    excel.tcell("CPU cores", sysinfo.cpu_core, abbr='cpu_core')
 
-    excel.tcell("CPU clock (GHz)", sysinfo.cpu_clock)
-    excel.tcell("Memory size (GB)", sysinfo.mem_size)
-    excel.tcell("Number of Hard Drives", sysinfo.disk_num)
-    excel.tcell("Number of Discrete Graphics Cards", sysinfo.discrete_gpu_num)
+    excel.tcell("CPU clock (GHz)", sysinfo.cpu_clock, abbr='cpu_clock')
+    excel.tcell("Memory size (GB)", sysinfo.mem_size, abbr='memory')
+    excel.tcell("Number of Hard Drives", sysinfo.disk_num, abbr='disk_number')
+    excel.tcell("Number of Discrete Graphics Cards", sysinfo.discrete_gpu_num, abbr='gpu_number')
     if sysinfo.tvtuner:
         msg = "Yes"
     else:
         msg = "No"
-    excel.tcell("Discrete television tuner", msg, ["Yes", "No"])
+    excel.tcell("Discrete television tuner", msg, ["Yes", "No"], abbr='tvtuner')
     if sysinfo.audio:
         msg = "Yes"
     else:
         msg = "No"
-    excel.tcell("Discrete audio card", msg, ["Yes", "No"])
-    excel.tcell("IEEE 802.3az compliant Gigabit Ethernet", sysinfo.eee)
+    excel.tcell("Discrete audio card", msg, ["Yes", "No"], abbr='audio')
+    excel.tcell("IEEE 802.3az compliant Gigabit Ethernet", sysinfo.eee, abbr='eee')
 
     excel.down()
 
@@ -396,25 +411,25 @@ def generate_excel_for_computers(excel, sysinfo):
         msg = "Discrete"
     else:
         msg = "Integrated"
-    excel.tcell("Graphics Type", msg, ['Integrated', 'Switchable', 'Discrete'])
+    excel.tcell("Graphics Type", msg, ['Integrated', 'Switchable', 'Discrete'], abbr='gpu_type')
     if sysinfo.computer_type == 3:
         msg = "<= 64-bit"
         validator = ['<= 64-bit', '> 64-bit and <= 128-bit', '> 128-bit']
     else:
         msg = "<= 128-bit"
         validator = ['<= 128-bit', '> 128-bit']
-    excel.tcell("GPU Frame Buffer Width", msg, validator)
-    excel.tcell("Graphics Category", G1, GN_LIST)
+    excel.tcell("GPU Frame Buffer Width", msg, validator, abbr='gpu_width')
+    excel.tcell("Graphics Category", G1, GN_LIST, abbr='gpu_category')
 
     excel.down()
 
     excel.ncell(2, 1, "Power Consumption")
-    excel.tcell("Off mode (W)", sysinfo.off)
-    excel.tcell("Off mode (W) with WOL", sysinfo.off_wol)
-    excel.tcell("Sleep mode (W)", sysinfo.sleep)
-    excel.tcell("Sleep mode (W) with WOL", sysinfo.sleep_wol)
-    excel.tcell("Long idle mode (W)", sysinfo.long_idle)
-    excel.tcell("Short idle mode (W)", sysinfo.short_idle)
+    excel.tcell("Off mode (W)", sysinfo.off, abbr='off')
+    excel.tcell("Off mode (W) with WOL", sysinfo.off_wol, abbr='off_wol')
+    excel.tcell("Sleep mode (W)", sysinfo.sleep, abbr='sleep')
+    excel.tcell("Sleep mode (W) with WOL", sysinfo.sleep_wol, abbr='sleep_wol')
+    excel.tcell("Long idle mode (W)", sysinfo.long_idle, abbr='long_idle')
+    excel.tcell("Short idle mode (W)", sysinfo.short_idle, abbr='short_idle')
 
     excel.down()
 
@@ -424,17 +439,17 @@ def generate_excel_for_computers(excel, sysinfo):
             msg = "Yes"
         else:
             msg = "No"
-        excel.tcell("Enhanced-performance Integrated Display", msg, ["Yes", "No"])
-        excel.tcell("Physical Diagonal (inch)", sysinfo.diagonal)
-        excel.tcell("Screen Width (px)", sysinfo.width)
-        excel.tcell("Screen Height (px)", sysinfo.height)
+        excel.tcell("Enhanced-performance Integrated Display", msg, ["Yes", "No"], abbr='ep_display')
+        excel.tcell("Physical Diagonal (inch)", sysinfo.diagonal, abbr='diagonal')
+        excel.tcell("Screen Width (px)", sysinfo.width, abbr='width')
+        excel.tcell("Screen Height (px)", sysinfo.height, abbr='height')
 
     if sysinfo.discrete_gpu_num > 1:
         excel.down()
         excel.ncell(2, 1, "Additional Discrete Graphics")
         for i in range(int(sysinfo.discrete_gpu_num) - 1):
             palette["dGfx #%d" % (i+2)] = ('field', 'unsure')
-            excel.tcell("dGfx #%d" % (i+2), G1, GN_LIST)
+            excel.tcell("dGfx #%d" % (i+2), G1, GN_LIST, abbr='dGfx%d' % (i+2))
 
     # Energy Star 5.2
     excel.jump('D', 1)
@@ -450,20 +465,17 @@ def generate_excel_for_computers(excel, sysinfo):
     else:
         (T_OFF, T_SLEEP, T_IDLE) = (0.55, 0.05, 0.4)
 
-    excel.tcell("T_OFF", '=IF(EXACT(%s,"Notebook"),0.6,0.55' % excel.pos["Computer Type"], T_OFF)
-    excel.tcell("T_SLEEP", '=IF(EXACT(%s,"Notebook"),0.1,0.05' % excel.pos["Computer Type"], T_SLEEP)
-    excel.tcell("T_IDLE", '=IF(EXACT(%s,"Notebook"),0.3,0.4' % excel.pos["Computer Type"], T_IDLE)
+    excel.tcell("T_OFF", '=IF(EXACT(%(computer)s,"Notebook"),0.6,0.55', T_OFF, abbr='t_off')
+    excel.tcell("T_SLEEP", '=IF(EXACT(%(computer)s,"Notebook"),0.1,0.05', T_SLEEP, abbr='t_sleep')
+    excel.tcell("T_IDLE", '=IF(EXACT(%(computer)s,"Notebook"),0.3,0.4', T_IDLE, abbr='t_idle')
 
-    excel.tcell("P_OFF", '=%s' % excel.pos["Off mode (W)"], sysinfo.off)
-    excel.tcell("P_SLEEP", '=%s' % excel.pos["Sleep mode (W)"], sysinfo.sleep)
-    excel.tcell("P_IDLE", '=%s' % excel.pos["Short idle mode (W)"], sysinfo.short_idle)
+    excel.tcell("P_OFF", '=%(off)s', sysinfo.off, abbr='p_off')
+    excel.tcell("P_SLEEP", '=%(sleep)s', sysinfo.sleep, abbr='p_sleep')
+    excel.tcell("P_IDLE", '=%(short_idle)s', sysinfo.short_idle, abbr='p_idle')
 
     E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_IDLE * sysinfo.short_idle) * 8760 / 1000
 
-    excel.tcell("E_TEC", "=(%s*%s+%s*%s+%s*%s)*8760/1000" % (
-        excel.pos["T_OFF"], excel.pos["P_OFF"],
-        excel.pos["T_SLEEP"], excel.pos["P_SLEEP"],
-        excel.pos["T_IDLE"], excel.pos["P_IDLE"]), E_TEC)
+    excel.tcell("E_TEC", "=(%(t_off)s*%(p_off)s+%(t_sleep)s*%(p_sleep)s+%(t_idle)s*%(p_idle)s)*8760/1000", E_TEC)
 
     # Prompt
     excel.jump('F', 2)
@@ -485,44 +497,31 @@ def generate_excel_for_computers(excel, sysinfo):
             msg = "B"
         else:
             msg = ""
-        excel.ncell(1, 2, 'B', '=IF(EXACT(%s,"Discrete"), "B", "")' % excel.pos["Graphics Type"], msg)
+        excel.ncell(1, 2, 'B', '=IF(EXACT(%(gpu_type)s,"Discrete"), "B", "")', msg)
 
         excel.jump('I', 2)
-        excel.ncell(1, 2, 'C', '=IF(AND(EXACT(%s,"Discrete"), EXACT(%s, "> 128-bit"), %s>=2, %s>=2), "C", "")' % (
-            excel.pos["Graphics Type"],
-            excel.pos["GPU Frame Buffer Width"],
-            excel.pos["CPU cores"],
-            excel.pos["Memory size (GB)"]), "")
+        excel.ncell(1, 2, 'C', '=IF(AND(EXACT(%(gpu_type)s,"Discrete"), EXACT(%(gpu_width)s, "> 128-bit"), %(cpu_core)s>=2, %(memory)s>=2), "C", "")', "")
     else:
         excel.jump('H', 2)
         if sysinfo.cpu_core == 2 and sysinfo.mem_size >=2:
             msg = "B"
         else:
             msg = ""
-        excel.ncell(1, 2, 'B', '=IF(AND(%s=2,%s>=2), "B", "")' % (
-            excel.pos["CPU cores"],
-            excel.pos["Memory size (GB)"]), msg)
+        excel.ncell(1, 2, 'B', '=IF(AND(%(cpu_core)s=2,%(memory)s>=2), "B", "")', msg)
 
         excel.jump('I', 2)
         if sysinfo.cpu_core > 2 and (sysinfo.mem_size >= 2 or sysinfo.discrete):
             msg = "C"
         else:
             msg = ""
-        excel.ncell(1, 2, 'C', '=IF(AND(%s>2,OR(%s>=2,EXACT(%s,"Discrete"))), "C", "")' % (
-            excel.pos["CPU cores"],
-            excel.pos["Memory size (GB)"],
-            excel.pos["Graphics Type"]), msg)
+        excel.ncell(1, 2, 'C', '=IF(AND(%(cpu_core)s>2,OR(%(memory)s>=2,EXACT(%(gpu_type)s,"Discrete"))), "C", "")', msg)
 
         excel.jump('J', 2)
         if sysinfo.cpu_core >= 4 and sysinfo.mem_size >= 4:
             msg = "D"
         else:
             msg = ""
-        excel.ncell(1, 2, 'D', '=IF(AND(%s>=4,OR(%s>=4,AND(EXACT(%s,"Discrete"),EXACT(%s,"> 128-bit")))), "D", "")' % (
-            excel.pos["CPU cores"],
-            excel.pos["Memory size (GB)"],
-            excel.pos["Graphics Type"],
-            excel.pos["GPU Frame Buffer Width"]), msg)
+        excel.ncell(1, 2, 'D', '=IF(AND(%(cpu_core)s>=4,OR(%(memory)s>=4,AND(EXACT(%(gpu_type)s,"Discrete"),EXACT(%(gpu_width)s,"> 128-bit")))), "D", "")', msg)
 
     excel.jump('F', 4)
     excel.cell("field1", "TEC_BASE")
@@ -550,9 +549,9 @@ def generate_excel_for_computers(excel, sysinfo):
             TEC_STORAGE = 0
 
         excel.cell("TEC_BASE", TEC_BASE)
-        excel.cell("TEC_MEMORY", "=IF(%s>4, 0.4*(%s-4), 0)" % (excel.pos["Memory size (GB)"], excel.pos["Memory size (GB)"]), TEC_MEMORY)
+        excel.cell("TEC_MEMORY", "=IF(%(memory)s>4, 0.4*(%(memory)s-4), 0)", TEC_MEMORY)
         excel.cell("TEC_GRAPHICS", TEC_GRAPHICS)
-        excel.cell("TEC_STORAGE", "=IF(%s>1, 3*(%s-1), 0)" % (excel.pos["Number of Hard Drives"], excel.pos["Number of Hard Drives"]), TEC_STORAGE)
+        excel.cell("TEC_STORAGE", "=IF(%(disk_number)s>1, 3*(%(disk_number)s-1), 0)", TEC_STORAGE)
     else:
         # Desktop
         TEC_BASE = 148
@@ -570,23 +569,17 @@ def generate_excel_for_computers(excel, sysinfo):
             TEC_STORAGE = 0
  
         excel.cell("TEC_BASE", TEC_BASE)
-        excel.cell("TEC_MEMORY", "=IF(%s>2, 1.0*(%s-2), 0)" % (excel.pos["Memory size (GB)"], excel.pos["Memory size (GB)"]), TEC_MEMORY)
-        excel.cell("TEC_GRAPHICS", '=IF(EXACT(%s,"> 128-bit"), 50, 35)' % excel.pos["GPU Frame Buffer Width"], TEC_GRAPHICS)
-        excel.cell("TEC_STORAGE", "=IF(%s>1, 25*(%s-1), 0)" % (excel.pos["Number of Hard Drives"], excel.pos["Number of Hard Drives"]), TEC_STORAGE)
+        excel.cell("TEC_MEMORY", "=IF(%(memory)s>2, 1.0*(%(memory)s-2), 0)", TEC_MEMORY)
+        excel.cell("TEC_GRAPHICS", '=IF(EXACT(%(gpu_width)s,"> 128-bit"), 50, 35)', TEC_GRAPHICS)
+        excel.cell("TEC_STORAGE", "=IF(%(disk_number)s>1, 25*(%(disk_number)s-1), 0)", TEC_STORAGE)
 
     E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE
-    excel.cell("E_TEC_MAX", "=%s+%s+%s+%s" % (
-        excel.pos["TEC_BASE"],
-        excel.pos["TEC_MEMORY"],
-        excel.pos["TEC_GRAPHICS"],
-        excel.pos["TEC_STORAGE"]), E_TEC_MAX)
+    excel.cell("E_TEC_MAX", "=%(TEC_BASE)s+%(TEC_MEMORY)s+%(TEC_GRAPHICS)s+%(TEC_STORAGE)s", E_TEC_MAX)
     if E_TEC <= E_TEC_MAX:
         RESULT = "PASS"
     else:
         RESULT = "FAIL"
-    excel.cell('center', '=IF(%s<=%s, "PASS", "FAIL")' % (
-        excel.pos["E_TEC"],
-        excel.pos["E_TEC_MAX"]), RESULT)
+    excel.cell('center', '=IF(%(E_TEC)s<=%(E_TEC_MAX)s, "PASS", "FAIL")', RESULT)
 
     # Category B
     excel.jump('H', 4)
@@ -620,10 +613,10 @@ def generate_excel_for_computers(excel, sysinfo):
             TEC_STORAGE = ""
             E_TEC_MAX = ""
             RESULT = ""
-        excel.cell('TEC_BASE', '=IF(EXACT(%s, "B"), 53, "")' % excel.pos["B"], TEC_BASE)
-        excel.cell('TEC_MEMORY', '=IF(EXACT(%s, "B"), %s, "")' % (excel.pos["B"], excel.pos["TEC_MEMORY"]), TEC_MEMORY)
-        excel.cell('TEC_GRAPHICS', '=IF(EXACT(%s, "B"), IF(EXACT(%s, "<= 64-bit"), 0, 3), "")' % (excel.pos["B"], excel.pos["GPU Frame Buffer Width"]), TEC_GRAPHICS)
-        excel.cell('TEC_STORAGE', '=IF(EXACT(%s, "B"), %s, "")' % (excel.pos["B"], excel.pos["TEC_STORAGE"]), TEC_STORAGE)
+        excel.cell('TEC_BASE', '=IF(EXACT(%(B)s, "B"), 53, "")', TEC_BASE)
+        excel.cell('TEC_MEMORY', '=IF(EXACT(%(B)s, "B"), %(TEC_MEMORY)s, "")', TEC_MEMORY)
+        excel.cell('TEC_GRAPHICS', '=IF(EXACT(%(B)s, "B"), IF(EXACT(%(gpu_width)s, "<= 64-bit"), 0, 3), "")', TEC_GRAPHICS)
+        excel.cell('TEC_STORAGE', '=IF(EXACT(%(B)s, "B"), %(TEC_STORAGE)s, "")', TEC_STORAGE)
     else:
         # Desktop
         if sysinfo.cpu_core == 2 and sysinfo.mem_size >= 2:
@@ -654,21 +647,13 @@ def generate_excel_for_computers(excel, sysinfo):
             TEC_STORAGE = ""
             E_TEC_MAX = ""
             RESULT = ""
-        excel.cell('TEC_BASE', '=IF(EXACT(%s, "B"), 175, "")' % excel.pos["B"], TEC_BASE)
-        excel.cell('TEC_MEMORY', '=IF(EXACT(%s, "B"), %s, "")' % (excel.pos["B"], excel.pos["TEC_MEMORY"]), TEC_MEMORY)
-        excel.cell('TEC_GRAPHICS', '=IF(EXACT(%s, "B"), %s, "")' % (excel.pos["B"], excel.pos["TEC_GRAPHICS"]), TEC_GRAPHICS)
-        excel.cell('TEC_STORAGE', '=IF(EXACT(%s, "B"), %s, "")' % (excel.pos["B"], excel.pos["TEC_STORAGE"]), TEC_STORAGE)
+        excel.cell('TEC_BASE', '=IF(EXACT(%(B)s, "B"), 175, "")', TEC_BASE)
+        excel.cell('TEC_MEMORY', '=IF(EXACT(%(B)s, "B"), %(TEC_MEMORY)s, "")', TEC_MEMORY)
+        excel.cell('TEC_GRAPHICS', '=IF(EXACT(%(B)s, "B"), %(TEC_GRAPHICS)s, "")', TEC_GRAPHICS)
+        excel.cell('TEC_STORAGE', '=IF(EXACT(%(B)s, "B"), %(TEC_STORAGE)s, "")', TEC_STORAGE)
 
-    excel.cell('E_TEC_MAX', '=IF(EXACT(%s, "B"), %s+%s+%s+%s, "")' % (
-        excel.pos["B"],
-        excel.pos["TEC_BASE"],
-        excel.pos["TEC_MEMORY"],
-        excel.pos["TEC_GRAPHICS"],
-        excel.pos["TEC_STORAGE"]), E_TEC_MAX)
-    excel.cell('center', '=IF(EXACT(%s, "B"), IF(%s<=%s, "PASS", "FAIL"), "")' % (
-        excel.pos["B"],
-        excel.pos["E_TEC"],
-        excel.pos["E_TEC_MAX"]), RESULT)
+    excel.cell('E_TEC_MAX', '=IF(EXACT(%(B)s, "B"), %(TEC_BASE)s+%(TEC_MEMORY)s+%(TEC_GRAPHICS)s+%(TEC_STORAGE)s, "")', E_TEC_MAX)
+    excel.cell('center', '=IF(EXACT(%(B)s, "B"), IF(%(E_TEC)s<=%(E_TEC_MAX)s, "PASS", "FAIL"), "")', RESULT)
 
     # Category C
     excel.jump('I', 4)
@@ -680,10 +665,10 @@ def generate_excel_for_computers(excel, sysinfo):
         TEC_STORAGE = ""
         E_TEC_MAX = ""
         RESULT = ""
-        excel.cell('TEC_BASE', '=IF(EXACT(%s, "C"), 88.5, "")' % excel.pos["C"], TEC_BASE)
-        excel.cell('TEC_MEMORY', '=IF(EXACT(%s, "C"), %s, "")' % (excel.pos["C"], excel.pos["TEC_MEMORY"]), TEC_MEMORY)
-        excel.cell('TEC_GRAPHICS', '=IF(EXACT(%s, "C"), 0, "")' % excel.pos["C"], TEC_GRAPHICS)
-        excel.cell('TEC_STORAGE', '=IF(EXACT(%s, "C"), %s, "")' % (excel.pos["C"], excel.pos["TEC_STORAGE"]), TEC_STORAGE)
+        excel.cell('TEC_BASE', '=IF(EXACT(%(C)s, "C"), 88.5, "")', TEC_BASE)
+        excel.cell('TEC_MEMORY', '=IF(EXACT(%(C)s, "C"), %(TEC_MEMORY)s, "")', TEC_MEMORY)
+        excel.cell('TEC_GRAPHICS', '=IF(EXACT(%(C)s, "C"), 0, "")', TEC_GRAPHICS)
+        excel.cell('TEC_STORAGE', '=IF(EXACT(%(C)s, "C"), %(TEC_STORAGE)s, "")', TEC_STORAGE)
     else:
         # Desktop
         if sysinfo.cpu_core > 2 and (sysinfo.mem_size >= 2 or sysinfo.discrete):
@@ -714,21 +699,13 @@ def generate_excel_for_computers(excel, sysinfo):
             TEC_STORAGE = ""
             E_TEC_MAX = ""
             RESULT = ""
-        excel.cell('TEC_BASE', '=IF(EXACT(%s, "C"), 209, "")' % excel.pos["C"], TEC_BASE)
-        excel.cell('TEC_MEMORY', '=IF(EXACT(%s, "C"), G5, "")' % excel.pos["C"], TEC_MEMORY)
-        excel.cell('TEC_GRAPHICS', '=IF(EXACT(%s, "C"), IF(EXACT(%s, "> 128-bit"), 50, 0), "")' % (excel.pos["C"], excel.pos["GPU Frame Buffer Width"]), TEC_GRAPHICS)
-        excel.cell('TEC_STORAGE', '=IF(EXACT(%s, "C"), G7, "")' % excel.pos["C"], TEC_STORAGE)
+        excel.cell('TEC_BASE', '=IF(EXACT(%(C)s, "C"), 209, "")', TEC_BASE)
+        excel.cell('TEC_MEMORY', '=IF(EXACT(%(C)s, "C"), G5, "")', TEC_MEMORY)
+        excel.cell('TEC_GRAPHICS', '=IF(EXACT(%(C)s, "C"), IF(EXACT(%(gpu_width)s, "> 128-bit"), 50, 0), "")', TEC_GRAPHICS)
+        excel.cell('TEC_STORAGE', '=IF(EXACT(%(C)s, "C"), G7, "")', TEC_STORAGE)
 
-    excel.cell('E_TEC_MAX', '=IF(EXACT(%s, "C"), %s+%s+%s+%s, "")' % (
-        excel.pos["C"],
-        excel.pos["TEC_BASE"],
-        excel.pos["TEC_MEMORY"],
-        excel.pos["TEC_GRAPHICS"],
-        excel.pos["TEC_STORAGE"]), E_TEC_MAX)
-    excel.cell('center', '=IF(EXACT(%s, "C"), IF(%s<=%s, "PASS", "FAIL"), "")' % (
-        excel.pos["C"],
-        excel.pos["E_TEC"],
-        excel.pos["E_TEC_MAX"]), RESULT)
+    excel.cell('E_TEC_MAX', '=IF(EXACT(%(C)s, "C"), %(TEC_BASE)s+%(TEC_MEMORY)s+%(TEC_GRAPHICS)s+%(TEC_STORAGE)s, "")', E_TEC_MAX)
+    excel.cell('center', '=IF(EXACT(%(C)s, "C"), IF(%(E_TEC)s<=%(E_TEC_MAX)s, "PASS", "FAIL"), "")', RESULT)
 
     excel.jump('J', 4)
     # Category D
@@ -762,23 +739,12 @@ def generate_excel_for_computers(excel, sysinfo):
             TEC_STORAGE = ""
             E_TEC_MAX = ""
             RESULT = ""
-        excel.cell('TEC_BASE', '=IF(EXACT(%s, "D"), 234, "")' % excel.pos["D"], TEC_BASE)
-        excel.cell('TEC_MEMORY', '=IF(EXACT(%s, "D"), IF(%s>4, %s-4, 0), "")' % (
-            excel.pos["D"],
-            excel.pos["Memory size (GB)"],
-            excel.pos["Memory size (GB)"]), TEC_MEMORY)
-        excel.cell('TEC_GRAPHICS', '=IF(EXACT(%s, "D"), %s, "")' % (excel.pos["D"], excel.pos["TEC_GRAPHICS"]), TEC_GRAPHICS)
-        excel.cell('TEC_STORAGE', '=IF(EXACT(%s, "D"), %s, "")' % (excel.pos["D"], excel.pos["TEC_STORAGE"]), TEC_STORAGE)
-        excel.cell('E_TEC_MAX', '=IF(EXACT(%s, "D"), %s+%s+%s+%s, "")' % (
-            excel.pos["D"],
-            excel.pos["TEC_BASE"],
-            excel.pos["TEC_MEMORY"],
-            excel.pos["TEC_GRAPHICS"],
-            excel.pos["TEC_STORAGE"]), E_TEC_MAX)
-        excel.cell('center', '=IF(EXACT(%s, "D"), IF(%s<=%s, "PASS", "FAIL"), "")' % (
-            excel.pos["D"],
-            excel.pos["E_TEC"],
-            excel.pos["E_TEC_MAX"]), RESULT)
+        excel.cell('TEC_BASE', '=IF(EXACT(%(D)s, "D"), 234, "")', TEC_BASE)
+        excel.cell('TEC_MEMORY', '=IF(EXACT(%(D)s, "D"), IF(%(memory)s>4, %(memory)s-4, 0), "")', TEC_MEMORY)
+        excel.cell('TEC_GRAPHICS', '=IF(EXACT(%(D)s, "D"), %(TEC_GRAPHICS)s, "")', TEC_GRAPHICS)
+        excel.cell('TEC_STORAGE', '=IF(EXACT(%(D)s, "D"), %(TEC_STORAGE)s, "")', TEC_STORAGE)
+        excel.cell('E_TEC_MAX', '=IF(EXACT(%(D)s, "D"), %(TEC_BASE)s+%(TEC_MEMORY)s+%(TEC_GRAPHICS)s+%(TEC_STORAGE)s, "")', E_TEC_MAX)
+        excel.cell('center', '=IF(EXACT(%(D)s, "D"), IF(%(E_TEC)s<=%(E_TEC_MAX)s, "PASS", "FAIL"), "")', RESULT)
 
     # Energy Star 6.0
     excel.jump('D', 10)
@@ -790,30 +756,24 @@ def generate_excel_for_computers(excel, sysinfo):
     else:
         (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.45, 0.05, 0.15, 0.35)
 
-    excel.tcell("T_OFF", '=IF(EXACT(%s,"Notebook"),0.25,0.45' % excel.pos["Computer Type"], T_OFF)
-    excel.tcell("T_SLEEP", '=IF(EXACT(%s,"Notebook"),0.35,0.05' % excel.pos["Computer Type"], T_SLEEP)
-    excel.tcell("T_LONG_IDLE", '=IF(EXACT(%s,"Notebook"),0.1,0.15' % excel.pos["Computer Type"], T_LONG_IDLE)
-    excel.tcell("T_SHORT_IDLE", '=IF(EXACT(%s,"Notebook"),0.3,0.35' % excel.pos["Computer Type"], T_SHORT_IDLE)
+    excel.tcell("T_OFF", '=IF(EXACT(%(computer)s,"Notebook"),0.25,0.45', T_OFF, abbr='t_off')
+    excel.tcell("T_SLEEP", '=IF(EXACT(%(computer)s,"Notebook"),0.35,0.05', T_SLEEP, abbr='t_sleep')
+    excel.tcell("T_LONG_IDLE", '=IF(EXACT(%(computer)s,"Notebook"),0.1,0.15', T_LONG_IDLE, abbr='t_long_idle')
+    excel.tcell("T_SHORT_IDLE", '=IF(EXACT(%(computer)s,"Notebook"),0.3,0.35', T_SHORT_IDLE, abbr='t_short_idle')
 
-    excel.tcell("P_OFF", '=%s' % excel.pos["Off mode (W)"], sysinfo.off)
-    excel.tcell("P_SLEEP", '=%s' % excel.pos["Sleep mode (W)"], sysinfo.sleep)
-    excel.tcell("P_LONG_IDLE", '=%s' % excel.pos["Long idle mode (W)"], sysinfo.long_idle)
-    excel.tcell("P_SHORT_IDLE", '=%s' % excel.pos["Short idle mode (W)"], sysinfo.short_idle)
+    excel.tcell("P_OFF", '=%(off)s', sysinfo.off, abbr='p_off')
+    excel.tcell("P_SLEEP", '=%(sleep)s', sysinfo.sleep, abbr='p_sleep')
+    excel.tcell("P_LONG_IDLE", '=%(long_idle)s', sysinfo.long_idle, abbr='p_long_idle')
+    excel.tcell("P_SHORT_IDLE", '=%(short_idle)s', sysinfo.short_idle, abbr='p_short_idle')
 
     E_TEC = (T_OFF * sysinfo.off + T_SLEEP * sysinfo.sleep + T_LONG_IDLE * sysinfo.long_idle + T_SHORT_IDLE * sysinfo.short_idle) * 8760 / 1000
 
-    excel.tcell("E_TEC", "=(%s*%s+%s*%s+%s*%s+%s*%s)*8760/1000" % (
-        excel.pos["T_OFF"], excel.pos["P_OFF"],
-        excel.pos["T_SLEEP"], excel.pos["P_SLEEP"],
-        excel.pos["T_LONG_IDLE"], excel.pos["P_LONG_IDLE"],
-        excel.pos["T_SHORT_IDLE"], excel.pos["P_SHORT_IDLE"]), E_TEC)
+    excel.tcell("E_TEC", "=(%(t_off)s*%(p_off)s+%(t_sleep)s*%(p_sleep)s+%(t_long_idle)s*%(p_long_idle)s+%(t_short_idle)s*%(p_short_idle)s)*8760/1000", E_TEC)
 
     # P, EP, r, A
     P = sysinfo.cpu_core * sysinfo.cpu_clock
     excel.jump('H', 11)
-    excel.tcell('P:', '=%s*%s' % (
-        excel.pos["CPU cores"],
-        excel.pos["CPU clock (GHz)"]), P)
+    excel.tcell('P:', '=%(cpu_core)s*%(cpu_clock)s', P)
 
     EP_LABEL = "EP:"
     if sysinfo.ep:
@@ -828,12 +788,9 @@ def generate_excel_for_computers(excel, sysinfo):
         else:
             EP = 0
     excel.jump('H', 12)
-    excel.cell('right', '=IF(EXACT(%s, "Desktop"), "", "EP:")' % excel.pos["Product Type"], EP_LABEL)
+    excel.cell('right', '=IF(EXACT(%(computer)s, "Desktop"), "", "EP:")', EP_LABEL)
     excel.jump('I', 12)
-    excel.cell('EP', '=IF(EXACT(%s, "Desktop"), "", IF(EXACT(%s, "Yes"), IF(%s >= 27, 0.75, 0.3), 0))' % (
-            excel.pos["Computer Type"],
-            excel.pos["Enhanced-performance Integrated Display"],
-            excel.pos["Physical Diagonal (inch)"]), EP)
+    excel.cell('EP', '=IF(EXACT(%(computer)s, "Desktop"), "", IF(EXACT(%(ep_display)s, "Yes"), IF(%(diagonal)s >= 27, 0.75, 0.3), 0))', EP)
 
     r_label = "r:"
     if sysinfo.computer_type != 1:
@@ -845,12 +802,9 @@ def generate_excel_for_computers(excel, sysinfo):
         else:
             r = 0
     excel.jump('H', 13)
-    excel.cell('right', '=IF(EXACT(%s, "Desktop"), "", "r:"' % excel.pos["Computer Type"], r_label)
+    excel.cell('right', '=IF(EXACT(%(computer)s, "Desktop"), "", "r:"', r_label)
     excel.jump('I', 13)
-    excel.cell('r', '=IF(EXACT(%s, "Desktop"), "", %s * %s / 1000000)' % (
-        excel.pos["Computer Type"],
-        excel.pos["Screen Width (px)"],
-        excel.pos["Screen Height (px)"]), r)
+    excel.cell('r', '=IF(EXACT(%(computer)s, "Desktop"), "", %(width)s * %(height)s / 1000000)', r)
 
     A_LABEL = "A:"
     if sysinfo.computer_type != 1:
@@ -862,18 +816,9 @@ def generate_excel_for_computers(excel, sysinfo):
         else:
             A = 0
     excel.jump('H', 14)
-    excel.cell('right', '=IF(EXACT(%s, "Desktop"), "", "A:"' % excel.pos["Computer Type"], A_LABEL)
+    excel.cell('right', '=IF(EXACT(%(computer)s, "Desktop"), "", "A:"', A_LABEL)
     excel.jump('I', 14)
-    excel.ncell(2, 1, 'A:', '=IF(EXACT(%s, "Desktop"), "", %s*%s*%s*%s/(%s*%s+%s*%s)' % (
-        excel.pos["Computer Type"],
-        excel.pos["Physical Diagonal (inch)"],
-        excel.pos["Physical Diagonal (inch)"],
-        excel.pos["Screen Width (px)"],
-        excel.pos["Screen Height (px)"],
-        excel.pos["Screen Width (px)"],
-        excel.pos["Screen Width (px)"],
-        excel.pos["Screen Height (px)"],
-        excel.pos["Screen Height (px)"]), A)
+    excel.ncell(2, 1, 'A:', '=IF(EXACT(%(computer)s, "Desktop"), "", %(diagonal)s*%(diagonal)s*%(width)s*%(height)s/(%(width)s*%(width)s+%(height)s*%(height)s)', A)
 
     excel.jump('F', 11)
 
@@ -914,31 +859,13 @@ def generate_excel_for_computers(excel, sysinfo):
                 TEC_BASE = 69
 
     if sysinfo.computer_type == 3:
-        excel.tcell("TEC_BASE", '=IF(EXACT(%s,"Discrete"), IF(%s>9, 18, IF(AND(%s<=9, %s>2), 16, 14)), IF(%s>8, 28, IF(AND(%s<=8, %s>5.2), 24, IF(AND(%s<=5.2, %s>2), 22, 14))))' % (
-            excel.pos["Graphics Type"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"]), TEC_BASE)
+        excel.tcell("TEC_BASE", '=IF(EXACT(%(gpu_type)s,"Discrete"), IF(%(P:)s>9, 18, IF(AND(%(P:)s<=9, %(P:)s>2), 16, 14)), IF(%(P:)s>8, 28, IF(AND(%(P:)s<=8, %(P:)s>5.2), 24, IF(AND(%(P:)s<=5.2, %(P:)s>2), 22, 14))))', TEC_BASE)
     else:
-        excel.tcell("TEC_BASE", '=IF(EXACT(%s,"Discrete"), IF(%s>9, 135, IF(AND(%s<=9, %s>3), 115, 69)), IF(%s>7, 135, IF(AND(%s<=7, %s>6), 120, IF(AND(%s<=6, %s>3), 112, 69))))' % (
-            excel.pos["Graphics Type"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"],
-            excel.pos["P:"]), TEC_BASE)
+        excel.tcell("TEC_BASE", '=IF(EXACT(%(gpu_type)s,"Discrete"), IF(%(P:)s>9, 135, IF(AND(%(P:)s<=9, %(P:)s>3), 115, 69)), IF(%(P:)s>7, 135, IF(AND(%(P:)s<=7, %(P:)s>6), 120, IF(AND(%(P:)s<=6, %(P:)s>3), 112, 69))))', TEC_BASE)
 
     # TEC_MEMORY
     TEC_MEMORY = 0.8 * sysinfo.mem_size
-    excel.tcell("TEC_MEMORY", '=%s*0.8' % excel.pos['Memory size (GB)'], TEC_MEMORY)
+    excel.tcell("TEC_MEMORY", '=%(memory)s*0.8', TEC_MEMORY)
 
     # TEC_GRAPHICS
     if sysinfo.discrete:
@@ -949,25 +876,9 @@ def generate_excel_for_computers(excel, sysinfo):
     else:
         TEC_GRAPHICS = 0
     if sysinfo.computer_type == 3:
-        excel.tcell("TEC_GRAPHICS",
-                '=IF(EXACT(%s, "Discrete"), IF(EXACT(%s, "G1 (FB_BW <= 16)"), 14, IF(EXACT(%s, "G2 (16 < FB_BW <= 32)"), 20, IF(EXACT(%s, "G3 (32 < FB_BW <= 64)"), 26, IF(EXACT(%s, "G4 (64 < FB_BW <= 96)"), 32, IF(EXACT(%s, "G5 (96 < FB_BW <= 128)"), 42, IF(EXACT(%s, "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"), 48, 60)))))), 0)' % (
-                    excel.pos["Graphics Type"],
-                    excel.pos["Graphics Category"],
-                    excel.pos["Graphics Category"],
-                    excel.pos["Graphics Category"],
-                    excel.pos["Graphics Category"],
-                    excel.pos["Graphics Category"],
-                    excel.pos["Graphics Category"]), TEC_GRAPHICS)
+        excel.tcell("TEC_GRAPHICS", '=IF(EXACT(%(gpu_type)s, "Discrete"), IF(EXACT(%(gpu_category)s, "%(g1)s"), 14, IF(EXACT(%(gpu_category)s, "%(g2)s"), 20, IF(EXACT(%(gpu_category)s, "%(g3)s"), 26, IF(EXACT(%(gpu_category)s, "%(g4)s"), 32, IF(EXACT(%(gpu_category)s, "%(g5)s"), 42, IF(EXACT(%(gpu_category)s, "%(g6)s"), 48, 60)))))), 0)', TEC_GRAPHICS)
     else:
-        excel.tcell("TEC_GRAPHICS",
-        '=IF(EXACT(%s, "Discrete"), IF(EXACT(%s, "G1 (FB_BW <= 16)"), 36, IF(EXACT(%s, "G2 (16 < FB_BW <= 32)"), 51, IF(EXACT(%s, "G3 (32 < FB_BW <= 64)"), 64, IF(EXACT(%s, "G4 (64 < FB_BW <= 96)"), 83, IF(EXACT(%s, "G5 (96 < FB_BW <= 128)"), 105, IF(EXACT(%s, "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"), 115, 130)))))), 0)' % (
-                    excel.pos["Graphics Type"],
-                    excel.pos["Graphics Category"],
-                    excel.pos["Graphics Category"],
-                    excel.pos["Graphics Category"],
-                    excel.pos["Graphics Category"],
-                    excel.pos["Graphics Category"],
-                    excel.pos["Graphics Category"]), TEC_GRAPHICS)
+        excel.tcell("TEC_GRAPHICS", '=IF(EXACT(%(gpu_type)s, "Discrete"), IF(EXACT(%(gpu_category)s, "%(g1)s"), 36, IF(EXACT(%(gpu_category)s, "%(g2)s"), 51, IF(EXACT(%(gpu_category)s, "%(g3)s"), 64, IF(EXACT(%(gpu_category)s, "%(g4)s"), 83, IF(EXACT(%(gpu_category)s, "%(g5)s"), 105, IF(EXACT(%(gpu_category)s, "%(g6)s"), 115, 130)))))), 0)', TEC_GRAPHICS)
     
     # TEC_STORAGE
     if sysinfo.disk_num > 1:
@@ -978,13 +889,9 @@ def generate_excel_for_computers(excel, sysinfo):
     else:
         TEC_STORAGE = 0
     if sysinfo.computer_type == 3:
-        excel.tcell("TEC_STORAGE", '=IF(%s>1,2.6*(%s-1),0)' % (
-            excel.pos["Number of Hard Drives"],
-            excel.pos["Number of Hard Drives"]), TEC_STORAGE)
+        excel.tcell("TEC_STORAGE", '=IF(%(disk_number)s>1,2.6*(%(disk_number)s-1),0)', TEC_STORAGE)
     else:
-        excel.tcell("TEC_STORAGE", '=IF(%s>1,26*(%s-1),0)' % (
-            excel.pos["Number of Hard Drives"],
-            excel.pos["Number of Hard Drives"]), TEC_STORAGE)
+        excel.tcell("TEC_STORAGE", '=IF(%(disk_number)s>1,26*(%(disk_number)s-1),0)', TEC_STORAGE)
 
     # TEC_INT_DISPLAY
     if sysinfo.computer_type == 3:
@@ -993,15 +900,7 @@ def generate_excel_for_computers(excel, sysinfo):
         TEC_INT_DISPLAY = 8.76 * 0.35 * (1+EP) * (4*r + 0.05*A)
     else:
         TEC_INT_DISPLAY = 0
-    excel.tcell("TEC_INT_DISPLAY", '=IF(EXACT(%s, "Notebook"), 8.76 * 0.3 * (1+%s) * (2*%s + 0.02*%s), IF(EXACT(%s, "Integrated Desktop"), 8.76 * 0.35 * (1+%s) * (4*%s + 0.05*%s), 0))' % (
-        excel.pos["Computer Type"],
-        excel.pos["EP"],
-        excel.pos["r"],
-        excel.pos["A:"],
-        excel.pos["Computer Type"],
-        excel.pos["EP"],
-        excel.pos["r"],
-        excel.pos["A:"]), TEC_INT_DISPLAY)
+    excel.tcell("TEC_INT_DISPLAY", '=IF(EXACT(%(computer)s, "Notebook"), 8.76 * 0.3 * (1+%(EP)s) * (2*%(r)s + 0.02*%(A:)s), IF(EXACT(%(computer)s, "Integrated Desktop"), 8.76 * 0.35 * (1+%(EP)s) * (4*%(r)s + 0.05*%(A:)s), 0))', TEC_INT_DISPLAY)
 
     # TEC_SWITCHABLE
     if sysinfo.computer_type == 3:
@@ -1010,54 +909,33 @@ def generate_excel_for_computers(excel, sysinfo):
         TEC_SWITCHABLE = 0.5 * 36
     else:
         TEC_SWITCHABLE = 0
-    excel.tcell('TEC_SWITCHABLE', '=IF(EXACT(%s, "Notebook"), 0, IF(EXACT(%s, "Switchable"), 0.5 * 36, 0))' % (
-        excel.pos["Computer Type"],
-        excel.pos["Graphics Type"]), TEC_SWITCHABLE)
+    excel.tcell('TEC_SWITCHABLE', '=IF(EXACT(%(computer)s, "Notebook"), 0, IF(EXACT(%(gpu_type)s, "Switchable"), 0.5 * 36, 0))', TEC_SWITCHABLE)
 
     # TEC_EEE
     if sysinfo.computer_type == 3:
         TEC_EEE = 8.76 * 0.2 * (0.1 + 0.3) * sysinfo.eee
     else:
         TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * sysinfo.eee
-    excel.tcell('TEC_EEE','=IF(EXACT(%s, "Notebook"), 8.76 * 0.2 * (0.1 + 0.3) * %s, 8.76 * 0.2 * (0.15 + 0.35) * %s)' % (
-        excel.pos["Computer Type"],
-        excel.pos["IEEE 802.3az compliant Gigabit Ethernet"],
-        excel.pos["IEEE 802.3az compliant Gigabit Ethernet"]), TEC_EEE)
+    excel.tcell('TEC_EEE','=IF(EXACT(%(computer)s, "Notebook"), 8.76 * 0.2 * (0.1 + 0.3) * %(eee)s, 8.76 * 0.2 * (0.15 + 0.35) * %(eee)s)', TEC_EEE)
 
     # ALLOWANCE_PSU
     (column, row) = excel.position()
     excel.jump('D', 21)
-    excel.ncell(4, 1, "Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], twin=True)
+    excel.ncell(4, 1, "Power Supply Efficiency Allowance requirements:", "None", ['None', 'Lower', 'Higher'], twin=True, abbr='psu')
 
     excel.jump(column, row)
-    excel.tcell("ALLOWANCE_PSU", '=IF(OR(EXACT(%s, "Notebook"), EXACT(%s, "Desktop")), IF(EXACT(%s, "Higher"), 0.03, IF(EXACT(%s, "Lower"), 0.015, 0)), IF(EXACT(%s, "Higher"), 0.04, IF(EXACT(%s, "Lower"), 0.015, 0)))' % (
-        excel.pos["Computer Type"],
-        excel.pos["Computer Type"],
-        excel.pos["Power Supply Efficiency Allowance requirements:"],
-        excel.pos["Power Supply Efficiency Allowance requirements:"],
-        excel.pos["Power Supply Efficiency Allowance requirements:"],
-        excel.pos["Power Supply Efficiency Allowance requirements:"]), 0)
+    excel.tcell("ALLOWANCE_PSU", '=IF(OR(EXACT(%(computer)s, "Notebook"), EXACT(%(computer)s, "Desktop")), IF(EXACT(%(psu)s, "Higher"), 0.03, IF(EXACT(%(psu)s, "Lower"), 0.015, 0)), IF(EXACT(%(psu)s, "Higher"), 0.04, IF(EXACT(%(psu)s, "Lower"), 0.015, 0)))', 0)
 
     # E_TEC_MAX
     E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_GRAPHICS + TEC_STORAGE + TEC_INT_DISPLAY + TEC_SWITCHABLE + TEC_EEE
-    excel.tcell('E_TEC_MAX', "=(1+%s)*(%s+%s+%s+%s+%s+%s+%s)" % (
-        excel.pos['ALLOWANCE_PSU'],
-        excel.pos['TEC_BASE'],
-        excel.pos['TEC_MEMORY'],
-        excel.pos['TEC_GRAPHICS'],
-        excel.pos['TEC_STORAGE'],
-        excel.pos['TEC_INT_DISPLAY'],
-        excel.pos['TEC_SWITCHABLE'],
-        excel.pos['TEC_EEE']), E_TEC_MAX)
+    excel.tcell('E_TEC_MAX', "=(1+%(ALLOWANCE_PSU)s)*(%(TEC_BASE)s+%(TEC_MEMORY)s+%(TEC_GRAPHICS)s+%(TEC_STORAGE)s+%(TEC_INT_DISPLAY)s+%(TEC_SWITCHABLE)s+%(TEC_EEE)s)", E_TEC_MAX)
 
     if E_TEC <= E_TEC_MAX:
         RESULT = "PASS"
     else:
         RESULT = "FAIL"
     excel.right()
-    excel.cell('center', '=IF(%s<=%s, "PASS", "FAIL")' % (
-        excel.pos["E_TEC"],
-        excel.pos["E_TEC_MAX"]), RESULT)
+    excel.cell('center', '=IF(%(E_TEC)s<=%(E_TEC_MAX)s, "PASS", "FAIL")', RESULT)
 
     # ErP Lot 3 from 1 July 2014
     excel.jump('D', 23)
@@ -1079,25 +957,19 @@ def generate_excel_for_computers(excel, sysinfo):
     E_TEC = early.get_E_TEC()
     E_TEC_WOL = early.get_E_TEC_WOL()
 
-    excel.tcell("T_OFF", '=IF(EXACT(%s,"Notebook"),0.6,0.55' % excel.pos["Computer Type"], T_OFF)
-    excel.tcell("T_SLEEP", '=IF(EXACT(%s,"Notebook"),0.1,0.05' % excel.pos["Computer Type"], T_SLEEP)
-    excel.tcell("T_IDLE", '=IF(EXACT(%s,"Notebook"),0.3,0.4' % excel.pos["Computer Type"], T_IDLE)
+    excel.tcell("T_OFF", '=IF(EXACT(%(computer)s,"Notebook"),0.6,0.55', T_OFF, abbr='t_off')
+    excel.tcell("T_SLEEP", '=IF(EXACT(%(computer)s,"Notebook"),0.1,0.05', T_SLEEP, abbr='t_sleep')
+    excel.tcell("T_IDLE", '=IF(EXACT(%(computer)s,"Notebook"),0.3,0.4', T_IDLE, abbr='t_idle')
 
-    excel.tcell("P_OFF", '=%s' % excel.pos["Off mode (W)"], sysinfo.off)
-    excel.tcell("P_OFF_WOL", '=%s' % excel.pos["Off mode (W) with WOL"], sysinfo.off_wol)
-    excel.tcell("P_SLEEP", '=%s' % excel.pos["Sleep mode (W)"], sysinfo.sleep)
-    excel.tcell("P_SLEEP_WOL", '=%s' % excel.pos["Sleep mode (W) with WOL"], sysinfo.sleep_wol)
-    excel.tcell("P_IDLE", '=%s' % excel.pos["Short idle mode (W)"], sysinfo.short_idle)
+    excel.tcell("P_OFF", '=%(off)s', sysinfo.off, abbr='p_off')
+    excel.tcell("P_OFF_WOL", '=%(off_wol)s', sysinfo.off_wol, abbr='p_off_wol')
+    excel.tcell("P_SLEEP", '=%(sleep)s', sysinfo.sleep, abbr='p_sleep')
+    excel.tcell("P_SLEEP_WOL", '=%(sleep_wol)s', sysinfo.sleep_wol, abbr='p_sleep_wol')
+    excel.tcell("P_IDLE", '=%(short_idle)s', sysinfo.short_idle, abbr='p_idle')
 
-    excel.tcell("E_TEC", "=(%s*%s+%s*%s+%s*%s)*8760/1000" % (
-        excel.pos["T_OFF"], excel.pos["P_OFF"],
-        excel.pos["T_SLEEP"], excel.pos["P_SLEEP"],
-        excel.pos["T_IDLE"], excel.pos["P_IDLE"]), E_TEC)
+    excel.tcell("E_TEC", "=(%(t_off)s*%(p_off)s+%(t_sleep)s*%(p_sleep)s+%(t_idle)s*%(p_idle)s)*8760/1000", E_TEC)
 
-    excel.tcell("E_TEC_WOL", "=(%s*%s+%s*%s+%s*%s)*8760/1000" % (
-        excel.pos["T_OFF"], excel.pos["P_OFF_WOL"],
-        excel.pos["T_SLEEP"], excel.pos["P_SLEEP_WOL"],
-        excel.pos["T_IDLE"], excel.pos["P_IDLE"]), E_TEC_WOL)
+    excel.tcell("E_TEC_WOL", "=(%(t_off)s*%(p_off_wol)s+%(t_sleep)s*%(p_sleep_wol)s+%(t_idle)s*%(p_idle)s)*8760/1000", E_TEC_WOL)
 
     if sysinfo.computer_type == 3:
         if sysinfo.sleep > 3 or sysinfo.sleep_wol > 3.7:
@@ -1110,12 +982,7 @@ def generate_excel_for_computers(excel, sysinfo):
         else:
             RESULT = 'PASS'
 
-    excel.cell('center', '=IF(EXACT(%s,"Notebook"), IF(OR(%s>3.0,%s>3.7), "FAIL", "PASS"), IF(OR(%s>5.0,%s>5.7), "FAIL", "PASS")' % (
-        excel.pos["Computer Type"],
-        excel.pos["Sleep mode (W)"],
-        excel.pos["Sleep mode (W) with WOL"],
-        excel.pos["Sleep mode (W)"],
-        excel.pos["Sleep mode (W) with WOL"]), RESULT)
+    excel.cell('center', '=IF(EXACT(%(computer)s,"Notebook"), IF(OR(%(sleep)s>3.0,%(sleep_wol)s>3.7), "FAIL", "PASS"), IF(OR(%(sleep)s>5.0,%(sleep_wol)s>5.7), "FAIL", "PASS")', RESULT)
 
     if sysinfo.off > 1 or sysinfo.off_wol > 1.7:
         RESULT = 'FAIL'
@@ -1124,9 +991,7 @@ def generate_excel_for_computers(excel, sysinfo):
 
     excel.up()
     excel.right()
-    excel.cell('center', '=IF(OR(%s>1.0,%s>1.7), "FAIL", "PASS")' % (
-        excel.pos["Off mode (W)"],
-        excel.pos["Off mode (W) with WOL"]), RESULT)
+    excel.cell('center', '=IF(OR(%(off)s>1.0,%(off_wol)s>1.7), "FAIL", "PASS")', RESULT)
 
     excel.shift(column, row, 2, 1)
     excel.ncell(1, 3, "Category")
@@ -1151,27 +1016,17 @@ def generate_excel_for_computers(excel, sysinfo):
                 if cat == 'A':
                     formula = None
                 elif cat == 'B':
-                    formula = '=IF(AND(%s>=2, %s>=2), "B", "")' % (excel.pos['CPU cores'], excel.pos['Memory size (GB)'])
+                    formula = '=IF(AND(%(cpu_core)s>=2, %(memory)s>=2), "B", "")'
                 elif cat == 'C':
-                    formula = '=IF(AND(%s>=3, OR(%s>=2, %s>=1)), "C", "")' % (excel.pos['CPU cores'], excel.pos['Memory size (GB)'], excel.pos['Number of Discrete Graphics Cards'])
+                    formula = '=IF(AND(%(cpu_core)s>=3, OR(%(memory)s>=2, %(gpu_number)s>=1)), "C", "")'
                 elif cat == 'D':
-                    formula = '=IF(AND(%(core)s>=4, OR(%(mem)s>=4, AND(%(gpu_number)s>=1, OR(\
+                    formula = '=IF(AND(%(cpu_core)s>=4, OR(%(memory)s>=4, AND(%(gpu_number)s>=1, OR(\
                             AND(EXACT(%(gpu_category)s, "%(g3)s"), EXACT(%(gpu_width)s, "> 128-bit")),\
                             EXACT(%(gpu_category)s, "%(g4)s"),\
                             EXACT(%(gpu_category)s, "%(g5)s"),\
                             EXACT(%(gpu_category)s, "%(g6)s"),\
                             EXACT(%(gpu_category)s, "%(g7)s")\
-                            )))), "D", "")' % {
-                                'core': excel.pos['CPU cores'],
-                                'mem': excel.pos['Memory size (GB)'],
-                                'gpu_number': excel.pos['Number of Discrete Graphics Cards'],
-                                'gpu_category': excel.pos['Graphics Category'],
-                                'gpu_width': excel.pos['GPU Frame Buffer Width'],
-                                'g3': G3,
-                                'g4': G4,
-                                'g5': G5,
-                                'g6': G6,
-                                'g7': G7}
+                            )))), "D", "")'
                     formula = formula_strip(formula)
                 else:
                     raise Exception('Should not be here.')
@@ -1197,14 +1052,7 @@ def generate_excel_for_computers(excel, sysinfo):
             msg = notebook_msg
         else:
             msg = desktop_msg
-        excel.cell('warning', '=IF(EXACT(%s, "Notebook"), IF(AND(%s >= 4, %s >=16), "%s", ""), IF(AND(%s >= 6, %s >=16), "%s", "") )' % (
-            excel.pos["Computer Type"],
-            excel.pos["CPU cores"],
-            excel.pos["Memory size (GB)"],
-            notebook_msg,
-            excel.pos["CPU cores"],
-            excel.pos["Memory size (GB)"],
-            desktop_msg), msg)
+        excel.cell('warning', '=IF(EXACT(%(computer)s, "Notebook"), IF(AND(%(cpu_core)s >= 4, %(memory)s >=16), "' + notebook_msg + '", ""), IF(AND(%(cpu_core)s >= 6, %(memory)s >=16), "' + desktop_msg + '", "") )', msg)
     # TODO
 
 def generate_excel_for_workstations(book, sysinfo, version):
