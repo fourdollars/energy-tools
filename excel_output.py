@@ -1007,7 +1007,7 @@ def generate_excel_for_computers(excel, sysinfo):
         for i in range(width):
             cat = chr(ord('A') + i)
             meet = early.category(cat)
-            if meet >= 0:
+            if meet > 0:
                 msg = cat
             else:
                 msg = ''
@@ -1020,13 +1020,29 @@ def generate_excel_for_computers(excel, sysinfo):
                 elif cat == 'C':
                     formula = '=IF(AND(%(cpu_core)s>=3, OR(%(memory)s>=2, %(gpu_number)s>=1)), "C", "")'
                 elif cat == 'D':
-                    formula = '=IF(AND(%(cpu_core)s>=4, OR(%(memory)s>=4, AND(%(gpu_number)s>=1, OR(\
-                            AND(EXACT(%(gpu_category)s, "%(g3)s"), EXACT(%(gpu_width)s, "> 128-bit")),\
-                            EXACT(%(gpu_category)s, "%(g4)s"),\
-                            EXACT(%(gpu_category)s, "%(g5)s"),\
-                            EXACT(%(gpu_category)s, "%(g6)s"),\
-                            EXACT(%(gpu_category)s, "%(g7)s")\
-                            )))), "D", "")'
+                    formula = '=IF(\
+                                    AND(\
+                                        %(cpu_core)s>=4,\
+                                        OR(\
+                                            %(memory)s>=4,\
+                                            AND(\
+                                                %(gpu_number)s>=1,\
+                                                OR(\
+                                                    AND(\
+                                                        EXACT(%(gpu_category)s, "%(g3)s"),\
+                                                        EXACT(%(gpu_width)s, "> 128-bit")\
+                                                    ),\
+                                                    EXACT(%(gpu_category)s, "%(g4)s"),\
+                                                    EXACT(%(gpu_category)s, "%(g5)s"),\
+                                                    EXACT(%(gpu_category)s, "%(g6)s"),\
+                                                    EXACT(%(gpu_category)s, "%(g7)s")\
+                                                )\
+                                            )\
+                                        )\
+                                    ),\
+                                    "D",\
+                                    ""\
+                                )'
                     formula = formula_strip(formula)
                 else:
                     raise Exception('Should not be here.')
@@ -1034,9 +1050,28 @@ def generate_excel_for_computers(excel, sysinfo):
                 if cat == 'A':
                     formula = None
                 elif cat == 'B':
-                    pass
+                    formula = '=IF(%(gpu_number)s>=1, "B", "")'
                 elif cat == 'C':
-                    pass
+                    formula = '=IF(\
+                                    AND(\
+                                        %(cpu_core)s >= 2,\
+                                        %(memory)s >= 2,\
+                                        %(gpu_number)s >= 1,\
+                                        OR(\
+                                            AND(\
+                                                EXACT(%(gpu_category)s, "%(g3)s"),\
+                                                EXACT(%(gpu_width)s, "> 128-bit")\
+                                            ),\
+                                            EXACT(%(gpu_category)s, "%(g4)s"),\
+                                            EXACT(%(gpu_category)s, "%(g5)s"),\
+                                            EXACT(%(gpu_category)s, "%(g6)s"),\
+                                            EXACT(%(gpu_category)s, "%(g7)s")\
+                                        )\
+                                    ),\
+                                    "C",\
+                                    ""\
+                                )'
+                    formula = formula_strip(formula)
                 else:
                     raise Exception('Should not be here.')
             if formula:
