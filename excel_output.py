@@ -27,6 +27,15 @@ __all__ = [
 from logging import debug, warning
 from erplot3 import *
 
+G1 = 'G1 (FB_BW <= 16)'
+G2 = 'G2 (16 < FB_BW <= 32)'
+G3 = 'G3 (32 < FB_BW <= 64)'
+G4 = 'G4 (64 < FB_BW <= 96)'
+G5 = 'G5 (96 < FB_BW <= 128)'
+G6 = 'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)'
+G7 = 'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)'
+GN_LIST = [G1, G2, G3, G4, G5, G6, G7]
+
 def generate_excel(sysinfo, version, output):
     if not output:
         return
@@ -56,6 +65,9 @@ def generate_excel(sysinfo, version, output):
         excel.save()
     else:
         book.close()
+
+def formula_strip(formula):
+    return ' '.join(formula.split())
 
 class ExcelMaker:
     def __init__(self, version, output):
@@ -392,14 +404,7 @@ def generate_excel_for_computers(excel, sysinfo):
         msg = "<= 128-bit"
         validator = ['<= 128-bit', '> 128-bit']
     excel.tcell("GPU Frame Buffer Width", msg, validator)
-    excel.tcell("Graphics Category", "G1 (FB_BW <= 16)", [
-        'G1 (FB_BW <= 16)',
-        'G2 (16 < FB_BW <= 32)',
-        'G3 (32 < FB_BW <= 64)',
-        'G4 (64 < FB_BW <= 96)',
-        'G5 (96 < FB_BW <= 128)',
-        'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)',
-        'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)'])
+    excel.tcell("Graphics Category", G1, GN_LIST)
 
     excel.down()
 
@@ -429,14 +434,7 @@ def generate_excel_for_computers(excel, sysinfo):
         excel.ncell(2, 1, "Additional Discrete Graphics")
         for i in range(int(sysinfo.discrete_gpu_num) - 1):
             palette["dGfx #%d" % (i+2)] = ('field', 'unsure')
-            excel.tcell("dGfx #%d" % (i+2), "G1 (FB_BW <= 16)", [
-                'G1 (FB_BW <= 16)',
-                'G2 (16 < FB_BW <= 32)',
-                'G3 (32 < FB_BW <= 64)',
-                'G4 (64 < FB_BW <= 96)',
-                'G5 (96 < FB_BW <= 128)',
-                'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)',
-                'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)'])
+            excel.tcell("dGfx #%d" % (i+2), G1, GN_LIST)
 
     # Energy Star 5.2
     excel.jump('D', 1)
@@ -1158,22 +1156,23 @@ def generate_excel_for_computers(excel, sysinfo):
                     formula = '=IF(AND(%s>=3, OR(%s>=2, %s>=1)), "C", "")' % (excel.pos['CPU cores'], excel.pos['Memory size (GB)'], excel.pos['Number of Discrete Graphics Cards'])
                 elif cat == 'D':
                     formula = '=IF(AND(%(core)s>=4, OR(%(mem)s>=4, AND(%(gpu_number)s>=1, OR(\
-                            AND(EXACT(%(gpu_category)s, "%(g3)s"), EXACT(%(gpu_width)s, "> 128-bit")), \
-                            EXACT(%(gpu_category)s, "%(g4)s"), \
-                            EXACT(%(gpu_category)s, "%(g5)s"), \
-                            EXACT(%(gpu_category)s, "%(g6)s"), \
+                            AND(EXACT(%(gpu_category)s, "%(g3)s"), EXACT(%(gpu_width)s, "> 128-bit")),\
+                            EXACT(%(gpu_category)s, "%(g4)s"),\
+                            EXACT(%(gpu_category)s, "%(g5)s"),\
+                            EXACT(%(gpu_category)s, "%(g6)s"),\
                             EXACT(%(gpu_category)s, "%(g7)s")\
-                            )))), "D", "")' % ({
+                            )))), "D", "")' % {
                                 'core': excel.pos['CPU cores'],
                                 'mem': excel.pos['Memory size (GB)'],
                                 'gpu_number': excel.pos['Number of Discrete Graphics Cards'],
                                 'gpu_category': excel.pos['Graphics Category'],
-                                'g3': 'G3 (32 < FB_BW <= 64)',
                                 'gpu_width': excel.pos['GPU Frame Buffer Width'],
-                                'g4': 'G4 (64 < FB_BW <= 96)',
-                                'g5': 'G5 (96 < FB_BW <= 128)',
-                                'g6': 'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)',
-                                'g7': 'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)'})
+                                'g3': G3,
+                                'g4': G4,
+                                'g5': G5,
+                                'g6': G6,
+                                'g7': G7}
+                    formula = formula_strip(formula)
                 else:
                     raise Exception('Should not be here.')
             else:
