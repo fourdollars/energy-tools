@@ -88,6 +88,10 @@ class ExcelMaker:
         sheet.set_column('H:H', 6)
         sheet.set_column('I:I', 6)
         sheet.set_column('J:J', 6)
+        sheet.set_column('K:K', 6)
+        sheet.set_column('L:L', 6)
+        sheet.set_column('M:M', 6)
+        sheet.set_column('N:N', 6)
 
     def setup_theme(self):
         book = self.book
@@ -226,17 +230,21 @@ class ExcelMaker:
     def tcell(self, label, formula=None, value=None, validator=None):
         self.ncell(1, 1, label, formula, value, validator, True)
 
-    def up(self):
-        self.row = self.row - 1
+    def up(self, step=1):
+        self.row = self.row - step
+        return self
 
-    def down(self):
-        self.row = self.row + 1
+    def down(self, step=1):
+        self.row = self.row + step
+        return self
 
-    def left(self):
-        self.column = chr(ord(self.column) - 1)
+    def left(self, step=1):
+        self.column = chr(ord(self.column) - step)
+        return self
 
-    def right(self):
-        self.column = chr(ord(self.column) + 1)
+    def right(self, step=1):
+        self.column = chr(ord(self.column) + step)
+        return self
 
     def position(self):
         return (self.column, self.row)
@@ -244,6 +252,10 @@ class ExcelMaker:
     def jump(self, column, row):
         self.column = column
         self.row = row
+
+    def shift(self, column, row, x, y):
+        self.column = chr(ord(column) + x)
+        self.row = row + y
 
 palette = {
         # Header
@@ -254,7 +266,9 @@ palette = {
         'Display': ('header', None),
         'Energy Star 5.2': ('header', None),
         'Energy Star 6.0': ('header', None),
-        'ErP Lot 3 from 1 July 2014': ('header', None),
+        'ErP Lot 3': ('header', None),
+        'from 1 July 2014': ('header', None),
+        'from 1 January 2016': ('header', None),
 
         # Inner header
         'Category': ('fieldC', None),
@@ -456,11 +470,11 @@ def generate_excel_for_computers(excel, sysinfo):
     # Prompt
     excel.jump('F', 2)
     excel.ncell(1, 2, "Category")
-    excel.jump('G', 2)
+    excel.up(2).right()
     excel.ncell(1, 2, "A")
-    excel.jump('H', 2)
+    excel.up(2).right()
     excel.ncell(1, 2, "B")
-    excel.jump('I', 2)
+    excel.up(2).right()
     excel.ncell(1, 2, "C")
 
     if sysinfo.computer_type != 3:
@@ -1049,13 +1063,20 @@ def generate_excel_for_computers(excel, sysinfo):
 
     # ErP Lot 3 from 1 July 2014
     excel.jump('D', 23)
+    (column, row) = excel.position()
+    excel.ncell(3, 1, "ErP Lot 3")
     if sysinfo.computer_type == 3:
-        width = 6
+        width = 3
     else:
-        width = 7
-    excel.ncell(width, 1, "ErP Lot 3 from 1 July 2014")
+        width = 4
+    excel.shift(column, row, 3, 0)
+    excel.ncell(width, 1, "from 1 July 2014")
+    excel.shift(column, row, 3 + width, 0)
+    excel.ncell(width, 1, "from 1 January 2016")
+
     early = ErPLot3_2014(sysinfo)
 
+    excel.shift(column, row, 0, 1)
     (T_OFF, T_SLEEP, T_IDLE) = early.get_T_values()
     E_TEC = early.get_E_TEC()
     E_TEC_WOL = early.get_E_TEC_WOL()
@@ -1091,12 +1112,6 @@ def generate_excel_for_computers(excel, sysinfo):
         else:
             RESULT = 'PASS'
 
-    excel.cell('center', '=IF(OR(%s>1.0,%s>1.7), "FAIL", "PASS")' % (
-        excel.pos["Off mode (W)"],
-        excel.pos["Off mode (W) with WOL"]), RESULT)
-
-    excel.up()
-    excel.right()
     excel.cell('center', '=IF(EXACT(%s,"Notebook"), IF(OR(%s>3.0,%s>3.7), "FAIL", "PASS"), IF(OR(%s>5.0,%s>5.7), "FAIL", "PASS")' % (
         excel.pos["Computer Type"],
         excel.pos["Sleep mode (W)"],
@@ -1108,6 +1123,72 @@ def generate_excel_for_computers(excel, sysinfo):
         RESULT = 'FAIL'
     else:
         RESULT = 'PASS'
+
+    excel.up()
+    excel.right()
+    excel.cell('center', '=IF(OR(%s>1.0,%s>1.7), "FAIL", "PASS")' % (
+        excel.pos["Off mode (W)"],
+        excel.pos["Off mode (W) with WOL"]), RESULT)
+
+    excel.shift(column, row, 2, 1)
+    excel.ncell(1, 3, "Category")
+    excel.cell("field1", "TEC_BASE")
+    excel.cell("field1", "TEC_MEMORY")
+    excel.cell("field1", "TEC_GRAPHICS")
+    excel.cell("field1", "TEC_TV_TUNER")
+    excel.cell("field1", "TEC_AUDIO")
+    excel.cell("field1", "TEC_STORAGE")
+    excel.cell("result", "E_TEC_MAX")
+
+    for step in (0, width):
+        for i in range(width):
+            cat = chr(ord('A') + i)
+            meet = early.category(cat)
+            if meet >= 0:
+                msg = cat
+            else:
+                msg = ''
+            excel.shift(column, row, 3 + step + i, 1)
+            if sysinfo.computer_type != 3:
+                if cat == 'A':
+                    formula = None
+                elif cat == 'B':
+                    formula = '=IF(AND(%s>=2, %s>=2), "B", "")' % (excel.pos['CPU cores'], excel.pos['Memory size (GB)'])
+                elif cat == 'C':
+                    formula = '=IF(AND(%s>=3, OR(%s>=2, %s>=1)), "C", "")' % (excel.pos['CPU cores'], excel.pos['Memory size (GB)'], excel.pos['Number of Discrete Graphics Cards'])
+                elif cat == 'D':
+                    formula = '=IF(AND(%(core)s>=4, OR(%(mem)s>=4, AND(%(gpu_number)s>=1, OR(\
+                            AND(EXACT(%(gpu_category)s, "%(g3)s"), EXACT(%(gpu_width)s, "> 128-bit")), \
+                            EXACT(%(gpu_category)s, "%(g4)s"), \
+                            EXACT(%(gpu_category)s, "%(g5)s"), \
+                            EXACT(%(gpu_category)s, "%(g6)s"), \
+                            EXACT(%(gpu_category)s, "%(g7)s")\
+                            )))), "D", "")' % ({
+                                'core': excel.pos['CPU cores'],
+                                'mem': excel.pos['Memory size (GB)'],
+                                'gpu_number': excel.pos['Number of Discrete Graphics Cards'],
+                                'gpu_category': excel.pos['Graphics Category'],
+                                'g3': 'G3 (32 < FB_BW <= 64)',
+                                'gpu_width': excel.pos['GPU Frame Buffer Width'],
+                                'g4': 'G4 (64 < FB_BW <= 96)',
+                                'g5': 'G5 (96 < FB_BW <= 128)',
+                                'g6': 'G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)',
+                                'g7': 'G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)'})
+                else:
+                    raise Exception('Should not be here.')
+            else:
+                if cat == 'A':
+                    formula = None
+                elif cat == 'B':
+                    pass
+                elif cat == 'C':
+                    pass
+                else:
+                    raise Exception('Should not be here.')
+            if formula:
+                excel.ncell(1, 3, cat, formula, msg)
+            else:
+                excel.ncell(1, 3, msg)
 
     # TODO
     if early.check_special_case():
