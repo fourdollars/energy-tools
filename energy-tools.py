@@ -410,7 +410,7 @@ def main():
                 auto=True,
                 product_type=1, computer_type=2,
                 cpu_core=6, cpu_clock=2.26,
-                mem_size=16, disk_num=1, eee=1, ep=True,
+                mem_size=16, disk_num=1, eee=1, ep=True, tvtuner=True, audio=True,
                 discrete=True, discrete_gpu_num=3, diagonal=12.1,
                 off=0.486, off_wol=0.66, sleep=0.74, sleep_wol=0.94, long_idle=10.6, short_idle=15)
     else:

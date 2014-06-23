@@ -1225,6 +1225,35 @@ def generate_excel_for_computers(excel, sysinfo):
                 msg = ''
             excel.cell('TEC_GRAPHICS', formula, msg)
 
+            # TEC_TV_TUNER for ErP Lot 3
+            TEC_TV_TUNER = erplot3.get_TEC_TV_TUNER()
+            if cat == 'A':
+                formula = '=IF(EXACT(%(tvtuner)s, "Yes"), IF(EXACT(%(computer)s, "Notebook"), 2.1, 15), 0)'
+            else:
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_TV_TUNER)s, "")'
+            if meet > 0:
+                msg = TEC_TV_TUNER
+            else:
+                msg = ''
+            if formula:
+                excel.cell('TEC_TV_TUNER', formula, msg)
+            else:
+                excel.cell('TEC_TV_TUNER', msg)
+
+            # TEC_AUDIO for ErP Lot 3
+            TEC_AUDIO = erplot3.get_TEC_AUDIO()
+            if cat == 'A':
+                formula = '=IF(EXACT(%(audio)s, "Yes"), IF(EXACT(%(computer)s, "Notebook"), 0, 15), 0)'
+            else:
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_AUDIO)s, "")'
+            if meet > 0:
+                msg = TEC_AUDIO
+            else:
+                msg = ''
+            if formula:
+                excel.cell('TEC_AUDIO', formula, msg)
+            else:
+                excel.cell('TEC_AUDIO', msg)
 
     # TODO
     if early.check_special_case():
