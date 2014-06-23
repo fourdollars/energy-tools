@@ -941,7 +941,7 @@ def generate_excel_for_computers(excel, sysinfo):
     excel.right()
     excel.cell('center', '=IF(%(E_TEC)s<=%(E_TEC_MAX)s, "PASS", "FAIL")', RESULT)
 
-    # ErP Lot 3 from 1 July 2014
+    # ErP Lot 3
     excel.jump('D', 23)
     (column, row) = excel.position()
     excel.ncell(3, 1, "ErP Lot 3")
@@ -1139,24 +1139,26 @@ def generate_excel_for_computers(excel, sysinfo):
                 if sysinfo.computer_type != 3:
                     if step == 0:
                         # Desktop from July 2014
-                        formula = '=IF(EXACT(%(gpu_category)s, "%(g1)s"), 34,\
+                        formula = '=IF(EXACT(%(gpu_type)s, "Discrete"),\
+                            IF(EXACT(%(gpu_category)s, "%(g1)s"), 34,\
                             IF(EXACT(%(gpu_category)s, "%(g2)s"), 54,\
                             IF(EXACT(%(gpu_category)s, "%(g3)s"), 69,\
                             IF(EXACT(%(gpu_category)s, "%(g4)s"), 100,\
                             IF(EXACT(%(gpu_category)s, "%(g5)s"), 133,\
                             IF(EXACT(%(gpu_category)s, "%(g6)s"), 166,\
                             IF(EXACT(%(gpu_category)s, "%(g7)s"), 225, 0\
-                            )))))))'
+                            ))))))))'
                     else:
                         # Desktop from January 1 2016
-                        formula = '=IF(EXACT(%(gpu_category)s, "%(g1)s"), 18,\
+                        formula = '=IF(EXACT(%(gpu_type)s, "Discrete"),\
+                            IF(EXACT(%(gpu_category)s, "%(g1)s"), 18,\
                             IF(EXACT(%(gpu_category)s, "%(g2)s"), 30,\
                             IF(EXACT(%(gpu_category)s, "%(g3)s"), 38,\
                             IF(EXACT(%(gpu_category)s, "%(g4)s"), 54,\
                             IF(EXACT(%(gpu_category)s, "%(g5)s"), 72,\
                             IF(EXACT(%(gpu_category)s, "%(g6)s"), 90,\
                             IF(EXACT(%(gpu_category)s, "%(g7)s"), 122, 0\
-                            )))))))'
+                            ))))))))'
                     for i in range(int(sysinfo.discrete_gpu_num) - 1):
                         dGfx = "dGfx%d" % (i+2)
                         if step == 0:
@@ -1182,24 +1184,26 @@ def generate_excel_for_computers(excel, sysinfo):
                 else:
                     if step == 0:
                         # Notebook from July 2014
-                        formula = '=IF(EXACT(%(gpu_category)s, "%(g1)s"), 12,\
+                        formula = '=IF(EXACT(%(gpu_type)s, "Discrete"),\
+                            IF(EXACT(%(gpu_category)s, "%(g1)s"), 12,\
                             IF(EXACT(%(gpu_category)s, "%(g2)s"), 20,\
                             IF(EXACT(%(gpu_category)s, "%(g3)s"), 26,\
                             IF(EXACT(%(gpu_category)s, "%(g4)s"), 37,\
                             IF(EXACT(%(gpu_category)s, "%(g5)s"), 49,\
                             IF(EXACT(%(gpu_category)s, "%(g6)s"), 61,\
                             IF(EXACT(%(gpu_category)s, "%(g7)s"), 113, 0\
-                            )))))))'
+                            ))))))))'
                     else:
                         # Notebook from January 1 2016
-                        formula = '=IF(EXACT(%(gpu_category)s, "%(g1)s"), 7,\
+                        formula = '=IF(EXACT(%(gpu_type)s, "Discrete"),\
+                            IF(EXACT(%(gpu_category)s, "%(g1)s"), 7,\
                             IF(EXACT(%(gpu_category)s, "%(g2)s"), 11,\
                             IF(EXACT(%(gpu_category)s, "%(g3)s"), 13,\
                             IF(EXACT(%(gpu_category)s, "%(g4)s"), 20,\
                             IF(EXACT(%(gpu_category)s, "%(g5)s"), 27,\
                             IF(EXACT(%(gpu_category)s, "%(g6)s"), 33,\
                             IF(EXACT(%(gpu_category)s, "%(g7)s"), 61, 0\
-                            )))))))'
+                            ))))))))'
                     for i in range(int(sysinfo.discrete_gpu_num) - 1):
                         dGfx = "dGfx%d" % (i+2)
                         if step == 0:
