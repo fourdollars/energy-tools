@@ -81,7 +81,7 @@ class ErPLot3:
                     debug("TEC_GRAPHICS = %s" % TEC_GRAPHICS)
                     self._verifying(inst, E_TEC_MAX, gpu)
             else:
-                print("    No console output because of too many discrete graphics cards.")
+                print("    No console output because of more than one discrete graphics card.")
 
     def _verify_s3_s4(self, inst):
         if self.sysinfo.computer_type != 3:

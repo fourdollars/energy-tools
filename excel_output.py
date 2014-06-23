@@ -951,6 +951,7 @@ def generate_excel_for_computers(excel, sysinfo):
     excel.ncell(width, 1, "from 1 January 2016")
 
     early = ErPLot3_2014(sysinfo)
+    late = ErPLot3_2016(sysinfo)
 
     excel.shift(column, row, 0, 1)
     (T_OFF, T_SLEEP, T_IDLE) = early.get_T_values()
@@ -1004,6 +1005,10 @@ def generate_excel_for_computers(excel, sysinfo):
     excel.cell("result", "E_TEC_MAX")
 
     for step in (0, width):
+        if step == 0:
+            erplot3 = early
+        else:
+            erplot3 = late
         for i in range(width):
             cat = chr(ord('A') + i)
             meet = early.category(cat)
@@ -1078,6 +1083,148 @@ def generate_excel_for_computers(excel, sysinfo):
                 excel.ncell(1, 3, cat, formula, msg)
             else:
                 excel.ncell(1, 3, msg)
+
+            # TEC_BASE for ErP Lot 3
+            TEC_BASE = erplot3.get_TEC_BASE(cat)
+            if cat == 'A':
+                formula = None
+            else:
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), ' + str(TEC_BASE) + ', "")'
+            if meet > 0:
+                msg = TEC_BASE
+            else:
+                msg = ''
+            if formula:
+                excel.cell('TEC_BASE', formula, msg)
+            else:
+                excel.cell('TEC_BASE', msg)
+
+            # TEC_MEMORY for ErP Lot 3
+            TEC_MEMORY = erplot3.get_TEC_MEMORY(cat)
+            if sysinfo.computer_type != 3:
+                if cat == 'A':
+                    formula = '=IF(%(memory)s > 2, 1.0 * (%(memory)s - 2), 0)'
+                elif cat == 'D':
+                    formula = '=IF(EXACT(%(D)s, "D"), IF(%(memory)s > 4, 1.0 * (%(memory)s - 4), 0), "")'
+                else:
+                    formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_MEMORY)s, "")'
+            else:
+                if cat == 'A':
+                    formula = '=IF(%(memory)s > 4, 0.4 * (%(memory)s - 4), 0)'
+                else:
+                    formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_MEMORY)s, "")'
+            if meet > 0:
+                msg = TEC_MEMORY
+            else:
+                msg = ''
+            excel.cell('TEC_MEMORY', formula, msg)
+
+            # TEC_GRAPHICS for ErP Lot 3
+            if sysinfo.discrete_gpu_num > 0:
+                TEC_GRAPHICS = erplot3.get_TEC_GRAPHICS('G1')
+                for i in range(sysinfo.discrete_gpu_num - 1):
+                    TEC_GRAPHICS = TEC_GRAPHICS + erplot3.additional_TEC_GRAPHICS('G1')
+            else:
+                TEC_GRAPHICS = 0
+            if sysinfo.computer_type != 3:
+                if cat == 'A':
+                    if step == 0:
+                        # Desktop from July 2014
+                        formula = '=IF(EXACT(%(gpu_category)s, "%(g1)s"), 34,\
+                            IF(EXACT(%(gpu_category)s, "%(g2)s"), 54,\
+                            IF(EXACT(%(gpu_category)s, "%(g3)s"), 69,\
+                            IF(EXACT(%(gpu_category)s, "%(g4)s"), 100,\
+                            IF(EXACT(%(gpu_category)s, "%(g5)s"), 133,\
+                            IF(EXACT(%(gpu_category)s, "%(g6)s"), 166,\
+                            IF(EXACT(%(gpu_category)s, "%(g7)s"), 225, 0\
+                            )))))))'
+                    else:
+                        # Desktop from January 1 2016
+                        formula = '=IF(EXACT(%(gpu_category)s, "%(g1)s"), 18,\
+                            IF(EXACT(%(gpu_category)s, "%(g2)s"), 30,\
+                            IF(EXACT(%(gpu_category)s, "%(g3)s"), 38,\
+                            IF(EXACT(%(gpu_category)s, "%(g4)s"), 54,\
+                            IF(EXACT(%(gpu_category)s, "%(g5)s"), 72,\
+                            IF(EXACT(%(gpu_category)s, "%(g6)s"), 90,\
+                            IF(EXACT(%(gpu_category)s, "%(g7)s"), 122, 0\
+                            )))))))'
+                    for i in range(int(sysinfo.discrete_gpu_num) - 1):
+                        dGfx = "dGfx%d" % (i+2)
+                        if step == 0:
+                            # Desktop from July 2014
+                            formula = formula + ' + IF(EXACT(%(' + dGfx + ')s, "%(g1)s"), 20, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g2)s"), 32, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g3)s"), 41, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g4)s"), 59, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g5)s"), 78, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g6)s"), 98, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g7)s"), 133, 0' \
+                                + ')))))))'
+                        else:
+                            # Desktop from January 1 2016
+                            formula = formula + ' + IF(EXACT(%(' + dGfx + ')s, "%(g1)s"), 11, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g2)s"), 17, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g3)s"), 22, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g4)s"), 32, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g5)s"), 42, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g6)s"), 53, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g7)s"), 72, 0' \
+                                + ')))))))'
+                else:
+                    formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_GRAPHICS)s, "")'
+            else:
+                if cat == 'A':
+                    if step == 0:
+                        # Notebook from July 2014
+                        formula = '=IF(EXACT(%(gpu_category)s, "%(g1)s"), 12,\
+                            IF(EXACT(%(gpu_category)s, "%(g2)s"), 20,\
+                            IF(EXACT(%(gpu_category)s, "%(g3)s"), 26,\
+                            IF(EXACT(%(gpu_category)s, "%(g4)s"), 37,\
+                            IF(EXACT(%(gpu_category)s, "%(g5)s"), 49,\
+                            IF(EXACT(%(gpu_category)s, "%(g6)s"), 61,\
+                            IF(EXACT(%(gpu_category)s, "%(g7)s"), 113, 0\
+                            )))))))'
+                    else:
+                        # Notebook from January 1 2016
+                        formula = '=IF(EXACT(%(gpu_category)s, "%(g1)s"), 7,\
+                            IF(EXACT(%(gpu_category)s, "%(g2)s"), 11,\
+                            IF(EXACT(%(gpu_category)s, "%(g3)s"), 13,\
+                            IF(EXACT(%(gpu_category)s, "%(g4)s"), 20,\
+                            IF(EXACT(%(gpu_category)s, "%(g5)s"), 27,\
+                            IF(EXACT(%(gpu_category)s, "%(g6)s"), 33,\
+                            IF(EXACT(%(gpu_category)s, "%(g7)s"), 61, 0\
+                            )))))))'
+                    for i in range(int(sysinfo.discrete_gpu_num) - 1):
+                        dGfx = "dGfx%d" % (i+2)
+                        if step == 0:
+                            # Notebook from July 2014
+                            formula = formula + ' + IF(EXACT(%(' + dGfx + ')s, "%(g1)s"), 7, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g2)s"), 12, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g3)s"), 15, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g4)s"), 22, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g5)s"), 29, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g6)s"), 36, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g7)s"), 66, 0' \
+                                + ')))))))'
+                        else:
+                            # Notebook from January 1 2016
+                            formula = formula + ' + IF(EXACT(%(' + dGfx + ')s, "%(g1)s"), 4, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g2)s"), 6, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g3)s"), 8, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g4)s"), 12, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g5)s"), 16, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g6)s"), 20, ' \
+                                + 'IF(EXACT(%(' + dGfx + ')s, "%(g7)s"), 36, 0' \
+                                + ')))))))'
+                else:
+                    formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_GRAPHICS)s, "")'
+            formula = formula_strip(formula)
+            if meet > 0:
+                msg = TEC_GRAPHICS
+            else:
+                msg = ''
+            excel.cell('TEC_GRAPHICS', formula, msg)
+
 
     # TODO
     if early.check_special_case():
