@@ -279,10 +279,12 @@ class ExcelMaker:
     def jump(self, column, row):
         self.column = column
         self.row = row
+        return self
 
     def shift(self, column, row, x, y):
         self.column = chr(ord(column) + x)
         self.row = row + y
+        return self
 
 palette = {
         # Header
@@ -1011,6 +1013,10 @@ def generate_excel_for_computers(excel, sysinfo):
             erplot3 = early
         else:
             erplot3 = late
+        gfx_A_pos = None
+        tuner_A_pos = None
+        audio_A_pos = None
+        storage_A_pos = None
         for i in range(width):
             cat = chr(ord('A') + i)
             meet = early.category(cat)
@@ -1109,12 +1115,12 @@ def generate_excel_for_computers(excel, sysinfo):
                 elif cat == 'D':
                     formula = '=IF(EXACT(%(D)s, "D"), IF(%(memory)s > 4, 1.0 * (%(memory)s - 4), 0), "")'
                 else:
-                    formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_MEMORY)s, "")'
+                    formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), IF(%(memory)s > 2, 1.0 * (%(memory)s - 2), 0), "")'
             else:
                 if cat == 'A':
                     formula = '=IF(%(memory)s > 4, 0.4 * (%(memory)s - 4), 0)'
                 else:
-                    formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_MEMORY)s, "")'
+                    formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), IF(%(memory)s > 4, 0.4 * (%(memory)s - 4), 0), "")'
             if meet > 0:
                 msg = TEC_MEMORY
             else:
@@ -1128,8 +1134,9 @@ def generate_excel_for_computers(excel, sysinfo):
                     TEC_GRAPHICS = TEC_GRAPHICS + erplot3.additional_TEC_GRAPHICS('G1')
             else:
                 TEC_GRAPHICS = 0
-            if sysinfo.computer_type != 3:
-                if cat == 'A':
+
+            if cat == 'A':
+                if sysinfo.computer_type != 3:
                     if step == 0:
                         # Desktop from July 2014
                         formula = '=IF(EXACT(%(gpu_category)s, "%(g1)s"), 34,\
@@ -1173,9 +1180,6 @@ def generate_excel_for_computers(excel, sysinfo):
                                 + 'IF(EXACT(%(' + dGfx + ')s, "%(g7)s"), 72, 0' \
                                 + ')))))))'
                 else:
-                    formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_GRAPHICS)s, "")'
-            else:
-                if cat == 'A':
                     if step == 0:
                         # Notebook from July 2014
                         formula = '=IF(EXACT(%(gpu_category)s, "%(g1)s"), 12,\
@@ -1218,8 +1222,10 @@ def generate_excel_for_computers(excel, sysinfo):
                                 + 'IF(EXACT(%(' + dGfx + ')s, "%(g6)s"), 20, ' \
                                 + 'IF(EXACT(%(' + dGfx + ')s, "%(g7)s"), 36, 0' \
                                 + ')))))))'
-                else:
-                    formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_GRAPHICS)s, "")'
+            else:
+                if gfx_A_pos == None:
+                    gfx_A_pos = excel.pos["TEC_GRAPHICS"]
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), ' + gfx_A_pos + ', "")'
             formula = formula_strip(formula)
             if meet > 0:
                 msg = TEC_GRAPHICS
@@ -1232,62 +1238,72 @@ def generate_excel_for_computers(excel, sysinfo):
             if cat == 'A':
                 formula = '=IF(EXACT(%(tvtuner)s, "Yes"), IF(EXACT(%(computer)s, "Notebook"), 2.1, 15), 0)'
             else:
-                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_TV_TUNER)s, "")'
+                if tuner_A_pos == None:
+                    tuner_A_pos = excel.pos["TEC_TV_TUNER"]
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), ' + tuner_A_pos + ', "")'
             if meet > 0:
                 msg = TEC_TV_TUNER
             else:
                 msg = ''
-            if formula:
-                excel.cell('TEC_TV_TUNER', formula, msg)
-            else:
-                excel.cell('TEC_TV_TUNER', msg)
+            excel.cell('TEC_TV_TUNER', formula, msg)
 
             # TEC_AUDIO for ErP Lot 3
             TEC_AUDIO = erplot3.get_TEC_AUDIO()
             if cat == 'A':
                 formula = '=IF(EXACT(%(audio)s, "Yes"), IF(EXACT(%(computer)s, "Notebook"), 0, 15), 0)'
             else:
-                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_AUDIO)s, "")'
+                if audio_A_pos == None:
+                    audio_A_pos = excel.pos["TEC_AUDIO"]
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), ' + audio_A_pos + ', "")'
             if meet > 0:
                 msg = TEC_AUDIO
             else:
                 msg = ''
-            if formula:
-                excel.cell('TEC_AUDIO', formula, msg)
-            else:
-                excel.cell('TEC_AUDIO', msg)
+            excel.cell('TEC_AUDIO', formula, msg)
 
             # TEC_STORAGE for ErP Lot 3
             TEC_STORAGE = erplot3.get_TEC_STORAGE()
             if cat == 'A':
                 formula = '=IF(%(disk_number)s > 1, IF(EXACT(%(computer)s, "Notebook"), 3 * (%(disk_number)s - 1), 25 * (%(disk_number)s - 1)), 0)'
             else:
-                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_STORAGE)s, "")'
+                if storage_A_pos == None:
+                    storage_A_pos = excel.pos["TEC_STORAGE"]
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), ' + storage_A_pos + ', "")'
             if meet > 0:
                 msg = TEC_STORAGE
             else:
                 msg = ''
-            if formula:
-                excel.cell('TEC_STORAGE', formula, msg)
-            else:
-                excel.cell('TEC_STORAGE', msg)
+            excel.cell('TEC_STORAGE', formula, msg)
 
             # E_TEC_MAX for ErP Lot 3
             E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_STORAGE + TEC_TV_TUNER + TEC_AUDIO + TEC_GRAPHICS
             if cat == 'A':
-                formula = None
+                formula = '=%(TEC_BASE)s + %(TEC_MEMORY)s + %(TEC_STORAGE)s + %(TEC_TV_TUNER)s + %(TEC_AUDIO)s + %(TEC_GRAPHICS)s'
             else:
-                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), ' + str(E_TEC_MAX) + ', "")'
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_BASE)s + %(TEC_MEMORY)s + %(TEC_STORAGE)s + %(TEC_TV_TUNER)s + %(TEC_AUDIO)s + %(TEC_GRAPHICS)s, "")'
             if meet > 0:
                 msg = E_TEC_MAX
             else:
                 msg = ''
-            if formula:
-                excel.cell('E_TEC_MAX', formula, msg)
-            else:
-                excel.cell('E_TEC_MAX', msg)
+            excel.cell('E_TEC_MAX', formula, msg)
 
-    # TODO
+            # Compute the result of ErP Lot 3
+            if E_TEC > E_TEC_MAX or E_TEC_WOL > E_TEC_MAX:
+                result = 'FAIL'
+            else:
+                result = 'PASS'
+            if cat == 'A':
+                formula = '=IF(AND(%(E_TEC)s <= %(E_TEC_MAX)s, %(E_TEC_WOL)s <= %(E_TEC_MAX)s), "PASS", "FAIL")'
+            else:
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), IF(AND(%(E_TEC)s <= %(E_TEC_MAX)s, %(E_TEC_WOL)s <= %(E_TEC_MAX)s), "PASS", "FAIL"), "")'
+            if meet > 0:
+                msg = result
+            else:
+                msg = ''
+            excel.cell('center', formula, msg)
+
+    excel.jump(column, row).down(12)
+
     if early.check_special_case():
         notebook_msg = "If discrete graphics card(s) providing total frame buffer bandwidths above 225 GB/s, use the requirement from 1 January 2016 instead."
         desktop_msg = "If discrete graphics card(s) providing total frame buffer bandwidths above 320 GB/s and a PSU with a rated output power of at least 1000W, use the requirement from 1 January 2016 instead."
@@ -1296,7 +1312,6 @@ def generate_excel_for_computers(excel, sysinfo):
         else:
             msg = desktop_msg
         excel.cell('warning', '=IF(EXACT(%(computer)s, "Notebook"), IF(AND(%(cpu_core)s >= 4, %(memory)s >=16), "' + notebook_msg + '", ""), IF(AND(%(cpu_core)s >= 6, %(memory)s >=16), "' + desktop_msg + '", "") )', msg)
-    # TODO
 
 def generate_excel_for_workstations(book, sysinfo, version):
 
