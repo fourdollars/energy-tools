@@ -327,6 +327,8 @@ palette = {
         'TEC_INT_DISPLAY': ('field1', 'value1'),
         'TEC_SWITCHABLE': ('field1', 'value1'),
         'TEC_EEE': ('field1', 'value1'),
+        'TEC_TV_TUNER': ('field1', 'value1'),
+        'TEC_AUDIO': ('field1', 'value1'),
 
         # Cell with different background color and float 1
         'P_IDLE': ('field2', 'value2'),
@@ -1254,6 +1256,36 @@ def generate_excel_for_computers(excel, sysinfo):
                 excel.cell('TEC_AUDIO', formula, msg)
             else:
                 excel.cell('TEC_AUDIO', msg)
+
+            # TEC_STORAGE for ErP Lot 3
+            TEC_STORAGE = erplot3.get_TEC_STORAGE()
+            if cat == 'A':
+                formula = '=IF(%(disk_number)s > 1, IF(EXACT(%(computer)s, "Notebook"), 3 * (%(disk_number)s - 1), 25 * (%(disk_number)s - 1)), 0)'
+            else:
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), %(TEC_STORAGE)s, "")'
+            if meet > 0:
+                msg = TEC_STORAGE
+            else:
+                msg = ''
+            if formula:
+                excel.cell('TEC_STORAGE', formula, msg)
+            else:
+                excel.cell('TEC_STORAGE', msg)
+
+            # E_TEC_MAX for ErP Lot 3
+            E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_STORAGE + TEC_TV_TUNER + TEC_AUDIO + TEC_GRAPHICS
+            if cat == 'A':
+                formula = None
+            else:
+                formula = '=IF(EXACT(%(' + cat +')s, "' + cat + '"), ' + str(E_TEC_MAX) + ', "")'
+            if meet > 0:
+                msg = E_TEC_MAX
+            else:
+                msg = ''
+            if formula:
+                excel.cell('E_TEC_MAX', formula, msg)
+            else:
+                excel.cell('E_TEC_MAX', msg)
 
     # TODO
     if early.check_special_case():
