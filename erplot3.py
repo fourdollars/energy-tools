@@ -479,14 +479,41 @@ class ErPLot3_2016(ErPLot3_2014):
 
 
 class TestErPLot3(unittest.TestCase):
+    def setUp(self):
+        self.sysinfo = SysInfo({
+            'Product Type': 1,
+            'Computer Type': 3,
+            'CPU Clock': 2.0,
+            'CPU Cores': 2,
+            'Discrete Audio': False,
+            'Discrete Graphics': False,
+            'Discrete Graphics Cards': 0,
+            'Switchable Graphics': False,
+            'Disk Number': 1,
+            'Display Diagonal': 14,
+            'Display Height': 768,
+            'Display Width': 1366,
+            'Enhanced Display': False,
+            'Gigabit Ethernet': 1,
+            'Memory Size': 8,
+            'TV Tuner': False,
+            'Off Mode': 1.0,
+            'Off Mode with WOL': 1.0,
+            'Sleep Mode': 1.7,
+            'Sleep Mode with WOL': 1.7,
+            'Long Idle Mode': 8.0,
+            'Short Idle Mode': 10.0})
+
+    def tearDown(self):
+        self.sysinfo = None
+
     def test_desktop_category(self):
-        sysinfo = SysInfo(
-                auto=True,
-                computer_type=1,
-                cpu_core=4,
-                mem_size=4,
-                discrete_gpu_num=1)
-        inst = ErPLot3_2014(sysinfo)
+        self.sysinfo.computer_type = 1
+        self.sysinfo.cpu_core = 4
+        self.sysinfo.mem_size = 4
+        self.sysinfo.discrete_gpu_num = 1
+
+        inst = ErPLot3_2014(self.sysinfo)
         self.assertEqual(inst.category('A'), 1)
         self.assertEqual(inst.category('B'), 1)
         self.assertEqual(inst.category('C'), 1)
@@ -524,13 +551,12 @@ class TestErPLot3(unittest.TestCase):
         self.assertEqual(inst.category('D'), -1)
 
     def test_notebook_category(self):
-        sysinfo = SysInfo(
-                auto=True,
-                computer_type=3,
-                cpu_core=2,
-                mem_size=2,
-                discrete_gpu_num=1)
-        inst = ErPLot3_2014(sysinfo)
+        self.sysinfo.computer_type = 3
+        self.sysinfo.cpu_core = 2
+        self.sysinfo.mem_size = 2
+        self.sysinfo.discrete_gpu_num = 1
+
+        inst = ErPLot3_2014(self.sysinfo)
         self.assertEqual(inst.category('A'), 1)
         self.assertEqual(inst.category('B'), 1)
         self.assertEqual(inst.category('C'), 0)
@@ -547,8 +573,10 @@ class TestErPLot3(unittest.TestCase):
         self.assertEqual(inst.category('C'), -1)
 
     def test_TEC_BASE(self):
-        sysinfo = SysInfo(auto=True, computer_type=1)
-        inst = ErPLot3_2014(sysinfo)
+        self.sysinfo.computer_type = 1
+
+        inst = ErPLot3_2014(self.sysinfo)
+
         self.assertEqual(inst.get_TEC_BASE('A'), 133)
         self.assertEqual(inst.get_TEC_BASE('B'), 158)
         self.assertEqual(inst.get_TEC_BASE('C'), 188)
@@ -559,11 +587,10 @@ class TestErPLot3(unittest.TestCase):
         self.assertEqual(inst.get_TEC_BASE('C'), 80.5)
 
     def test_TEC_TV_TUNER(self):
-        sysinfo = SysInfo(
-                auto=True,
-                computer_type=1,
-                tvtuner=True)
-        inst = ErPLot3_2014(sysinfo)
+        self.sysinfo.computer_type = 1
+        self.sysinfo.tvtuner = True
+
+        inst = ErPLot3_2014(self.sysinfo)
         self.assertEqual(inst.get_TEC_TV_TUNER(), 15)
         inst.tv_tuner = False
         self.assertEqual(inst.get_TEC_TV_TUNER(), 0)
@@ -573,11 +600,10 @@ class TestErPLot3(unittest.TestCase):
         self.assertEqual(inst.get_TEC_TV_TUNER(), 2.1)
 
     def test_TEC_AUDIO(self):
-        sysinfo = SysInfo(
-                auto=True,
-                computer_type=1,
-                audio=True)
-        inst = ErPLot3_2014(sysinfo)
+        self.sysinfo.computer_type = 1
+        self.sysinfo.audio = True
+
+        inst = ErPLot3_2014(self.sysinfo)
         self.assertEqual(inst.get_TEC_AUDIO(), 15)
         inst.discrete_audio = False
         self.assertEqual(inst.get_TEC_AUDIO(), 0)
@@ -587,11 +613,10 @@ class TestErPLot3(unittest.TestCase):
         self.assertEqual(inst.get_TEC_AUDIO(), 0)
 
     def test_TEC_MEMORY(self):
-        sysinfo = SysInfo(
-                auto=True,
-                computer_type=1,
-                mem_size=8)
-        inst = ErPLot3_2014(sysinfo)
+        self.sysinfo.computer_type = 1
+        self.sysinfo.mem_size = 8
+
+        inst = ErPLot3_2014(self.sysinfo)
         self.assertEqual(inst.get_TEC_MEMORY('A'), 6)
         self.assertEqual(inst.get_TEC_MEMORY('B'), 6)
         self.assertEqual(inst.get_TEC_MEMORY('C'), 6)
@@ -603,11 +628,10 @@ class TestErPLot3(unittest.TestCase):
         self.assertEqual(inst.get_TEC_MEMORY('D'), 1.6)
 
     def test_TEC_STORAGE(self):
-        sysinfo = SysInfo(
-                auto=True,
-                computer_type=1,
-                disk_num=1)
-        inst = ErPLot3_2014(sysinfo)
+        self.sysinfo.computer_type = 1
+        self.sysinfo.disk_num = 1
+
+        inst = ErPLot3_2014(self.sysinfo)
         self.assertEqual(inst.get_TEC_STORAGE(), 0)
         inst.disk_number = 2
         self.assertEqual(inst.get_TEC_STORAGE(), 25)

@@ -24,7 +24,9 @@ import os
 import re
 import subprocess
 
-def question_str(prompt, length, validator):
+def question_str(prompt, length, validator, settings, name):
+    if settings:
+        return settings[name]
     while True:
         s = raw_input(prompt + "\n>> ")
         if len(s) == length and set(s).issubset(validator):
@@ -32,7 +34,9 @@ def question_str(prompt, length, validator):
             return s
         print("The valid input '" + validator + "'.")
 
-def question_bool(prompt):
+def question_bool(prompt, settings, name):
+    if settings:
+        return settings[name]
     while True:
         s = raw_input(prompt + " [y/n]\n>> ")
         if len(s) == 1 and set(s).issubset("YyNn01"):
@@ -42,7 +46,9 @@ def question_bool(prompt):
             else:
                 return False
 
-def question_int(prompt, maximum):
+def question_int(prompt, maximum, settings, name):
+    if settings:
+        return settings[name]
     while True:
         s = raw_input(prompt + "\n>> ")
         if set(s).issubset("0123456789"):
@@ -55,7 +61,9 @@ def question_int(prompt, maximum):
                 print("Please input a positive integer less than or equal to %s." % (maximum))
         print("Please input a positive integer less than or equal to %s." % (maximum))
 
-def question_num(prompt):
+def question_num(prompt, settings, name):
+    if settings:
+        return settings[name]
     while True:
         s = raw_input(prompt + "\n>> ")
         try:
@@ -67,97 +75,35 @@ def question_num(prompt):
 
 
 class SysInfo:
-    def __init__(self,
-            auto=False,
-            cpu_core=0,
-            cpu_clock=0.0,
-            mem_size=0.0,
-            disk_num=0,
-            diagonal=0,
-            ep=False,
-            width=0,
-            height=0,
-            product_type=0,
-            computer_type=0,
-            off=0,
-            off_wol=0,
-            sleep=0,
-            sleep_wol=0,
-            long_idle=0,
-            short_idle=0,
-            eee=-1,
-            tvtuner=False,
-            audio=False,
-            discrete=False,
-            discrete_gpu_num=0,
-            switchable=False,
-            max_power=0,
-            more_discrete=False,
-            media_codec=False,
-            integrated_display=False):
-        self.auto = auto
-        self.cpu_core = cpu_core
-        self.cpu_clock = cpu_clock
-        self.mem_size = mem_size
-        self.disk_num = disk_num
-        self.width = width
-        self.height = height
-        self.diagonal = diagonal
-        self.ep = ep
-        self.product_type = product_type
-        self.computer_type = computer_type
-        self.eee = eee
-        self.tvtuner = tvtuner
-        self.audio = audio
-        self.off = off
-        self.off_wol = off_wol
-        self.sleep = sleep
-        self.sleep_wol = sleep_wol
-        self.long_idle = long_idle
-        self.short_idle = short_idle
-        self.discrete = discrete
-        self.discrete_gpu_num = discrete_gpu_num
-        self.switchable = switchable
-        self.max_power = max_power
-        self.more_discrete = more_discrete
-        self.media_codec = media_codec
-        self.integrated_display = integrated_display
-
-        if auto:
-            return
-
-        if eee != -1:
-            self.eee = eee
-        else:
-            self.eee = 0
-            for eth in os.listdir("/sys/class/net/"):
-                if eth.startswith('eth') and subprocess.call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % eth, shell=True) == 0:
-                    self.eee = self.eee + 1
+    def __init__(self, settings=None):
+        self.settings = settings
 
         # Product type
         self.product_type = question_int("""Which product type would you like to verify?
 [1] Desktop, Integrated Desktop, and Notebook Computers
 [2] Workstations
 [3] Small-scale Servers
-[4] Thin Clients""", 4)
+[4] Thin Clients""", 4, settings, "Product Type")
 
         if self.product_type == 1:
             # Computer type
             self.computer_type = question_int("""Which type of computer do you use?
 [1] Desktop
 [2] Integrated Desktop
-[3] Notebook""", 3)
-            self.tvtuner = question_bool("Is there a television tuner?")
+[3] Notebook""", 3, settings, "Computer Type")
+            self.tvtuner = question_bool("Is there a television tuner?", settings, "TV Tuner")
 
             if self.computer_type != 3:
-                self.audio = question_bool("Is there a discrete audio?")
+                self.audio = question_bool("Is there a discrete audio?", settings, "Discrete Audio")
+            else:
+                self.audio = False
 
             # GPU Information
-            self.discrete_gpu_num = question_num("How many discrete graphics cards?")
+            self.discrete_gpu_num = question_num("How many discrete graphics cards?", settings, "Discrete Graphics Cards")
             if self.discrete_gpu_num > 0:
                 self.switchable = False
                 self.discrete = True
-            elif question_bool("Does it have switchable graphics and automated switching enabled by default?"):
+            elif question_bool("Does it have switchable graphics and automated switching enabled by default?", settings, "Switchable Graphics"):
                 self.switchable = True
                 # Those with switchable graphics may not apply the Discrete Graphics allowance.
                 self.discrete = False
@@ -167,40 +113,59 @@ class SysInfo:
 
             # Screen size
             if self.computer_type != 1:
-                self.diagonal = question_num("What is the display diagonal in inches?")
-                self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?")
+                self.diagonal = question_num("What is the display diagonal in inches?", settings, "Display Diagonal")
+                self.ep = question_bool("Is there an Enhanced-perforcemance Integrated Display?", settings, "Enhanced Display")
 
             # Power Consumption
-            self.off = question_num("What is the power consumption in Off Mode?")
-            self.off_wol = question_num("What is the power consumption in Off Mode with Wake-on-LAN enabled?")
-            self.sleep = question_num("What is the power consumption in Sleep Mode?")
-            self.sleep_wol = question_num("What is the power consumption in Sleep Mode with Wake-on-LAN enabled?")
-            self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
-            self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+            self.off = question_num("What is the power consumption in Off Mode?", settings, "Off Mode")
+            self.off_wol = question_num("What is the power consumption in Off Mode with Wake-on-LAN enabled?", settings, "Off Mode with WOL")
+            self.sleep = question_num("What is the power consumption in Sleep Mode?", settings, "Sleep Mode")
+            self.sleep_wol = question_num("What is the power consumption in Sleep Mode with Wake-on-LAN enabled?", settings, "Sleep Mode with WOL")
+            self.long_idle = question_num("What is the power consumption in Long Idle Mode?", settings, "Long Idle Mode")
+            self.short_idle = question_num("What is the power consumption in Short Idle Mode?", settings, "Short Idle Mode")
         elif self.product_type == 2:
-            self.off = question_num("What is the power consumption in Off Mode?")
-            self.sleep = question_num("What is the power consumption in Sleep Mode?")
-            self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
-            self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
-            self.max_power = question_num("What is the maximum power consumption?")
+            self.off = question_num("What is the power consumption in Off Mode?", settings, "Off Mode")
+            self.sleep = question_num("What is the power consumption in Sleep Mode?", settings, "Sleep Mode")
+            self.long_idle = question_num("What is the power consumption in Long Idle Mode?", settings, "Long Idle Mode")
+            self.short_idle = question_num("What is the power consumption in Short Idle Mode?", settings, "Short Idle Mode")
+            self.max_power = question_num("What is the maximum power consumption?", settings, "Maximum Power")
         elif self.product_type == 3:
-            self.off = question_num("What is the power consumption in Off Mode?")
-            self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
+            self.off = question_num("What is the power consumption in Off Mode?", settings, "Off Mode")
+            self.short_idle = question_num("What is the power consumption in Short Idle Mode?", settings, "Short Idle Mode")
             if self.get_cpu_core() < 2:
-                self.more_discrete = question_bool("Does it have more than one discrete graphics device?")
+                self.more_discrete = question_bool("Does it have more than one discrete graphics device?", settings, "More Discrete Graphics")
         elif self.product_type == 4:
-            self.off = question_num("What is the power consumption in Off Mode?")
-            self.sleep = question_num("What is the power consumption in Sleep Mode?\n(You can input the power consumption in Long Idle Mode, if it lacks a discrete System Sleep Mode)")
-            self.long_idle = question_num("What is the power consumption in Long Idle Mode?")
-            self.short_idle = question_num("What is the power consumption in Short Idle Mode?")
-            self.media_codec = question_bool("Does it support local multimedia encode/decode?")
-            self.discrete = question_bool("Does it have discrete graphics?")
-            self.integrated_display = question_bool("Does it have integrated display?")
+            self.off = question_num("What is the power consumption in Off Mode?", settings, "Off Mode")
+            self.sleep = question_num("What is the power consumption in Sleep Mode?\n(You can input the power consumption in Long Idle Mode, if it lacks a discrete System Sleep Mode)", settings, "Sleep Mode")
+            self.long_idle = question_num("What is the power consumption in Long Idle Mode?", settings, "Long Idle Mode")
+            self.short_idle = question_num("What is the power consumption in Short Idle Mode?", settings, "Short Idle Mode")
+            self.media_codec = question_bool("Does it support local multimedia encode/decode?", settings, "Media Codec")
+            self.discrete = question_bool("Does it have discrete graphics?", settings, "Discrete Graphics")
+            self.integrated_display = question_bool("Does it have integrated display?", settings, "Integrated Display")
             if self.integrated_display:
-                self.diagonal = question_num("What is the display diagonal in inches?")
-                self.ep = question_bool("Is it an Enhanced-perforcemance Integrated Display?")
+                self.diagonal = question_num("What is the display diagonal in inches?", settings, "Display Diagonal")
+                self.ep = question_bool("Is it an Enhanced-perforcemance Integrated Display?", settings, "Enhanced Display")
 
-    def get_cpu_vendor(self):
+        # Ethernet
+        if settings:
+            self.eee = settings["Gigabit Ethernet"]
+        else:
+            self.eee = 0
+            for eth in os.listdir("/sys/class/net/"):
+                if eth.startswith('eth') and subprocess.call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % eth, shell=True) == 0:
+                    self.eee = self.eee + 1
+
+        if self.settings:
+            if "Disk Number" in self.settings:
+                self.disk_num = self.settings["Disk Number"]
+            if "CPU Cores" in self.settings:
+                self.cpu_core = self.settings["CPU Cores"]
+            if "CPU Clock" in self.settings:
+                self.cpu_clock = self.settings["CPU Clock"]
+            if "Memory Size" in self.settings:
+                self.mem_size = self.settings["Memory Size"]
+
+    def _get_cpu_vendor(self):
         vendor=subprocess.check_output("cat /proc/cpuinfo | grep 'vendor_id' | grep -ioE '(intel|amd)'", shell=True).strip()
         if re.match("intel", vendor, re.IGNORECASE):
             return 'intel'
@@ -209,6 +174,9 @@ class SysInfo:
         return 'unknown'
 
     def get_cpu_core(self):
+        if self.settings:
+            self.cpu_core = self.settings["CPU Cores"]
+            return self.cpu_core
         if self.cpu_core:
             return self.cpu_core
 
@@ -223,10 +191,13 @@ class SysInfo:
         return self.cpu_core
 
     def get_cpu_clock(self):
+        if self.settings:
+            self.cpu_clock = self.settings["CPU Clock"]
+            return self.cpu_clock
         if self.cpu_clock:
             return self.cpu_clock
 
-        cpu = self.get_cpu_vendor()
+        cpu = self._get_cpu_vendor()
         if cpu == 'intel':
             self.cpu_clock = float(subprocess.check_output("cat /proc/cpuinfo | grep 'model name' | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'", shell=True).strip())
         elif cpu == 'amd':
@@ -238,6 +209,9 @@ class SysInfo:
         return self.cpu_clock
 
     def get_mem_size(self):
+        if self.settings:
+            self.mem_size = self.settings["Memory Size"]
+            return self.mem_size
         if self.mem_size:
             return self.mem_size
 
@@ -250,6 +224,9 @@ class SysInfo:
         return self.mem_size
 
     def get_disk_num(self):
+        if self.settings:
+            self.disk_num = self.settings["Disk Number"]
+            return self.disk_num
         if self.disk_num:
             return self.disk_num
 
@@ -266,6 +243,10 @@ class SysInfo:
         return (self.diagonal, self.ep)
 
     def get_resolution(self):
+        if self.settings:
+            self.width = self.settings["Display Width"]
+            self.height = self.settings["Display Height"]
+            return (self.width, self.height)
         if self.width == 0 or self.height == 0:
             (width, height) = subprocess.check_output("xrandr --current | grep current | sed 's/.*current \\([0-9]*\\) x \\([0-9]*\\).*/\\1 \\2/'", shell=True).strip().split(' ')
             self.width = int(width)

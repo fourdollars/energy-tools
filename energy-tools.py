@@ -324,95 +324,98 @@ def main():
     version = "v0.0"
     print("Energy Tools %s for Energy Star 5.2/6.0 and ErP Lot 3\n" % (version)+ '=' * 80)
     if args.test == 1:
-        # Test case from Energy Star 5.2/6.0 for Notebooks
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=1, computer_type=3,
-                cpu_core=2, cpu_clock=2.0,
-                mem_size=8, disk_num=1,
-                width=1366, height=768, eee=1,
-                diagonal=14, ep=False,
-                discrete=False, switchable=True,
-                off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
+        # Test case for Notebooks of Energy Star 5.2 & 6.0
+        # E_TEC: 33.03 kWh/year, E_TEC_MAX: 41.6 kWh/year, PASS for 5.2
+        # E_TEC: 40.7 kWh/year, E_TEC_MAX: 39.0 kWh/year, FAIL for 6.0
+        sysinfo = SysInfo({
+            'Product Type': 1,
+            'Computer Type': 3,
+            'CPU Clock': 2.0,
+            'CPU Cores': 2,
+            'Discrete Audio': False,
+            'Discrete Graphics': False,
+            'Discrete Graphics Cards': 0,
+            'Switchable Graphics': False,
+            'Disk Number': 1,
+            'Display Diagonal': 14,
+            'Display Height': 768,
+            'Display Width': 1366,
+            'Enhanced Display': False,
+            'Gigabit Ethernet': 1,
+            'Memory Size': 8,
+            'TV Tuner': False,
+            'Off Mode': 1.0,
+            'Off Mode with WOL': 1.0,
+            'Sleep Mode': 1.7,
+            'Sleep Mode with WOL': 1.7,
+            'Long Idle Mode': 8.0,
+            'Short Idle Mode': 10.0})
     elif args.test == 2:
-        # Test case for Workstations
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=2, disk_num=2, eee=0,
-                off=2, sleep=4, long_idle=50, short_idle=80, max_power=180)
+        # Test case for Workstations of Energy Star 5.2
+        # P_TEC: 45.1 W, P_MAX: 53.2 W, PASS for 5.2
+        sysinfo = SysInfo({
+            'Product Type': 2,
+            'Disk Number': 2,
+            'Gigabit Ethernet': 0,
+            'Off Mode': 2.0,
+            'Sleep Mode': 4.0,
+            'Long Idle Mode': 50.0,
+            'Short Idle Mode': 80.0,
+            'Maximum Power': 180.0})
     elif args.test == 3:
         # Test case for Small-scale Servers 
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=3, mem_size=4,
-                cpu_core=1, more_discrete=False,
-                eee=1, disk_num=1,
-                off=2.7, short_idle=65.0)
+        sysinfo = SysInfo({
+            'Product Type': 3,
+            'Memory Size': 4,
+            'CPU Clock': 2.0, # TODO: remove this
+            'CPU Cores': 1,
+            'More Discrete Graphics': False,
+            'Gigabit Ethernet': 1,
+            'Disk Number': 1,
+            'Off Mode': 2.7,
+            'Short Idle Mode': 65.0})
     elif args.test == 4:
         # Test case for Thin Clients
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=4,
-                integrated_display=True, width=1366, height=768, diagonal=14, ep=True,
-                off=2.7, sleep=2.7, long_idle=15.0, short_idle=15.0, media_codec=True)
+        sysinfo = SysInfo({
+            'Product Type': 4,
+            'Integrated Display': True,
+            'Display Width': 1366,
+            'Display Height': 768,
+            'Display Diagonal': 14,
+            'Enhanced Display': True,
+            'Discrete Graphics': False,
+            'Off Mode': 2.7,
+            'Sleep Mode': 2.7,
+            'Long Idle Mode': 15.0,
+            'Short Idle Mode': 15.0,
+            'Gigabit Ethernet': 1,
+            'Media Codec': True})
     elif args.test == 5:
         # Test case from OEM/ODM only for Energy Star 5.2
         # Category B: 19.16688 (E_TEC) <= 60.8 (E_TEC_MAX), PASS
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=1, computer_type=3,
-                cpu_core=2, cpu_clock=1.8,
-                mem_size=16, disk_num=1,
-                width=1366, height=768, eee=1,
-                diagonal=14, ep=False,
-                discrete=True, switchable=False,
-                off=0.27, sleep=0.61, long_idle=6.55, short_idle=6.55)
-    elif args.test == 6:
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=1, computer_type=2,
-                cpu_core=2, cpu_clock=2.4,
-                mem_size=4, disk_num=1,
-                width=1680, height=1050, eee=1,
-                diagonal=27, ep=True,
-                discrete=False, switchable=True,
-                off=12, sleep=23, long_idle=34, short_idle=45)
-    elif args.test == 7:
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=1, computer_type=3,
-                cpu_core=2, cpu_clock=2.0,
-                mem_size=8, disk_num=1,
-                width=1366, height=768, eee=1,
-                diagonal=14, ep=False,
-                discrete=True, switchable=False,
-                off=1.0, sleep=1.7, long_idle=8.0, short_idle=10.0)
-    elif args.test == 8:
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=1, computer_type=2,
-                cpu_core=4, cpu_clock=2.4,
-                mem_size=4, disk_num=1,
-                width=1680, height=1050, eee=1,
-                diagonal=27, ep=True,
-                discrete=False, switchable=True,
-                off=12, sleep=23, long_idle=34, short_idle=45)
-    elif args.test == 9:
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=1, computer_type=1,
-                cpu_core=4, cpu_clock=2.4,
-                mem_size=4, disk_num=1, eee=1,
-                discrete=False, switchable=True,
-                off=12, sleep=23, long_idle=34, short_idle=45)
-    elif args.test == 10:
-        sysinfo = SysInfo(
-                auto=True,
-                product_type=1, computer_type=2,
-                cpu_core=6, cpu_clock=2.26,
-                mem_size=16, disk_num=1, eee=1, ep=True, tvtuner=True, audio=True,
-                discrete=True, discrete_gpu_num=3, diagonal=12.1,
-                off=0.486, off_wol=0.66, sleep=0.74, sleep_wol=0.94, long_idle=10.6, short_idle=15)
+        sysinfo = SysInfo({
+            'Product Type': 1,
+            'Computer Type': 3,
+            'CPU Clock': 1.8,
+            'CPU Cores': 2,
+            'Discrete Audio': False,
+            'Discrete Graphics': True,
+            'Discrete Graphics Cards': 1,
+            'Switchable Graphics': False,
+            'Disk Number': 1,
+            'Display Diagonal': 14,
+            'Display Height': 768,
+            'Display Width': 1366,
+            'Enhanced Display': False,
+            'Gigabit Ethernet': 1,
+            'Memory Size': 16,
+            'TV Tuner': False,
+            'Off Mode': 0.27,
+            'Off Mode with WOL': 0.27,
+            'Sleep Mode': 0.61,
+            'Sleep Mode with WOL': 0.61,
+            'Long Idle Mode': 6.55,
+            'Short Idle Mode': 6.55})
     else:
         sysinfo = SysInfo()
 

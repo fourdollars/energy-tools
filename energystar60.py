@@ -28,7 +28,7 @@ class EnergyStar60:
     def equation_one(self):
         """Equation 1: TEC Calculation (E_TEC) for Desktop, Integrated Desktop, Thin Client and Notebook Computers"""
         (P_OFF, P_SLEEP, P_LONG_IDLE, P_SHORT_IDLE) = self.sysinfo.get_power_consumptions()
-        if self.sysinfo.computer_type == 3:
+        if self.sysinfo.product_type == 4 or self.sysinfo.computer_type == 3:
             (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.25, 0.35, 0.1, 0.3)
         else:
             (T_OFF, T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.45, 0.05, 0.15, 0.35)
