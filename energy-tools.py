@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-from logging import debug, warning
+import logging, os, json
+from logging import debug, warning, error
 import argparse
 from excel_output import *
 from energystar52 import EnergyStar52
@@ -416,12 +416,24 @@ def main():
             'Sleep Mode with WOL': 0.61,
             'Long Idle Mode': 6.55,
             'Short Idle Mode': 6.55})
+    elif args.profile:
+        if os.path.exists(args.profile):
+            with open(args.profile, "r") as data:
+                tmp = data.read().replace('\n', '')
+                profile = json.loads(tmp)
+                sysinfo = SysInfo(profile)
+        else:
+            error('Can not open %s to read.' % args.profile)
+            return
     else:
         sysinfo = SysInfo()
 
     energystar_calculate(sysinfo)
     erplot3_calculate(sysinfo)
     generate_excel(sysinfo, version, args.output)
+
+    if args.export:
+        sysinfo.save(args.export)
 
 def erplot3_calculate(sysinfo):
     if sysinfo.product_type != 1:
@@ -431,9 +443,11 @@ def erplot3_calculate(sysinfo):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--debug",  help="print debug messages", action="store_true")
-    parser.add_argument("-t", "--test",  help="use test case", type=int)
-    parser.add_argument("-o", "--output",  help="output Excel file", type=str)
+    parser.add_argument("-d", "--debug",   help="print debug messages",  action="store_true")
+    parser.add_argument("-t", "--test",    help="use test case",         type=int)
+    parser.add_argument("-o", "--output",  help="output Excel file",     type=str)
+    parser.add_argument("-p", "--profile", help="import system profile", type=str)
+    parser.add_argument("-x", "--export",  help="export system profile", type=str)
     args = parser.parse_args()
     if args.debug:
         logging.basicConfig(format='<%(levelname)s> %(message)s', level=logging.DEBUG)
