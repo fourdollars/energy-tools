@@ -1429,9 +1429,9 @@ def generate_excel_for_workstations(book, sysinfo, version):
     sheet.write('A25', 'P_TEC', result)
     sheet.write('B25', '=(B21*B7+B22*B8+B23*B9+B24*B10)', result_value, P_TEC)
 
-    P_MAX = 0.28 * (sysinfo.max_power + sysinfo.disk_num * 5) + 8.76 * sysinfo.eee * (sysinfo.sleep + sysinfo.long_idle + sysinfo.short_idle)
+    P_MAX = 0.28 * (sysinfo.max_power + sysinfo.disk_num * 5) + 8.76 * 0.2 * sysinfo.eee * (T_SLEEP + T_LONG_IDLE + T_SHORT_IDLE)
     sheet.write('A26', 'P_MAX', result)
-    sheet.write('B26', '=0.28*(B11+B3*5) + 8.76*B4*(B8 + B9 + B10)', result_value, P_MAX)
+    sheet.write('B26', '=0.28*(B11+B3*5) + 8.76*0.2*B4*(B22 + B23 + B24)', result_value, P_MAX)
 
     if P_TEC <= P_MAX:
         RESULT = 'PASS'
