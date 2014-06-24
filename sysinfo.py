@@ -137,11 +137,14 @@ class SysInfo:
             self.long_idle = self.question_num("What is the power consumption in Long Idle Mode?", "Long Idle Mode")
             self.short_idle = self.question_num("What is the power consumption in Short Idle Mode?", "Short Idle Mode")
             self.max_power = self.question_num("What is the maximum power consumption?", "Maximum Power")
+            self.get_disk_num()
         elif self.product_type == 3:
             self.off = self.question_num("What is the power consumption in Off Mode?", "Off Mode")
             self.short_idle = self.question_num("What is the power consumption in Short Idle Mode?", "Short Idle Mode")
             if self.get_cpu_core() < 2:
                 self.more_discrete = self.question_bool("Does it have more than one discrete graphics device?", "More Discrete Graphics")
+            else:
+                self.more_discrete = False
         elif self.product_type == 4:
             self.off = self.question_num("What is the power consumption in Off Mode?", "Off Mode")
             self.sleep = self.question_num("What is the power consumption in Sleep Mode?\n(You can input the power consumption in Long Idle Mode, if it lacks a discrete System Sleep Mode)", "Sleep Mode")
@@ -155,7 +158,7 @@ class SysInfo:
                 self.ep = self.question_bool("Is it an Enhanced-perforcemance Integrated Display?", "Enhanced Display")
 
         # Ethernet
-        if self.profile:
+        if "Gigabit Ethernet" in self.profile:
             self.eee = self.profile["Gigabit Ethernet"]
         else:
             self.eee = 0
@@ -163,15 +166,14 @@ class SysInfo:
                 if eth.startswith('eth') and subprocess.call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % eth, shell=True) == 0:
                     self.eee = self.eee + 1
 
-        if self.profile:
-            if "Disk Number" in self.profile:
-                self.disk_num = self.profile["Disk Number"]
-            if "CPU Cores" in self.profile:
-                self.cpu_core = self.profile["CPU Cores"]
-            if "CPU Clock" in self.profile:
-                self.cpu_clock = self.profile["CPU Clock"]
-            if "Memory Size" in self.profile:
-                self.mem_size = self.profile["Memory Size"]
+        if "Disk Number" in self.profile:
+            self.disk_num = self.profile["Disk Number"]
+        if "CPU Cores" in self.profile:
+            self.cpu_core = self.profile["CPU Cores"]
+        if "CPU Clock" in self.profile:
+            self.cpu_clock = self.profile["CPU Clock"]
+        if "Memory Size" in self.profile:
+            self.mem_size = self.profile["Memory Size"]
 
     def _get_cpu_vendor(self):
         vendor=subprocess.check_output("cat /proc/cpuinfo | grep 'vendor_id' | grep -ioE '(intel|amd)'", shell=True).strip()
@@ -182,10 +184,8 @@ class SysInfo:
         return 'unknown'
 
     def get_cpu_core(self):
-        if self.profile:
+        if "CPU Cores" in self.profile:
             self.cpu_core = self.profile["CPU Cores"]
-            return self.cpu_core
-        if self.cpu_core:
             return self.cpu_core
 
         try:
@@ -196,13 +196,12 @@ class SysInfo:
             self.cpu_core = int(subprocess.check_output('cat /proc/cpuinfo | grep "cpu cores" | sort -ru | head -n 1 | cut -d: -f2 | xargs', shell=True).strip())
 
         debug("CPU core: %s" % (self.cpu_core))
+        self.profile["CPU Cores"] = self.cpu_core
         return self.cpu_core
 
     def get_cpu_clock(self):
-        if self.profile:
+        if "CPU Clock" in self.profile:
             self.cpu_clock = self.profile["CPU Clock"]
-            return self.cpu_clock
-        if self.cpu_clock:
             return self.cpu_clock
 
         cpu = self._get_cpu_vendor()
@@ -214,33 +213,33 @@ class SysInfo:
             raise Exception('Unknown CPU Vendor')
 
         debug("CPU clock: %s GHz" % (self.cpu_clock))
+        self.profile["CPU Clock"] = self.cpu_clock
         return self.cpu_clock
 
     def get_mem_size(self):
-        if self.profile:
+        if "Memory Size" in self.profile:
             self.mem_size = self.profile["Memory Size"]
             return self.mem_size
-        if self.mem_size:
-            return self.mem_size
 
+        self.mem_size = 0
         for size in subprocess.check_output("sudo dmidecode -t 17 | grep 'Size:.*MB' | awk '{print $2}'", shell=True).split('\n'):
             if size:
                 self.mem_size = self.mem_size + int(size)
         self.mem_size = self.mem_size / 1024
 
         debug("Memory size: %s GB" % (self.mem_size))
+        self.profile["Memory Size"] = self.mem_size
         return self.mem_size
 
     def get_disk_num(self):
-        if self.profile:
+        if "Disk Number" in self.profile:
             self.disk_num = self.profile["Disk Number"]
-            return self.disk_num
-        if self.disk_num:
             return self.disk_num
 
         self.disk_num = len(subprocess.check_output('ls /sys/block | grep sd', shell=True).strip().split('\n'))
 
         debug("Disk number: %s" % (self.disk_num))
+        self.profile["Disk Number"] = self.disk_num
         return self.disk_num
 
     def set_display(self, diagonal, ep):
@@ -251,15 +250,17 @@ class SysInfo:
         return (self.diagonal, self.ep)
 
     def get_resolution(self):
-        if self.profile:
+        if "Display Width" in self.profile and "Display Height" in self.profile:
             self.width = self.profile["Display Width"]
             self.height = self.profile["Display Height"]
             return (self.width, self.height)
-        if self.width == 0 or self.height == 0:
-            (width, height) = subprocess.check_output("xrandr --current | grep current | sed 's/.*current \\([0-9]*\\) x \\([0-9]*\\).*/\\1 \\2/'", shell=True).strip().split(' ')
-            self.width = int(width)
-            self.height = int(height)
+
+        (width, height) = subprocess.check_output("xrandr --current | grep current | sed 's/.*current \\([0-9]*\\) x \\([0-9]*\\).*/\\1 \\2/'", shell=True).strip().split(' ')
+        self.width = int(width)
+        self.height = int(height)
         debug("Resolution: %s x %s" % (self.width, self.height))
+        self.profile["Display Width"] = self.width
+        self.profile["Display Height"] = self.height
         return (self.width, self.height)
 
     def get_power_consumptions(self):
