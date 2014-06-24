@@ -39,6 +39,9 @@ GN_LIST = [G1, G2, G3, G4, G5, G6, G7]
 def generate_excel(sysinfo, version, output):
     if not output:
         return
+    elif not output.endswith('.xlsx'):
+        warning('Please use xlsx as the suffix of Excel file.') 
+        output = output + '.xlsx'
 
     if sysinfo.product_type == 1:
         excel = ExcelMaker(version, output)

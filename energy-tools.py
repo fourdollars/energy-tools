@@ -437,4 +437,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.debug:
         logging.basicConfig(format='<%(levelname)s> %(message)s', level=logging.DEBUG)
+    else:
+        logging.basicConfig(format='<%(levelname)s> %(message)s')
     main()
