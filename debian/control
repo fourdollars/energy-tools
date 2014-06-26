@@ -1,0 +1,15 @@
+Source: energy-tools
+Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
+Section: python
+Priority: optional
+Build-Depends: python-all (>= 2.6.6-3), debhelper (>= 7)
+Homepage: https://code.launchpad.net/~oem-solutions-engineers/somerville/energy-tools
+Standards-Version: 3.9.1
+
+Package: python-energy-tools
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}, dmidecode, ethtool
+Recommends: python-xlsxwriter
+Description: Energy Tools for Energy Star 5.2/6.0 and ErP Lot 3
+ This program is designed to collect the system profile and calculate
+ the results of Energy Star 5.2/6.0 and ErP Lot 3.

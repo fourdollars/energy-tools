@@ -1,0 +1,9 @@
+#!/bin/sh -e                   
+
+. /usr/share/debconf/confmodule
+
+case "$1" in
+	(configure)
+		chmod +x /usr/lib/python2.7/dist-packages/energy-tools/energy-tools.py
+		;;
+esac
