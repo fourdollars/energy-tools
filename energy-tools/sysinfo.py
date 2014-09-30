@@ -80,6 +80,13 @@ class SysInfo:
             except ValueError:
                 print "Oops!  That was no valid number.  Try again..."
 
+    def get_diagonal(self):
+            from gi.repository import Gdk
+            screen = Gdk.Screen.get_default()
+            major = screen.get_primary_monitor()
+            diagonal_mm = math.sqrt(screen.get_monitor_width_mm(major) ** 2 + screen.get_monitor_height_mm(major) ** 2)
+            return diagonal_mm / 25.4
+
     def __init__(self, profile=None):
         if profile:
             self.profile = profile
@@ -121,7 +128,7 @@ class SysInfo:
 
             # Screen size
             if self.computer_type != 1:
-                self.diagonal = self.question_num("What is the display diagonal in inches?", "Display Diagonal")
+                self.diagonal = self.get_diagonal()
                 self.ep = self.question_bool("Is there an Enhanced-perforcemance Integrated Display?", "Enhanced Display")
 
             # Power Consumption
@@ -154,7 +161,7 @@ class SysInfo:
             self.discrete = self.question_bool("Does it have discrete graphics?", "Discrete Graphics")
             self.integrated_display = self.question_bool("Does it have integrated display?", "Integrated Display")
             if self.integrated_display:
-                self.diagonal = self.question_num("What is the display diagonal in inches?", "Display Diagonal")
+                self.diagonal = self.get_diagonal()
                 self.ep = self.question_bool("Is it an Enhanced-perforcemance Integrated Display?", "Enhanced Display")
 
         # Ethernet
