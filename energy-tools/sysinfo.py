@@ -81,11 +81,16 @@ class SysInfo:
                 print "Oops!  That was no valid number.  Try again..."
 
     def get_diagonal(self):
+        key = 'Display Diagonal'
+        if key in self.profile:
+            return self.profile[key]
+        else:
             from gi.repository import Gdk
             screen = Gdk.Screen.get_default()
             major = screen.get_primary_monitor()
             diagonal_mm = math.sqrt(screen.get_monitor_width_mm(major) ** 2 + screen.get_monitor_height_mm(major) ** 2)
-            return diagonal_mm / 25.4
+            self.profile[key] = diagonal_mm / 25.4
+            return self.profile[key]
 
     def __init__(self, profile=None):
         if profile:
