@@ -119,7 +119,7 @@ class SysInfo:
                 self.audio = False
 
             # GPU Information
-            self.discrete_gpu_num = self.question_int("How many discrete graphics cards?", "Discrete Graphics Cards")
+            self.discrete_gpu_num = self.question_int("How many discrete graphics cards?", 10, "Discrete Graphics Cards")
             if self.discrete_gpu_num > 0:
                 self.switchable = False
                 self.discrete = True
