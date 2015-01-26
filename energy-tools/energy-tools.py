@@ -321,7 +321,7 @@ def energystar_calculate(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = "v1.3.2"
+    version = "v1.3.3"
     print("Energy Tools %s for Energy Star 5.2/6.0 and ErP Lot 3\n" % (version)+ '=' * 80)
     if args.test == 1:
         # Test case for Notebooks of Energy Star 5.2 & 6.0
@@ -363,7 +363,7 @@ def main():
             'Short Idle Mode': 80.0,
             'Maximum Power': 180.0})
     elif args.test == 3:
-        # Test case for Small-scale Servers 
+        # Test case for Small-scale Servers
         sysinfo = SysInfo({
             'Product Type': 3,
             'Memory Size': 4,

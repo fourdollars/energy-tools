@@ -119,7 +119,7 @@ class SysInfo:
                 self.audio = False
 
             # GPU Information
-            self.discrete_gpu_num = self.question_num("How many discrete graphics cards?", "Discrete Graphics Cards")
+            self.discrete_gpu_num = self.question_int("How many discrete graphics cards?", "Discrete Graphics Cards")
             if self.discrete_gpu_num > 0:
                 self.switchable = False
                 self.discrete = True
@@ -255,7 +255,7 @@ class SysInfo:
         return self.disk_num
 
     def set_display(self, diagonal, ep):
-        self.diagonal = diagonal 
+        self.diagonal = diagonal
         self.ep = ep
 
     def get_display(self):
