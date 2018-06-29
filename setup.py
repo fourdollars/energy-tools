@@ -21,9 +21,9 @@ from distutils.core import setup
 import glob, os
 
 setup(name='energy-tools',
-      version='1.3.4',
-      description='Energy Tools for Energy Star 5.2/6.0 and ErP Lot 3',
-      long_description='This program is designed to collect the system profile and calculate\nthe results of Energy Star 5.2/6.0 and ErP Lot 3.',
+      version='1.3.5',
+      description='Energy Tools for Energy Star 5.2/6.0 and ErP Lot 3 2014/2016',
+      long_description='This program is designed to collect the system profile and calculate\nthe results of Energy Star 5.2/6.0 and ErP Lot 3 2014/2016.',
       platforms=['Linux'],
       license='GPLv3',
       author='Shih-Yuan Lee (FourDollars)',

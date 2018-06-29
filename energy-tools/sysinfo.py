@@ -85,6 +85,8 @@ class SysInfo:
         if key in self.profile:
             return self.profile[key]
         else:
+            import gi
+            gi.require_version('Gdk', '3.0')
             from gi.repository import Gdk
             screen = Gdk.Screen.get_default()
             major = screen.get_primary_monitor()
@@ -248,7 +250,7 @@ class SysInfo:
             self.disk_num = self.profile["Disk Number"]
             return self.disk_num
 
-        self.disk_num = len(subprocess.check_output('ls /sys/block | grep sd', shell=True).strip().split('\n'))
+        self.disk_num = len(subprocess.check_output('ls /sys/block | grep -e sd -e nvme', shell=True).strip().split('\n'))
 
         debug("Disk number: %s" % (self.disk_num))
         self.profile["Disk Number"] = self.disk_num

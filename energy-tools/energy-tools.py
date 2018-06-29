@@ -321,8 +321,8 @@ def energystar_calculate(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = "v1.3.4"
-    print("Energy Tools %s for Energy Star 5.2/6.0 and ErP Lot 3\n" % (version)+ '=' * 80)
+    version = "v1.3.5"
+    print("Energy Tools %s for Energy Star 5.2/6.0 and ErP Lot 3 2014/2016\n" % (version)+ '=' * 80)
     if args.test == 1:
         # Test case for Notebooks of Energy Star 5.2 & 6.0
         # E_TEC: 33.03 kWh/year, E_TEC_MAX: 41.6 kWh/year, PASS for 5.2
