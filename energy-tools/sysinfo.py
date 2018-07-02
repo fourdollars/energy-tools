@@ -222,7 +222,7 @@ class SysInfo:
         if cpu == 'intel':
             self.cpu_clock = float(subprocess.check_output("cat /proc/cpuinfo | grep 'model name' | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'", shell=True).strip())
         elif cpu == 'amd':
-            self.cpu_clock = float(subprocess.check_output("sudo dmidecode -t processor | grep 'Max Speed' | cut -d: -f2 | xargs | sed 's/MHz//'", shell=True).strip()) / 1000
+            self.cpu_clock = float(subprocess.check_output("sudo dmidecode -t processor | grep 'Current Speed' | cut -d: -f2 | xargs | sed 's/MHz//'", shell=True).strip()) / 1000
         else:
             raise Exception('Unknown CPU Vendor')
 
