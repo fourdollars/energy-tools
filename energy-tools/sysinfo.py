@@ -125,9 +125,11 @@ class SysInfo:
             if self.discrete_gpu_num > 0:
                 self.switchable = False
                 self.discrete = True
+                if self.computer_type == 3:
+                    self.fb_bw = self.question_num("How many is the display frame buffer bandwidth in gigabytes per second (GB/s) (abbr FB_BW)?\nThis is a manufacturer declared parameter and should be calculated as follows: (Data Rate [Mhz] × Frame Buffer Data Width [bits]) / ( 8 × 1000 ) ", "Frame Buffer Bandwidth")
             elif self.question_bool("Does it have switchable graphics and automated switching enabled by default?", "Switchable Graphics"):
                 self.switchable = True
-                # Those with switchable graphics may not apply the Discrete Graphics allowance.
+                # Those with switchable graphics can not apply the Discrete Graphics allowance.
                 self.discrete = False
             else:
                 self.switchable = False

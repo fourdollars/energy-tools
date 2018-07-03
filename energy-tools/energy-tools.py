@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4; -*-
 #
-# Copyright (C) 2014 Canonical Ltd.
+# Copyright (C) 2014-2018 Canonical Ltd.
 # Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -23,6 +23,7 @@ import argparse
 from excel_output import *
 from energystar52 import EnergyStar52
 from energystar60 import EnergyStar60
+from energystar70 import EnergyStar70
 from sysinfo import SysInfo
 from erplot3 import ErPLot3
 
@@ -153,6 +154,84 @@ def energystar_calculate(sysinfo):
                 elif AllowancePSU == higher:
                     print("  If power supplies meet higher efficiency requirements,")
                 E_TEC_MAX = estar60.equation_two('G1') * AllowancePSU
+                if E_TEC <= E_TEC_MAX:
+                    result = 'PASS'
+                    operator = '<='
+                else:
+                    result = 'FAIL'
+                    operator = '>'
+                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+
+        # Energy Star 7.0
+        print("\nEnergy Star 7.0:\n")
+        estar70 = EnergyStar70(sysinfo)
+        E_TEC = estar70.equation_one()
+
+        lower = 1.015
+        if sysinfo.computer_type == 2:
+            higher = 1.04
+        else:
+            higher = 1.03
+
+        if sysinfo.computer_type == 1 or sysinfo.computer_type == 2:
+            for AllowancePSU in (1, lower, higher):
+                if sysinfo.discrete:
+                    if AllowancePSU == 1:
+                        print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
+                    elif AllowancePSU == lower:
+                        print("  If power supplies meet lower efficiency requirements,")
+                    elif AllowancePSU == higher:
+                        print("  If power supplies meet higher efficiency requirements,")
+                    for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
+                        E_TEC_MAX = estar70.equation_two(gpu) * AllowancePSU
+                        if E_TEC <= E_TEC_MAX:
+                            result = 'PASS'
+                            operator = '<='
+                        else:
+                            result = 'FAIL'
+                            operator = '>'
+                        if gpu == 'G1':
+                            gpu = "G1 (FB_BW <= 16)"
+                        elif gpu == 'G2':
+                            gpu = "G2 (16 < FB_BW <= 32)"
+                        elif gpu == 'G3':
+                            gpu = "G3 (32 < FB_BW <= 64)"
+                        elif gpu == 'G4':
+                            gpu = "G4 (64 < FB_BW <= 96)"
+                        elif gpu == 'G5':
+                            gpu = "G5 (96 < FB_BW <= 128)"
+                        elif gpu == 'G6':
+                            gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
+                        elif gpu == 'G7':
+                            gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
+                        print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
+                else:
+                    if AllowancePSU == 1:
+                        print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
+                    elif AllowancePSU == lower:
+                        print("  If power supplies meet lower efficiency requirements,")
+                    elif AllowancePSU == higher:
+                        print("  If power supplies meet higher efficiency requirements,")
+                    E_TEC_MAX = estar70.equation_two('G1') * AllowancePSU
+                    if E_TEC <= E_TEC_MAX:
+                        result = 'PASS'
+                        operator = '<='
+                    else:
+                        result = 'FAIL'
+                        operator = '>'
+                    print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+        else:
+            if sysinfo.discrete:
+                E_TEC_MAX = estar70.equation_two('N/A', sysinfo.fb_bw)
+                if E_TEC <= E_TEC_MAX:
+                    result = 'PASS'
+                    operator = '<='
+                else:
+                    result = 'FAIL'
+                    operator = '>'
+                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+            else:
+                E_TEC_MAX = estar70.equation_two('G1')
                 if E_TEC <= E_TEC_MAX:
                     result = 'PASS'
                     operator = '<='
@@ -321,12 +400,12 @@ def energystar_calculate(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = "v1.3.5"
-    print("Energy Tools %s for Energy Star 5.2/6.0 and ErP Lot 3 2014/2016\n" % (version)+ '=' * 80)
+    version = '1.4'
+    print("Energy Tools %s for Energy Star (5.2 & 6.0 & 7.0) and ErP Lot 3 (Jul. 2014 & Jan. 2016)\n" % (version)+ '=' * 80)
     if args.test == 1:
-        # Test case for Notebooks of Energy Star 5.2 & 6.0
-        # E_TEC: 33.03 kWh/year, E_TEC_MAX: 41.6 kWh/year, PASS for 5.2
-        # E_TEC: 40.7 kWh/year, E_TEC_MAX: 39.0 kWh/year, FAIL for 6.0
+        print("""# Test case from Notebooks of Energy Star 5.2 & 6.0
+# E_TEC: 33.03 kWh/year, E_TEC_MAX: 41.6 kWh/year, PASS for 5.2
+# E_TEC: 40.7 kWh/year, E_TEC_MAX: 39.0 kWh/year, FAIL for 6.0""")
         sysinfo = SysInfo({
             'Product Type': 1,
             'Computer Type': 3,
@@ -351,8 +430,34 @@ def main():
             'Long Idle Mode': 8.0,
             'Short Idle Mode': 10.0})
     elif args.test == 2:
-        # Test case for Workstations of Energy Star 5.2
-        # P_TEC: 45.1 W, P_MAX: 53.2 W, PASS for 5.2
+        print("""# Test case from Notebooks of Energy Star 7.0
+# E_TEC: 35.7 kWh/year, E_TEC_MAX: 19.7 kWh/year, FAIL for 7.0""")
+        sysinfo = SysInfo({
+            'Product Type': 1,
+            'Computer Type': 3,
+            'CPU Clock': 2.0,
+            'CPU Cores': 2,
+            'Discrete Audio': False,
+            'Discrete Graphics': False,
+            'Discrete Graphics Cards': 0,
+            'Switchable Graphics': True,
+            'Disk Number': 1,
+            'Display Diagonal': 14,
+            'Display Height': 768,
+            'Display Width': 1366,
+            'Enhanced Display': False,
+            'Gigabit Ethernet': 1,
+            'Memory Size': 8,
+            'TV Tuner': False,
+            'Off Mode': 0.5,
+            'Off Mode with WOL': 0.5,
+            'Sleep Mode': 1.0,
+            'Sleep Mode with WOL': 1.0,
+            'Long Idle Mode': 6.0,
+            'Short Idle Mode': 10.0})
+    elif args.test == 3:
+        print("""# Test case from Workstations of Energy Star 5.2
+# P_TEC: 45.1 W, P_MAX: 53.2 W, PASS for 5.2""")
         sysinfo = SysInfo({
             'Product Type': 2,
             'Disk Number': 2,
@@ -362,8 +467,8 @@ def main():
             'Long Idle Mode': 50.0,
             'Short Idle Mode': 80.0,
             'Maximum Power': 180.0})
-    elif args.test == 3:
-        # Test case for Small-scale Servers
+    elif args.test == 4:
+        print("# Test case from Small-scale Servers of Energy Star 5.2")
         sysinfo = SysInfo({
             'Product Type': 3,
             'Memory Size': 4,
@@ -374,8 +479,8 @@ def main():
             'Disk Number': 1,
             'Off Mode': 2.7,
             'Short Idle Mode': 65.0})
-    elif args.test == 4:
-        # Test case for Thin Clients
+    elif args.test == 5:
+        print("# Test case from Thin Clients of Energy Star 5.2")
         sysinfo = SysInfo({
             'Product Type': 4,
             'Integrated Display': True,
@@ -390,13 +495,14 @@ def main():
             'Short Idle Mode': 15.0,
             'Gigabit Ethernet': 1,
             'Media Codec': True})
-    elif args.test == 5:
-        # Test case from OEM/ODM only for Energy Star 5.2
-        # Category B: 19.16688 (E_TEC) <= 60.8 (E_TEC_MAX), PASS
+    elif args.test == 6:
+        print("""# Test case for Notebooks with discrete graphics of Energy Star 7.0
+# E_TEC: 35.697, E_TEC_MAX: 36.2246077931, PASS for 7.0
+#   P.S. This is a random data for test, the result could be wrong.)""")
         sysinfo = SysInfo({
             'Product Type': 1,
             'Computer Type': 3,
-            'CPU Clock': 1.8,
+            'CPU Clock': 2.0,
             'CPU Cores': 2,
             'Discrete Audio': False,
             'Discrete Graphics': True,
@@ -408,14 +514,15 @@ def main():
             'Display Width': 1366,
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
-            'Memory Size': 16,
+            'Memory Size': 8,
             'TV Tuner': False,
-            'Off Mode': 0.27,
-            'Off Mode with WOL': 0.27,
-            'Sleep Mode': 0.61,
-            'Sleep Mode with WOL': 0.61,
-            'Long Idle Mode': 6.55,
-            'Short Idle Mode': 6.55})
+            'Off Mode': 0.5,
+            'Off Mode with WOL': 0.5,
+            'Sleep Mode': 1.0,
+            'Sleep Mode with WOL': 1.0,
+            'Long Idle Mode': 6.0,
+            'Frame Buffer Bandwidth': 64.0,
+            'Short Idle Mode': 10.0})
     elif args.profile:
         if os.path.exists(args.profile):
             with open(args.profile, "r") as data:

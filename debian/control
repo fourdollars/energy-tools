@@ -8,7 +8,7 @@ Standards-Version: 3.9.5
 
 Package: python-energy-tools
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, dmidecode, ethtool
+Depends: ${misc:Depends}, ${python:Depends}, dmidecode, ethtool, python-debian
 Recommends: python-xlsxwriter, python-gi, gir1.2-gtk-3.0
 Description: Energy Tools for Energy Star 5.2/6.0 and ErP Lot 3 2014/2016
  This program is designed to collect the system profile and calculate
