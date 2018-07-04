@@ -23,6 +23,7 @@ class EnergyStar60:
     """Energy Star 6.0 calculator"""
     def __init__(self, sysinfo):
         self.sysinfo = sysinfo
+        debug("=== Energy Star 6.0 ===")
 
     # Requirements for Desktop, Integrated Desktop, and Notebook Computers
     def equation_one(self):

@@ -151,6 +151,7 @@ class ErPLot3:
 class ErPLot3_2014:
     """ErP Lot 3 calculator from 1 July 2014"""
     def __init__(self, sysinfo):
+        debug("=== ErP Lot 3 from 1 July 2014 ===")
         self.computer_type = sysinfo.computer_type
         self.cpu_core = sysinfo.cpu_core
         self.cpu_clock = sysinfo.cpu_clock
@@ -386,6 +387,10 @@ class ErPLot3_2014:
 
 class ErPLot3_2016(ErPLot3_2014):
     """ErP Lot 3 calculator from 1 January 2016"""
+    def __init__(self, sysinfo):
+        ErPLot3_2014.__init__(self, sysinfo)
+        debug("=== ErP Lot 3 from 1 January 2016 ===")
+
     def get_TEC_BASE(self, category):
         # Notebook
         if self.computer_type == 3:

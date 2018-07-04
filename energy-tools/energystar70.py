@@ -24,6 +24,7 @@ class EnergyStar70:
     """Energy Star 7.0 calculator"""
     def __init__(self, sysinfo):
         self.sysinfo = sysinfo
+        debug("=== Energy Star 7.0 ===")
 
     # Requirements for Desktop, Integrated Desktop, and Notebook Computers
     def equation_one(self):

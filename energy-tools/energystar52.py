@@ -23,6 +23,7 @@ class EnergyStar52:
     """Energy Star 5.2 calculator"""
     def __init__(self, sysinfo):
         self.sysinfo = sysinfo
+        debug("=== Energy Star 5.2 ===")
 
     def qualify_desktop_category(self, category, discrete=False, over_frame_buffer_width_128=False):
         (core, clock, memory, disk) = self.sysinfo.get_basic_info()
