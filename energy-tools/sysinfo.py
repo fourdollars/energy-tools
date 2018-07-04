@@ -178,9 +178,10 @@ class SysInfo:
             self.eee = self.profile["Gigabit Ethernet"]
         else:
             self.eee = 0
-            for eth in os.listdir("/sys/class/net/"):
-                if eth.startswith('eth') and subprocess.call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % eth, shell=True) == 0:
-                    self.eee = self.eee + 1
+            for dev in os.listdir("/sys/class/net/"):
+                if dev.startswith('eth') or dev.startswith('enp'):
+                    if subprocess.call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % dev, shell=True) == 0:
+                        self.eee = self.eee + 1
 
         if "Disk Number" in self.profile:
             self.disk_num = self.profile["Disk Number"]
@@ -257,6 +258,21 @@ class SysInfo:
         debug("Disk number: %s" % (self.disk_num))
         self.profile["Disk Number"] = self.disk_num
         return self.disk_num
+
+    def get_eee_num(self):
+        if "Gigabit Ethernet" in self.profile:
+            self.eee = self.profile["Gigabit Ethernet"]
+            return self.eee
+
+        self.eee = 0
+        for dev in os.listdir("/sys/class/net/"):
+            if dev.startswith('eth') or dev.startswith('enp'):
+                if subprocess.call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % dev, shell=True) == 0:
+                    self.eee = self.eee + 1
+
+        debug("Gigabit Ethernet: %s" % (self.eee))
+        self.profile["Gigabit Ethernet"] = self.eee
+        return self.eee
 
     def set_display(self, diagonal, ep):
         self.diagonal = diagonal

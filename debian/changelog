@@ -1,3 +1,9 @@
+energy-tools (1.4.1) xenial; urgency=medium
+
+  * Fix the detection and profile problems for Gigabit Ethernet.
+
+ -- Commercial Engineering <commercial-engineering@canonical.com>  Wed, 04 Jul 2018 16:58:42 +0800
+
 energy-tools (1.4) xenial; urgency=medium
 
   * Support Energy Star 7.0 for the command line output only.
