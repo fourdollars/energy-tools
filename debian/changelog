@@ -1,3 +1,9 @@
+energy-tools (1.4.3) xenial; urgency=medium
+
+  * Bump to 1.4.3.
+
+ -- Commercial Engineering <commercial-engineering@canonical.com>  Thu, 05 Jul 2018 14:58:57 +0800
+
 energy-tools (1.4.2) xenial; urgency=medium
 
   * Calculate Screen Area directly to be more precise.
