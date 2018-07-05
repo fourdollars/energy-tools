@@ -419,6 +419,7 @@ def main():
             'Display Diagonal': 14,
             'Display Height': 768,
             'Display Width': 1366,
+            'Screen Area': 83.4,
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
             'Memory Size': 8,
@@ -445,6 +446,7 @@ def main():
             'Display Diagonal': 14,
             'Display Height': 768,
             'Display Width': 1366,
+            'Screen Area': 83.4,
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
             'Memory Size': 8,
@@ -487,6 +489,7 @@ def main():
             'Display Width': 1366,
             'Display Height': 768,
             'Display Diagonal': 14,
+            'Screen Area': 83.4,
             'Enhanced Display': True,
             'Discrete Graphics': False,
             'Off Mode': 2.7,
@@ -497,7 +500,7 @@ def main():
             'Media Codec': True})
     elif args.test == 6:
         print("""# Test case for Notebooks with discrete graphics of Energy Star 7.0
-# E_TEC: 35.697, E_TEC_MAX: 36.2246077931, PASS for 7.0
+# E_TEC: 35.697, E_TEC_MAX: 36.2018334752, PASS for 7.0
 #   P.S. This is a random data for test, the result could be wrong.)""")
         sysinfo = SysInfo({
             'Product Type': 1,
@@ -512,6 +515,7 @@ def main():
             'Display Diagonal': 14,
             'Display Height': 768,
             'Display Width': 1366,
+            'Screen Area': 83.4,
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
             'Memory Size': 8,

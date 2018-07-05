@@ -1,3 +1,9 @@
+energy-tools (1.4.2) xenial; urgency=medium
+
+  * Calculate Screen Area directly to be more precise.
+
+ -- Commercial Engineering <commercial-engineering@canonical.com>  Thu, 05 Jul 2018 14:54:19 +0800
+
 energy-tools (1.4.1) xenial; urgency=medium
 
   * Fix the detection and profile problems for Gigabit Ethernet.

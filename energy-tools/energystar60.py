@@ -158,7 +158,7 @@ class EnergyStar60:
             EP = 0
         (width, height) = self.sysinfo.get_resolution()
         r = 1.0 * width * height / 1000000
-        A =  1.0 * diagonal * diagonal * width * height / (width ** 2 + height ** 2)
+        A =  1.0 * self.sysinfo.get_screen_area()
         debug("EP = %s, r = %s, A = %s" % (EP, r, A))
         return (EP, r, A)
 

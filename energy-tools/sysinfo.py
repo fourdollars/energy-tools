@@ -94,6 +94,19 @@ class SysInfo:
             self.profile[key] = diagonal_mm / 25.4
             return self.profile[key]
 
+    def get_screen_area(self):
+        key = 'Screen Area'
+        if key in self.profile:
+            return self.profile[key]
+        else:
+            import gi
+            gi.require_version('Gdk', '3.0')
+            from gi.repository import Gdk
+            screen = Gdk.Screen.get_default()
+            major = screen.get_primary_monitor()
+            self.profile[key] = screen.get_monitor_width_mm(major) * screen.get_monitor_height_mm(major) / 25.4 / 25.4
+            return self.profile[key]
+
     def __init__(self, profile=None):
         if profile:
             self.profile = profile
@@ -138,6 +151,7 @@ class SysInfo:
             # Screen size
             if self.computer_type != 1:
                 self.diagonal = self.get_diagonal()
+                self.screen_area = self.get_screen_area()
                 self.ep = self.question_bool("Is there an Enhanced-perforcemance Integrated Display?", "Enhanced Display")
 
             # Power Consumption
@@ -171,6 +185,7 @@ class SysInfo:
             self.integrated_display = self.question_bool("Does it have integrated display?", "Integrated Display")
             if self.integrated_display:
                 self.diagonal = self.get_diagonal()
+                self.screen_area = self.get_screen_area()
                 self.ep = self.question_bool("Is it an Enhanced-perforcemance Integrated Display?", "Enhanced Display")
 
         # Ethernet
