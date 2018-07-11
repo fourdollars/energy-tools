@@ -9,10 +9,17 @@ Standards-Version: 3.9.5
 Package: energy-tools
 Architecture: all
 Depends: ${misc:Depends}, python-energy-tools
+Suggests: energy-tools-doc
 Description: Energy Tools for Energy Star and ErP Lot 3
  This program is designed to collect the system profile and calculate the
  results of Energy Star (5.2 & 6.0 & 7.0) and
  ErP Lot 3 (Jul. 2014 & Jan. 2016)
+
+Package: energy-tools-doc
+Architecture: all
+Depends: ${misc:Depends}
+Description: Energy Tools for Energy Star and ErP Lot 3
+ The design flow for this program.
 
 Package: python-energy-tools
 Architecture: all
