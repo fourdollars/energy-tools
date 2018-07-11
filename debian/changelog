@@ -1,3 +1,9 @@
+energy-tools (1.4.4) xenial; urgency=medium
+
+  * Use pybuild to build Debian package and provide energy-tools package.
+
+ -- Commercial Engineering <commercial-engineering@canonical.com>  Wed, 11 Jul 2018 17:29:50 +0800
+
 energy-tools (1.4.3) xenial; urgency=medium
 
   * Bump to 1.4.3.
