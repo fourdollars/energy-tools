@@ -400,8 +400,8 @@ def energystar_calculate(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = '1.4.4'
-    print("Energy Tools %s for Energy Star (5.2 & 6.0 & 7.0) and ErP Lot 3 (Jul. 2014 & Jan. 2016)\n" % (version)+ '=' * 80)
+    version = '1.5'
+    print("Energy Tools %s for Energy Star and ErP Lot 3\n" % (version)+ '=' * 80)
     if args.test == 1:
         print("""# Test case from Notebooks of Energy Star 5.2 & 6.0
 # E_TEC: 33.03 kWh/year, E_TEC_MAX: 41.6 kWh/year, PASS for 5.2
@@ -527,24 +527,45 @@ def main():
             'Long Idle Mode': 6.0,
             'Frame Buffer Bandwidth': 64.0,
             'Short Idle Mode': 10.0})
-    elif args.profile:
-        if os.path.exists(args.profile):
-            with open(args.profile, "r") as data:
+    elif args.input:
+        if os.path.exists(args.input):
+            with open(args.input, "r") as data:
                 tmp = data.read().replace('\n', '')
                 profile = json.loads(tmp)
                 sysinfo = SysInfo(profile)
         else:
-            error('Can not open %s to read.' % args.profile)
+            error('Can not open %s to read.' % args.input)
             return
     else:
         sysinfo = SysInfo()
 
     energystar_calculate(sysinfo)
     erplot3_calculate(sysinfo)
-    generate_excel(sysinfo, version, args.output)
+    if args.excel:
+        if args.input:
+            excel = '.'.join(args.input.split('.')[:-1]) + '.xlsx'
+        else:
+            excel = get_system_filename() + '.xlsx'
+        generate_excel(sysinfo, version, excel)
 
-    if args.export:
-        sysinfo.save(args.export)
+    if args.output:
+        if args.input:
+            output = '.'.join(args.input.split('.')[:-1]) + '.profile'
+            if output == '.profile':
+                output = args.input + '.profile'
+        else:
+            output = get_system_filename() + '.profile'
+        debug("Profile Output: " + output)
+        sysinfo.save(output)
+
+def get_dmi_info(info):
+    base = '/sys/devices/virtual/dmi/id/'
+    if os.path.exists(base + info):
+        with open(base + info, "r") as data:
+            return data.read().strip().replace(' ','_')
+
+def get_system_filename():
+    return get_dmi_info('product_name') + '_' + get_dmi_info('bios_version')
 
 def erplot3_calculate(sysinfo):
     if sysinfo.product_type != 1:
@@ -554,11 +575,11 @@ def erplot3_calculate(sysinfo):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--debug",   help="print debug messages",  action="store_true")
-    parser.add_argument("-t", "--test",    help="use test case",         type=int)
-    parser.add_argument("-o", "--output",  help="output Excel file",     type=str)
-    parser.add_argument("-p", "--profile", help="import system profile", type=str)
-    parser.add_argument("-x", "--export",  help="export system profile", type=str)
+    parser.add_argument("-d", "--debug",  help="print debug messages",  action="store_true")
+    parser.add_argument("-t", "--test",   help="use test case",         type=int)
+    parser.add_argument("-e", "--excel",  help="generate Excel file",   action="store_true")
+    parser.add_argument("-i", "--input",  help="input system profile",  type=str)
+    parser.add_argument("-o", "--output", help="output system profile", action="store_true")
     args = parser.parse_args()
     if args.debug:
         logging.basicConfig(format='<%(levelname)s> %(message)s', level=logging.DEBUG)
