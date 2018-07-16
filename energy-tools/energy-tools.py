@@ -400,7 +400,7 @@ def energystar_calculate(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = '1.5.2'
+    version = '1.5.3'
     print("Energy Tools %s for Energy Star and ErP Lot 3\n" % (version)+ '=' * 80)
     if args.test == 1:
         print("""# Test case from Notebooks of Energy Star 5.2 & 6.0
@@ -541,6 +541,12 @@ def main():
 
     energystar_calculate(sysinfo)
     erplot3_calculate(sysinfo)
+
+    if not args.profile:
+        profile = get_system_filename() + '.profile'
+        sysinfo.save(profile)
+        print('\nThe profile is saved as "' + profile + '".')
+
     if args.excel:
         if args.profile:
             excel = '.'.join(args.profile.split('.')[:-1]) + '.xlsx'
@@ -548,11 +554,6 @@ def main():
             excel = get_system_filename() + '.xlsx'
         generate_excel(sysinfo, version, excel)
         print('\nThe excel is saved as "' + excel + '".')
-
-    if not args.profile:
-        profile = get_system_filename() + '.profile'
-        sysinfo.save(profile)
-        print('\nThe profile is saved as "' + profile + '".')
 
 def get_dmi_info(info):
     base = '/sys/devices/virtual/dmi/id/'
