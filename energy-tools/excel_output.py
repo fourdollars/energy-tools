@@ -53,7 +53,7 @@ def generate_excel(sysinfo, version, output):
             return
 
         book = Workbook(output)
-        book.set_properties({'comments':"Created by Energy Tools %s from Canonical Ltd." % (version)})
+        book.set_properties({'comments':"Energy Tools %s" % (version)})
 
     if sysinfo.product_type == 1:
         generate_excel_for_computers(excel, sysinfo)
@@ -80,7 +80,7 @@ class ExcelMaker:
             warning("You need to install Python xlsxwriter module or you can not output Excel format file.")
             return
         self.book = Workbook(output)
-        self.book.set_properties({'comments':"Created by Energy Tools %s from Canonical Ltd." % (version)})
+        self.book.set_properties({'comments':"Energy Tools %s" % (version)})
         self.sheet = self.book.add_worksheet()
         self.adjust_column_width()
         self.setup_theme()
@@ -390,7 +390,7 @@ def generate_excel_for_computers(excel, sysinfo):
     else:
         msg = "Notebook"
 
-    excel.tcell("Computer Type", msg, abbr='computer')
+    excel.tcell("Computer Type", msg, ["Desktop", "Integrated Desktop", "Notebook"], abbr='computer')
     excel.tcell("CPU cores", sysinfo.cpu_core, abbr='cpu_core')
 
     excel.tcell("CPU clock (GHz)", sysinfo.cpu_clock, abbr='cpu_clock')
@@ -440,16 +440,15 @@ def generate_excel_for_computers(excel, sysinfo):
 
     excel.down()
 
-    if sysinfo.computer_type != 1:
-        excel.ncell(2, 1, "Display")
-        if sysinfo.ep:
-            msg = "Yes"
-        else:
-            msg = "No"
-        excel.tcell("Enhanced-performance Integrated Display", msg, ["Yes", "No"], abbr='ep_display')
-        excel.tcell("Physical Diagonal (inch)", sysinfo.diagonal, abbr='diagonal')
-        excel.tcell("Screen Width (px)", sysinfo.width, abbr='width')
-        excel.tcell("Screen Height (px)", sysinfo.height, abbr='height')
+    excel.ncell(2, 1, "Display")
+    if sysinfo.ep:
+        msg = "Yes"
+    else:
+        msg = "No"
+    excel.tcell("Enhanced-performance Integrated Display", msg, ["Yes", "No"], abbr='ep_display')
+    excel.tcell("Physical Diagonal (inch)", sysinfo.diagonal, abbr='diagonal')
+    excel.tcell("Screen Width (px)", sysinfo.width, abbr='width')
+    excel.tcell("Screen Height (px)", sysinfo.height, abbr='height')
 
     if sysinfo.discrete_gpu_num > 1:
         excel.down()

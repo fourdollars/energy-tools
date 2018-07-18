@@ -108,6 +108,11 @@ class SysInfo:
             return self.profile[key]
 
     def __init__(self, profile=None):
+        self.ep = False
+        self.diagonal = 0.0
+        self.width = 0
+        self.height = 0
+
         if profile:
             self.profile = profile
         else:
