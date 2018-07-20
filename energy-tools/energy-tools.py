@@ -400,7 +400,7 @@ def energystar_calculate(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = '1.5.4'
+    version = '1.5.5'
     print("Energy Tools %s for Energy Star and ErP Lot 3\n" % (version)+ '=' * 80)
     if args.test == 1:
         print("""# Test case from Notebooks of Energy Star 5.2 & 6.0

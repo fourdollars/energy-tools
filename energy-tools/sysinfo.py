@@ -161,9 +161,15 @@ class SysInfo:
 
             # Power Consumption
             self.off = self.question_num("What is the power consumption in Off Mode?", "Off Mode")
-            self.off_wol = self.question_num("What is the power consumption in Off Mode with Wake-on-LAN enabled?", "Off Mode with WOL")
+            if self._check_wol():
+                self.off_wol = self.question_num("What is the power consumption in Off Mode with Wake-on-LAN enabled?", "Off Mode with WOL")
+            else:
+                self.off_wol = self.off
             self.sleep = self.question_num("What is the power consumption in Sleep Mode?", "Sleep Mode")
-            self.sleep_wol = self.question_num("What is the power consumption in Sleep Mode with Wake-on-LAN enabled?", "Sleep Mode with WOL")
+            if self._check_wol():
+                self.sleep_wol = self.question_num("What is the power consumption in Sleep Mode with Wake-on-LAN enabled?", "Sleep Mode with WOL")
+            else:
+                self.sleep_wol = self.sleep
             self.long_idle = self.question_num("What is the power consumption in Long Idle Mode?", "Long Idle Mode")
             self.short_idle = self.question_num("What is the power consumption in Short Idle Mode?", "Short Idle Mode")
         elif self.product_type == 2:
@@ -197,11 +203,7 @@ class SysInfo:
         if "Gigabit Ethernet" in self.profile:
             self.eee = self.profile["Gigabit Ethernet"]
         else:
-            self.eee = 0
-            for dev in os.listdir("/sys/class/net/"):
-                if dev.startswith('eth') or dev.startswith('enp'):
-                    if subprocess.call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % dev, shell=True) == 0:
-                        self.eee = self.eee + 1
+            self._check_eee_num()
 
         if "Disk Number" in self.profile:
             self.disk_num = self.profile["Disk Number"]
@@ -211,6 +213,29 @@ class SysInfo:
             self.cpu_clock = self.profile["CPU Clock"]
         if "Memory Size" in self.profile:
             self.mem_size = self.profile["Memory Size"]
+
+    def _check_wol(self):
+        with open("/proc/acpi/wakeup") as f:
+            line = f.readline()
+            while line:
+                if line.startswith('GLAN'):
+                    if 'enabled' in line:
+                        return True
+                    elif 'disabled' in line:
+                        return False
+                line = f.readline()
+        return False
+
+    def _check_eee_num(self):
+        self.eee = 0
+        for dev in os.listdir("/sys/class/net/"):
+            if dev.startswith('eth') or dev.startswith('enp'):
+                if os.path.exists("/sys/class/net/" + dev + "/speed"):
+                    speed = 0
+                    with open("/sys/class/net/" + dev + "/speed") as f:
+                        speed = int(f.read())
+                    if speed >= 1000:
+                        self.eee = self.eee + 1
 
     def _get_cpu_vendor(self):
         vendor=subprocess.check_output("cat /proc/cpuinfo | grep 'vendor_id' | grep -ioE '(intel|amd)'", shell=True).strip()
@@ -284,11 +309,7 @@ class SysInfo:
             self.eee = self.profile["Gigabit Ethernet"]
             return self.eee
 
-        self.eee = 0
-        for dev in os.listdir("/sys/class/net/"):
-            if dev.startswith('eth') or dev.startswith('enp'):
-                if subprocess.call('sudo ethtool %s | grep 1000 >/dev/null 2>&1' % dev, shell=True) == 0:
-                    self.eee = self.eee + 1
+        self._check_eee_num()
 
         debug("Gigabit Ethernet: %s" % (self.eee))
         self.profile["Gigabit Ethernet"] = self.eee
