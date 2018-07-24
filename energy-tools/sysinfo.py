@@ -157,7 +157,16 @@ class SysInfo:
             if self.computer_type != 1:
                 self.diagonal = self.get_diagonal()
                 self.screen_area = self.get_screen_area()
-                self.ep = self.question_bool("Is there an Enhanced-perforcemance Integrated Display?", "Enhanced Display")
+                (width, height) = self.get_resolution()
+                if width * height >= 2300000:
+                    self.ep = self.question_bool("""Is it an Enhanced-perforcemance Integrated Display?
+  i. Contrast ratio of at least 60:1 measured at a horizontal viewing angle of at least 85° from the 
+     perpendicular on a flat screen and at least 83° from the perpendicular on a curved screen, 
+     with or without a screen cover glass; 
+ ii. A native resolution greater than or equal to 2.3 megapixels (MP); and
+iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Display")
+                else:
+                    self.ep = False
 
             # Power Consumption
             self.off = self.question_num("What is the power consumption in Off Mode?", "Off Mode")
@@ -197,7 +206,16 @@ class SysInfo:
             if self.integrated_display:
                 self.diagonal = self.get_diagonal()
                 self.screen_area = self.get_screen_area()
-                self.ep = self.question_bool("Is it an Enhanced-perforcemance Integrated Display?", "Enhanced Display")
+                (width, height) = self.get_resolution()
+                if width * height >= 2300000:
+                    self.ep = self.question_bool("""Is it an Enhanced-perforcemance Integrated Display?
+  i. Contrast ratio of at least 60:1 measured at a horizontal viewing angle of at least 85° from the 
+     perpendicular on a flat screen and at least 83° from the perpendicular on a curved screen, 
+     with or without a screen cover glass; 
+ ii. A native resolution greater than or equal to 2.3 megapixels (MP); and
+iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Display")
+                else:
+                    self.ep = False
 
         # Ethernet
         if "Gigabit Ethernet" in self.profile:
