@@ -139,19 +139,23 @@ class SysInfo:
                 self.audio = False
 
             # GPU Information
-            self.discrete_gpu_num = self.question_int("How many discrete graphics cards?", 10, "Discrete Graphics Cards")
-            if self.discrete_gpu_num > 0:
-                self.switchable = False
-                self.discrete = True
-                if self.computer_type == 3:
-                    self.fb_bw = self.question_num("How many is the display frame buffer bandwidth in gigabytes per second (GB/s) (abbr FB_BW)?\nThis is a manufacturer declared parameter and should be calculated as follows: (Data Rate [Mhz] × Frame Buffer Data Width [bits]) / ( 8 × 1000 ) ", "Frame Buffer Bandwidth")
-            elif self.question_bool("Does it have switchable graphics and automated switching enabled by default?", "Switchable Graphics"):
+            if self.question_bool("""Does it have switchable graphics and automated switching enabled by default?
+Switchable Graphics: Functionality that allows Discrete Graphics to be disabled
+when not required in favor of Integrated Graphics.""", "Switchable Graphics"):
                 self.switchable = True
                 # Those with switchable graphics can not apply the Discrete Graphics allowance.
                 self.discrete = False
+                self.discrete_gpu_num = 0
             else:
-                self.switchable = False
-                self.discrete = False
+                self.discrete_gpu_num = self.question_int("How many discrete graphics cards?", 10, "Discrete Graphics Cards")
+                if self.discrete_gpu_num > 0:
+                    self.switchable = False
+                    self.discrete = True
+                    if self.computer_type == 3:
+                        self.fb_bw = self.question_num("How many is the display frame buffer bandwidth in gigabytes per second (GB/s) (abbr FB_BW)?\nThis is a manufacturer declared parameter and should be calculated as follows: (Data Rate [Mhz] × Frame Buffer Data Width [bits]) / ( 8 × 1000 ) ", "Frame Buffer Bandwidth")
+                else:
+                    self.switchable = False
+                    self.discrete = False
 
             # Screen size
             if self.computer_type != 1:
@@ -171,13 +175,17 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             # Power Consumption
             self.off = self.question_num("What is the power consumption in Off Mode?", "Off Mode")
             if self._check_wol():
+                self.profile["Wake-on-LAN"] = True
                 self.off_wol = self.question_num("What is the power consumption in Off Mode with Wake-on-LAN enabled?", "Off Mode with WOL")
             else:
+                self.profile["Wake-on-LAN"] = False
                 self.off_wol = self.off
             self.sleep = self.question_num("What is the power consumption in Sleep Mode?", "Sleep Mode")
             if self._check_wol():
+                self.profile["Wake-on-LAN"] = True
                 self.sleep_wol = self.question_num("What is the power consumption in Sleep Mode with Wake-on-LAN enabled?", "Sleep Mode with WOL")
             else:
+                self.profile["Wake-on-LAN"] = False
                 self.sleep_wol = self.sleep
             self.long_idle = self.question_num("What is the power consumption in Long Idle Mode?", "Long Idle Mode")
             self.short_idle = self.question_num("What is the power consumption in Short Idle Mode?", "Short Idle Mode")
@@ -233,6 +241,8 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             self.mem_size = self.profile["Memory Size"]
 
     def _check_wol(self):
+        if "Wake-on-LAN" in self.profile:
+            return self.profile["Wake-on-LAN"]
         with open("/proc/acpi/wakeup") as f:
             line = f.readline()
             while line:
