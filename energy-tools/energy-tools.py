@@ -27,6 +27,17 @@ from energystar70 import EnergyStar70
 from sysinfo import SysInfo
 from erplot3 import ErPLot3
 
+def result_filter(result, value, maximum):
+    if maximum >= value:
+        delta = (maximum - value) * 100 / maximum
+        if delta < 5.0:
+            return "marginally %s (%s%% to fail)" % (result, round(delta, 2))
+        else:
+            return result
+    else:
+        delta = (value - maximum) * 100 / maximum
+        return "%s (%s%% to pass)" % (result, round(delta, 2))
+
 def energystar_calculate(sysinfo):
     if sysinfo.product_type == 1:
 
@@ -61,7 +72,7 @@ def energystar_calculate(sysinfo):
                         else:
                             result = 'FAIL'
                             operator = '>'
-                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
                     print("\n  If 64 bits < GPU Frame Buffer Width <= 128 bits,")
                     for i in between_64_and_128:
                         (category, E_TEC_MAX) = i
@@ -71,7 +82,7 @@ def energystar_calculate(sysinfo):
                         else:
                             result = 'FAIL'
                             operator = '>'
-                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
                 else:
                     print("\n  If GPU Frame Buffer Width <= 128 bits,")
                     for i in between_64_and_128:
@@ -82,7 +93,7 @@ def energystar_calculate(sysinfo):
                         else:
                             result = 'FAIL'
                             operator = '>'
-                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
                 print("\n  If GPU Frame Buffer Width > 128 bits,")
                 for i in over_128:
                     (category, E_TEC_MAX) = i
@@ -92,7 +103,7 @@ def energystar_calculate(sysinfo):
                     else:
                         result = 'FAIL'
                         operator = '>'
-                    print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+                    print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
             else:
                 for i in under_64:
                     (category, E_TEC_MAX) = i
@@ -102,7 +113,7 @@ def energystar_calculate(sysinfo):
                     else:
                         result = 'FAIL'
                         operator = '>'
-                    print("\n  Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result))
+                    print("\n  Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
 
         # Energy Star 6.0
         print("\nEnergy Star 6.0:\n")
@@ -145,7 +156,7 @@ def energystar_calculate(sysinfo):
                         gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
                     elif gpu == 'G7':
                         gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
-                    print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
+                    print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result_filter(result, E_TEC, E_TEC_MAX)))
             else:
                 if AllowancePSU == 1:
                     print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
@@ -160,7 +171,7 @@ def energystar_calculate(sysinfo):
                 else:
                     result = 'FAIL'
                     operator = '>'
-                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
 
         # Energy Star 7.0
         print("\nEnergy Star 7.0:\n")
@@ -204,7 +215,7 @@ def energystar_calculate(sysinfo):
                             gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
                         elif gpu == 'G7':
                             gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
-                        print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result))
+                        print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result_filter(result, E_TEC, E_TEC_MAX)))
                 else:
                     if AllowancePSU == 1:
                         print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
@@ -219,7 +230,7 @@ def energystar_calculate(sysinfo):
                     else:
                         result = 'FAIL'
                         operator = '>'
-                    print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+                    print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
         else:
             if sysinfo.discrete:
                 E_TEC_MAX = estar70.equation_two('N/A', sysinfo.fb_bw)
@@ -229,7 +240,7 @@ def energystar_calculate(sysinfo):
                 else:
                     result = 'FAIL'
                     operator = '>'
-                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
             else:
                 E_TEC_MAX = estar70.equation_two('G1')
                 if E_TEC <= E_TEC_MAX:
@@ -238,7 +249,7 @@ def energystar_calculate(sysinfo):
                 else:
                     result = 'FAIL'
                     operator = '>'
-                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
     elif sysinfo.product_type == 2:
         # Energy Star 5.2
         print("Energy Star 5.2:")
@@ -251,7 +262,7 @@ def energystar_calculate(sysinfo):
         else:
             result = 'FAIL'
             operator = '>'
-        print("  %s (P_TEC) %s %s (P_TEC_MAX), %s" % (P_TEC, operator, P_TEC_MAX, result))
+        print("  %s (P_TEC) %s %s (P_TEC_MAX), %s" % (P_TEC, operator, P_TEC_MAX, result_filter(result, P_TEC, P_TEC_MAX)))
 
         # Energy Star 6.0
         print("Energy Star 6.0:")
@@ -264,7 +275,7 @@ def energystar_calculate(sysinfo):
         else:
             result = 'FAIL'
             operator = '>'
-        print("  %s (P_TEC) %s %s (P_TEC_MAX), %s" % (P_TEC, operator, P_TEC_MAX, result))
+        print("  %s (P_TEC) %s %s (P_TEC_MAX), %s" % (P_TEC, operator, P_TEC_MAX, result_filter(result, P_TEC, P_TEC_MAX)))
     elif sysinfo.product_type == 3:
         # Energy Star 5.2
         print("Energy Star 5.2:")
@@ -395,12 +406,12 @@ def energystar_calculate(sysinfo):
                 else:
                     operator = '>'
                     result = 'FAIL'
-                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result))
+                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
     else:
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = '1.5.7'
+    version = '1.5.8'
     print("Energy Tools %s for Energy Star and ErP Lot 3\n" % (version)+ '=' * 80)
     if args.test == 1:
         print("""# Test case from Notebooks of Energy Star 5.2 & 6.0
