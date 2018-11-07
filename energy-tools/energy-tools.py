@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4; -*-
 #
 # Copyright (C) 2014-2018 Canonical Ltd.
@@ -38,64 +38,40 @@ def result_filter(result, value, maximum):
         delta = (value - maximum) * 100 / maximum
         return "%s (%s%% to pass)" % (result, round(delta, 2))
 
-def energystar_calculate(sysinfo):
-    if sysinfo.product_type == 1:
+def calculate_product_type1_estar5(sysinfo):
+    print("Energy Star 5:")
+    estar52 = EnergyStar52(sysinfo)
+    E_TEC = estar52.equation_one()
 
-        # Energy Star 5.2
-        print("Energy Star 5.2:")
-        estar52 = EnergyStar52(sysinfo)
-        E_TEC = estar52.equation_one()
+    over_128 = estar52.equation_two(True, True)
+    between_64_and_128 = estar52.equation_two(False, True)
+    under_64 = estar52.equation_two(False, False)
+    debug(over_128)
+    debug(between_64_and_128)
+    debug(under_64)
+    different=False
 
-        over_128 = estar52.equation_two(True, True)
-        between_64_and_128 = estar52.equation_two(False, True)
-        under_64 = estar52.equation_two(False, False)
-        debug(over_128)
-        debug(between_64_and_128)
-        debug(under_64)
-        different=False
-
-        for i,j,k in zip(over_128, between_64_and_128, under_64):
-            (cat1, max1) = i
-            (cat2, max2) = j
-            (cat3, max3) = k
-            if cat1 != cat2 or max1 != max2 or cat2 != cat3 or max2 != max3:
-                different=True
-        else:
-            if different is True:
-                if sysinfo.computer_type == 3:
-                    print("\n  If GPU Frame Buffer Width <= 64 bits,")
-                    for i in under_64:
-                        (category, E_TEC_MAX) = i
-                        if E_TEC <= E_TEC_MAX:
-                            result = 'PASS'
-                            operator = '<='
-                        else:
-                            result = 'FAIL'
-                            operator = '>'
-                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
-                    print("\n  If 64 bits < GPU Frame Buffer Width <= 128 bits,")
-                    for i in between_64_and_128:
-                        (category, E_TEC_MAX) = i
-                        if E_TEC <= E_TEC_MAX:
-                            result = 'PASS'
-                            operator = '<='
-                        else:
-                            result = 'FAIL'
-                            operator = '>'
-                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
-                else:
-                    print("\n  If GPU Frame Buffer Width <= 128 bits,")
-                    for i in between_64_and_128:
-                        (category, E_TEC_MAX) = i
-                        if E_TEC <= E_TEC_MAX:
-                            result = 'PASS'
-                            operator = '<='
-                        else:
-                            result = 'FAIL'
-                            operator = '>'
-                        print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
-                print("\n  If GPU Frame Buffer Width > 128 bits,")
-                for i in over_128:
+    for i,j,k in zip(over_128, between_64_and_128, under_64):
+        (cat1, max1) = i
+        (cat2, max2) = j
+        (cat3, max3) = k
+        if cat1 != cat2 or max1 != max2 or cat2 != cat3 or max2 != max3:
+            different=True
+    else:
+        if different is True:
+            if sysinfo.computer_type == 3:
+                print("\n  If GPU Frame Buffer Width <= 64 bits,")
+                for i in under_64:
+                    (category, E_TEC_MAX) = i
+                    if E_TEC <= E_TEC_MAX:
+                        result = 'PASS'
+                        operator = '<='
+                    else:
+                        result = 'FAIL'
+                        operator = '>'
+                    print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
+                print("\n  If 64 bits < GPU Frame Buffer Width <= 128 bits,")
+                for i in between_64_and_128:
                     (category, E_TEC_MAX) = i
                     if E_TEC <= E_TEC_MAX:
                         result = 'PASS'
@@ -105,7 +81,8 @@ def energystar_calculate(sysinfo):
                         operator = '>'
                     print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
             else:
-                for i in under_64:
+                print("\n  If GPU Frame Buffer Width <= 128 bits,")
+                for i in between_64_and_128:
                     (category, E_TEC_MAX) = i
                     if E_TEC <= E_TEC_MAX:
                         result = 'PASS'
@@ -113,29 +90,115 @@ def energystar_calculate(sysinfo):
                     else:
                         result = 'FAIL'
                         operator = '>'
-                    print("\n  Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
-
-        # Energy Star 6.0
-        print("\nEnergy Star 6.0:\n")
-        estar60 = EnergyStar60(sysinfo)
-        E_TEC = estar60.equation_one()
-
-        lower = 1.015
-        if sysinfo.computer_type == 2:
-            higher = 1.04
+                    print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
+            print("\n  If GPU Frame Buffer Width > 128 bits,")
+            for i in over_128:
+                (category, E_TEC_MAX) = i
+                if E_TEC <= E_TEC_MAX:
+                    result = 'PASS'
+                    operator = '<='
+                else:
+                    result = 'FAIL'
+                    operator = '>'
+                print("    Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
         else:
-            higher = 1.03
+            for i in under_64:
+                (category, E_TEC_MAX) = i
+                if E_TEC <= E_TEC_MAX:
+                    result = 'PASS'
+                    operator = '<='
+                else:
+                    result = 'FAIL'
+                    operator = '>'
+                print("\n  Category %s: %s (E_TEC) %s %s (E_TEC_MAX), %s" % (category, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
 
+def calculate_product_type1_estar6(sysinfo):
+    print("\nEnergy Star 6:\n")
+    estar60 = EnergyStar60(sysinfo)
+    E_TEC = estar60.equation_one()
+
+    lower = 1.015
+    if sysinfo.computer_type == 2:
+        higher = 1.04
+    else:
+        higher = 1.03
+
+    for AllowancePSU in (1, lower, higher):
+        if sysinfo.discrete:
+            if AllowancePSU == 1:
+                print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
+            elif AllowancePSU == lower:
+                print("  If power supplies meet lower efficiency requirements,")
+            elif AllowancePSU == higher:
+                print("  If power supplies meet higher efficiency requirements,")
+            for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
+                E_TEC_MAX = estar60.equation_two(gpu) * AllowancePSU
+                if E_TEC <= E_TEC_MAX:
+                    result = 'PASS'
+                    operator = '<='
+                else:
+                    result = 'FAIL'
+                    operator = '>'
+                if gpu == 'G1':
+                    gpu = "G1 (FB_BW <= 16)"
+                elif gpu == 'G2':
+                    gpu = "G2 (16 < FB_BW <= 32)"
+                elif gpu == 'G3':
+                    gpu = "G3 (32 < FB_BW <= 64)"
+                elif gpu == 'G4':
+                    gpu = "G4 (64 < FB_BW <= 96)"
+                elif gpu == 'G5':
+                    gpu = "G5 (96 < FB_BW <= 128)"
+                elif gpu == 'G6':
+                    gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
+                elif gpu == 'G7':
+                    gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
+                print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result_filter(result, E_TEC, E_TEC_MAX)))
+        else:
+            if AllowancePSU == 1:
+                print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
+            elif AllowancePSU == lower:
+                print("  If power supplies meet lower efficiency requirements,")
+            elif AllowancePSU == higher:
+                print("  If power supplies meet higher efficiency requirements,")
+            E_TEC_MAX = estar60.equation_two('G1') * AllowancePSU
+            if E_TEC <= E_TEC_MAX:
+                result = 'PASS'
+                operator = '<='
+            else:
+                result = 'FAIL'
+                operator = '>'
+            print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
+
+def tee(mesg, data=None):
+    print(mesg)
+    if data:
+        return data + mesg
+    else:
+        return mesg
+
+def calculate_product_type1_estar7(sysinfo):
+    data = tee("\nEnergy Star 7:\n")
+    estar70 = EnergyStar70(sysinfo)
+    E_TEC = estar70.equation_one()
+
+    lower = 1.015
+    if sysinfo.computer_type == 2:
+        higher = 1.04
+    else:
+        higher = 1.03
+
+    if sysinfo.computer_type == 1 or sysinfo.computer_type == 2:
         for AllowancePSU in (1, lower, higher):
             if sysinfo.discrete:
                 if AllowancePSU == 1:
-                    print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
+                    data = tee("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,", data)
                 elif AllowancePSU == lower:
-                    print("  If power supplies meet lower efficiency requirements,")
+                    data = tee("  If power supplies meet lower efficiency requirements,", data)
                 elif AllowancePSU == higher:
-                    print("  If power supplies meet higher efficiency requirements,")
+                    data = tee("  If power supplies meet higher efficiency requirements,", data)
                 for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
-                    E_TEC_MAX = estar60.equation_two(gpu) * AllowancePSU
+                    E_TEC_MAX = estar70.equation_two(gpu) * AllowancePSU
                     if E_TEC <= E_TEC_MAX:
                         result = 'PASS'
                         operator = '<='
@@ -156,100 +219,48 @@ def energystar_calculate(sysinfo):
                         gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
                     elif gpu == 'G7':
                         gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
-                    print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result_filter(result, E_TEC, E_TEC_MAX)))
+                    data = tee("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result_filter(result, E_TEC, E_TEC_MAX)), data)
             else:
                 if AllowancePSU == 1:
-                    print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
+                    data = tee("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,", data)
                 elif AllowancePSU == lower:
-                    print("  If power supplies meet lower efficiency requirements,")
+                    data = tee("  If power supplies meet lower efficiency requirements,", data)
                 elif AllowancePSU == higher:
-                    print("  If power supplies meet higher efficiency requirements,")
-                E_TEC_MAX = estar60.equation_two('G1') * AllowancePSU
+                    data = tee("  If power supplies meet higher efficiency requirements,", data)
+                E_TEC_MAX = estar70.equation_two('G1') * AllowancePSU
                 if E_TEC <= E_TEC_MAX:
                     result = 'PASS'
                     operator = '<='
                 else:
                     result = 'FAIL'
                     operator = '>'
-                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
-
-        # Energy Star 7.0
-        print("\nEnergy Star 7.0:\n")
-        estar70 = EnergyStar70(sysinfo)
-        E_TEC = estar70.equation_one()
-
-        lower = 1.015
-        if sysinfo.computer_type == 2:
-            higher = 1.04
-        else:
-            higher = 1.03
-
-        if sysinfo.computer_type == 1 or sysinfo.computer_type == 2:
-            for AllowancePSU in (1, lower, higher):
-                if sysinfo.discrete:
-                    if AllowancePSU == 1:
-                        print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
-                    elif AllowancePSU == lower:
-                        print("  If power supplies meet lower efficiency requirements,")
-                    elif AllowancePSU == higher:
-                        print("  If power supplies meet higher efficiency requirements,")
-                    for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
-                        E_TEC_MAX = estar70.equation_two(gpu) * AllowancePSU
-                        if E_TEC <= E_TEC_MAX:
-                            result = 'PASS'
-                            operator = '<='
-                        else:
-                            result = 'FAIL'
-                            operator = '>'
-                        if gpu == 'G1':
-                            gpu = "G1 (FB_BW <= 16)"
-                        elif gpu == 'G2':
-                            gpu = "G2 (16 < FB_BW <= 32)"
-                        elif gpu == 'G3':
-                            gpu = "G3 (32 < FB_BW <= 64)"
-                        elif gpu == 'G4':
-                            gpu = "G4 (64 < FB_BW <= 96)"
-                        elif gpu == 'G5':
-                            gpu = "G5 (96 < FB_BW <= 128)"
-                        elif gpu == 'G6':
-                            gpu = "G6 (FB_BW > 128; Frame Buffer Data Width < 192 bits)"
-                        elif gpu == 'G7':
-                            gpu = "G7 (FB_BW > 128; Frame Buffer Data Width >= 192 bits)"
-                        print("    %s (E_TEC) %s %s (E_TEC_MAX) for %s, %s" % (E_TEC, operator, E_TEC_MAX, gpu, result_filter(result, E_TEC, E_TEC_MAX)))
-                else:
-                    if AllowancePSU == 1:
-                        print("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,")
-                    elif AllowancePSU == lower:
-                        print("  If power supplies meet lower efficiency requirements,")
-                    elif AllowancePSU == higher:
-                        print("  If power supplies meet higher efficiency requirements,")
-                    E_TEC_MAX = estar70.equation_two('G1') * AllowancePSU
-                    if E_TEC <= E_TEC_MAX:
-                        result = 'PASS'
-                        operator = '<='
-                    else:
-                        result = 'FAIL'
-                        operator = '>'
-                    print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
-        else:
-            if sysinfo.discrete:
-                E_TEC_MAX = estar70.equation_two('N/A', sysinfo.fb_bw)
-                if E_TEC <= E_TEC_MAX:
-                    result = 'PASS'
-                    operator = '<='
-                else:
-                    result = 'FAIL'
-                    operator = '>'
-                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
+                data = tee("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)), data)
+    else:
+        if sysinfo.discrete:
+            E_TEC_MAX = estar70.equation_two('N/A', sysinfo.fb_bw)
+            if E_TEC <= E_TEC_MAX:
+                result = 'PASS'
+                operator = '<='
             else:
-                E_TEC_MAX = estar70.equation_two('G1')
-                if E_TEC <= E_TEC_MAX:
-                    result = 'PASS'
-                    operator = '<='
-                else:
-                    result = 'FAIL'
-                    operator = '>'
-                print("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
+                result = 'FAIL'
+                operator = '>'
+            data = tee("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)), data)
+        else:
+            E_TEC_MAX = estar70.equation_two('G1')
+            if E_TEC <= E_TEC_MAX:
+                result = 'PASS'
+                operator = '<='
+            else:
+                result = 'FAIL'
+                operator = '>'
+            data = tee("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)), data)
+    return data
+
+def energystar_calculate(sysinfo):
+    if sysinfo.product_type == 1:
+        calculate_product_type1_estar5(sysinfo)
+        calculate_product_type1_estar6(sysinfo)
+        return calculate_product_type1_estar7(sysinfo)
     elif sysinfo.product_type == 2:
         # Energy Star 5.2
         print("Energy Star 5.2:")
@@ -411,8 +422,8 @@ def energystar_calculate(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = '1.5.8'
-    print("Energy Tools %s for Energy Star and ErP Lot 3\n" % (version)+ '=' * 80)
+    version = '1.5.9'
+    print("Energy Tools %s for Energy Star 5/6/7 and ErP Lot 3\n" % (version)+ '=' * 80)
     if args.test == 1:
         print("""# Test case from Notebooks of Energy Star 5.2 & 6.0
 # E_TEC: 33.03 kWh/year, E_TEC_MAX: 41.6 kWh/year, PASS for 5.2
@@ -550,13 +561,24 @@ def main():
     else:
         sysinfo = SysInfo()
 
-    energystar_calculate(sysinfo)
+    report = None
+
+
+    output = energystar_calculate(sysinfo)
     erplot3_calculate(sysinfo)
 
-    if not args.profile:
-        profile = get_system_filename() + '.profile'
+    if args.report:
+        report = get_system_filename(sysinfo) + '.report'
+        sysinfo.report(report)
+        print(output)
+        with open(report, 'a') as target:
+            target.write(output + '\n')
+        print('\nThe report is saved to "' + report + '".')
+
+    if not args.profile and not args.test:
+        profile = get_system_filename(sysinfo) + '.profile'
         sysinfo.save(profile)
-        print('\nThe profile is saved as "' + profile + '".')
+        print('\nThe profile is saved to "' + profile + '".')
 
     if args.excel:
         if args.profile:
@@ -564,16 +586,10 @@ def main():
         else:
             excel = get_system_filename() + '.xlsx'
         generate_excel(sysinfo, version, excel)
-        print('\nThe excel is saved as "' + excel + '".')
+        print('\nThe excel is saved to "' + excel + '".')
 
-def get_dmi_info(info):
-    base = '/sys/devices/virtual/dmi/id/'
-    if os.path.exists(base + info):
-        with open(base + info, "r") as data:
-            return data.read().strip().replace(' ','_')
-
-def get_system_filename():
-    return get_dmi_info('product_name') + '_' + get_dmi_info('bios_version')
+def get_system_filename(sysinfo):
+    return sysinfo.get_dmi_info('product_name') + '_' + sysinfo.get_dmi_info('bios_version')
 
 def erplot3_calculate(sysinfo):
     if sysinfo.product_type != 1:
@@ -585,6 +601,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--debug",   help="print debug messages", action="store_true")
     parser.add_argument("-e", "--excel",   help="generate Excel file",  action="store_true")
+    parser.add_argument("-r", "--report",  help="generate report",      action="store_true")
     parser.add_argument("-p", "--profile", help="specify profile",      type=str)
     parser.add_argument("-t", "--test",    help="use test case",        type=int)
     args = parser.parse_args()

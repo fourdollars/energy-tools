@@ -1,7 +1,7 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4; -*-
 #
-# Copyright (C) 2014 Canonical Ltd.
+# Copyright (C) 2014-2018 Canonical Ltd.
 # Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@ class SysInfo:
         if name in self.profile:
             return self.profile[name]
         while True:
-            s = raw_input(prompt + "\n>> ")
+            s = input(prompt + "\n>> ")
             if len(s) == length and set(s).issubset(validator):
                 print('-'*80)
                 self.profile[name] = s
@@ -41,7 +41,7 @@ class SysInfo:
         if name in self.profile:
             return self.profile[name]
         while True:
-            s = raw_input(prompt + " [y/n]\n>> ")
+            s = input(prompt + " [y/n]\n>> ")
             if len(s) == 1 and set(s).issubset("YyNn01"):
                 print('-'*80)
                 if s == 'Y' or s == 'y' or s == '1':
@@ -55,7 +55,7 @@ class SysInfo:
         if name in self.profile:
             return self.profile[name]
         while True:
-            s = raw_input(prompt + "\n>> ")
+            s = input(prompt + "\n>> ")
             if set(s).issubset("0123456789"):
                 try:
                     num = int(s)
@@ -71,14 +71,14 @@ class SysInfo:
         if name in self.profile:
             return self.profile[name]
         while True:
-            s = raw_input(prompt + "\n>> ")
+            s = input(prompt + "\n>> ")
             try:
                 num = float(s)
                 print('-'*80)
                 self.profile[name] = num
                 return num
             except ValueError:
-                print "Oops!  That was no valid number.  Try again..."
+                print("Oops!  That was no valid number.  Try again...")
 
     def get_diagonal(self):
         key = 'Display Diagonal'
@@ -266,7 +266,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
                         self.eee = self.eee + 1
 
     def _get_cpu_vendor(self):
-        vendor=subprocess.check_output("cat /proc/cpuinfo | grep 'vendor_id' | grep -ioE '(intel|amd)'", shell=True).strip()
+        vendor=subprocess.check_output("cat /proc/cpuinfo | grep 'vendor_id' | grep -ioE '(intel|amd)'", shell=True, encoding='utf8').strip()
         if re.match("intel", vendor, re.IGNORECASE):
             return 'intel'
         if re.match("amd", vendor, re.IGNORECASE):
@@ -279,11 +279,11 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             return self.cpu_core
 
         try:
-            subprocess.check_output('cat /proc/cpuinfo | grep cores', shell=True)
+            subprocess.check_output('cat /proc/cpuinfo | grep cores', shell=True, encoding='utf8')
         except subprocess.CalledProcessError:
             self.cpu_core = 1
         else:
-            self.cpu_core = int(subprocess.check_output('cat /proc/cpuinfo | grep "cpu cores" | sort -ru | head -n 1 | cut -d: -f2 | xargs', shell=True).strip())
+            self.cpu_core = int(subprocess.check_output('cat /proc/cpuinfo | grep "cpu cores" | sort -ru | head -n 1 | cut -d: -f2 | xargs', shell=True, encoding='utf8').strip())
 
         debug("CPU core: %s" % (self.cpu_core))
         self.profile["CPU Cores"] = self.cpu_core
@@ -296,9 +296,9 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
 
         cpu = self._get_cpu_vendor()
         if cpu == 'intel':
-            self.cpu_clock = float(subprocess.check_output("cat /proc/cpuinfo | grep 'model name' | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'", shell=True).strip())
+            self.cpu_clock = float(subprocess.check_output("cat /proc/cpuinfo | grep 'model name' | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'", shell=True, encoding='utf8').strip())
         elif cpu == 'amd':
-            self.cpu_clock = float(subprocess.check_output("sudo dmidecode -t processor | grep 'Current Speed' | cut -d: -f2 | xargs | sed 's/MHz//'", shell=True).strip()) / 1000
+            self.cpu_clock = float(subprocess.check_output("sudo dmidecode -t processor | grep 'Current Speed' | cut -d: -f2 | xargs | sed 's/MHz//'", shell=True, encoding='utf8').strip()) / 1000
         else:
             raise Exception('Unknown CPU Vendor')
 
@@ -312,7 +312,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             return self.mem_size
 
         self.mem_size = 0
-        for size in subprocess.check_output("sudo dmidecode -t 17 | grep 'Size:.*MB' | awk '{print $2}'", shell=True).split('\n'):
+        for size in subprocess.check_output("sudo dmidecode -t 17 | grep 'Size:.*MB' | awk '{print $2}'", shell=True, encoding='utf8').split('\n'):
             if size:
                 self.mem_size = self.mem_size + int(size)
         self.mem_size = self.mem_size / 1024
@@ -326,7 +326,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             self.disk_num = self.profile["Disk Number"]
             return self.disk_num
 
-        self.disk_num = len(subprocess.check_output('ls /sys/block | grep -e sd -e nvme', shell=True).strip().split('\n'))
+        self.disk_num = len(subprocess.check_output('ls /sys/block | grep -e sd -e nvme', shell=True, encoding='utf8').strip().split('\n'))
 
         debug("Disk number: %s" % (self.disk_num))
         self.profile["Disk Number"] = self.disk_num
@@ -350,13 +350,19 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
     def get_display(self):
         return (self.diagonal, self.ep)
 
+    def get_dmi_info(self, info):
+        base = '/sys/devices/virtual/dmi/id/'
+        if os.path.exists(base + info):
+            with open(base + info, "r") as data:
+                return data.read().strip().replace(' ','_')
+
     def get_resolution(self):
         if "Display Width" in self.profile and "Display Height" in self.profile:
             self.width = self.profile["Display Width"]
             self.height = self.profile["Display Height"]
             return (self.width, self.height)
 
-        (width, height) = subprocess.check_output("xrandr --current | grep current | sed 's/.*current \\([0-9]*\\) x \\([0-9]*\\).*/\\1 \\2/'", shell=True).strip().split(' ')
+        (width, height) = subprocess.check_output("xrandr --current | grep current | sed 's/.*current \\([0-9]*\\) x \\([0-9]*\\).*/\\1 \\2/'", shell=True, encoding='utf8').strip().split(' ')
         self.width = int(width)
         self.height = int(height)
         debug("Resolution: %s x %s" % (self.width, self.height))
@@ -369,6 +375,32 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
 
     def get_basic_info(self):
         return (self.get_cpu_core(), self.get_cpu_clock(), self.get_mem_size(), self.get_disk_num())
+
+    def report(self, filename):
+        product_types = ('Desktop, Integrated Desktop, and Notebook Computers', 'Workstations', 'Small-scale Servers', 'Thin Clients')
+        computer_types = ('Desktop', 'Integrated Desktop', 'Notebook')
+        with open(filename, "w") as data:
+            data.write('Devicie configuration details:')
+            data.write('\n\tProduct Type: ' + product_types[self.profile['Product Type'] - 1])
+            data.write('\n\tComputer Type: ' + computer_types[self.profile['Computer Type'] - 1])
+
+            for k, v in self.profile.items():
+                if k not in ('Off Mode', 'Sleep Mode', 'Short Idle Mode', 'Long Idle Mode', 'Product Type', 'Computer Type'):
+                    data.write('\n\t' + k + ': ' + str(v))
+            try:
+                result = subprocess.run(['ubuntu-report', 'show'], stdout=subprocess.PIPE)
+                ubuntu_report = json.loads(result.stdout)
+                data.write('\nManifest version: ' + ubuntu_report['OEM']['DCD'])
+            except FileNotFoundError:
+                pass
+            except KeyError:
+                pass
+
+            data.write('\nBIOS version: ' + self.get_dmi_info('bios_version'))
+
+            for k in ('Short Idle Mode', 'Long Idle Mode', 'Sleep Mode', 'Off Mode'):
+                data.write('\n' + k + ': ' + str(self.profile[k]))
+            data.write('\n')
 
     def save(self, filename):
         with open(filename, "w") as data:

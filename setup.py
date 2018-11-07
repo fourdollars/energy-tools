@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4; -*-
 #
-# Copyright (C) 2014 Canonical Ltd.
+# Copyright (C) 2014-2018 Canonical Ltd.
 # Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,13 +21,13 @@ from distutils.core import setup
 import glob, os
 
 setup(name='energy-tools',
-      version='1.5.8',
-      description='Energy Tools for Energy Star and ErP Lot 3',
+      version='1.5.9',
+      description='Energy Tools for Energy Star 5/6/7 and ErP Lot 3',
       long_description='This program is designed to collect the system profile and calculate\nthe results of Energy Star (5.2 & 6.0 & 7.0) and ErP Lot 3 (Jul. 2014 & Jan. 2016).',
       platforms=['Linux'],
       license='GPLv3',
       author='Shih-Yuan Lee (FourDollars)',
       author_email='sylee@canonical.com',
-      url='https://code.launchpad.net/~oem-solutions-engineers/somerville/energy-tools',
+      url='https://github.com/fourdollars/energy-tools',
       packages=['energy-tools'],
      )
