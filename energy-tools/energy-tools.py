@@ -422,7 +422,7 @@ def energystar_calculate(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = '1.5.9'
+    version = '1.5.10'
     print("Energy Tools %s for Energy Star 5/6/7 and ErP Lot 3\n" % (version)+ '=' * 80)
     if args.test == 1:
         print("""# Test case from Notebooks of Energy Star 5.2 & 6.0
@@ -561,35 +561,34 @@ def main():
     else:
         sysinfo = SysInfo()
 
-    report = None
-
-
     output = energystar_calculate(sysinfo)
     erplot3_calculate(sysinfo)
 
-    if args.report:
-        report = get_system_filename(sysinfo) + '.report'
-        sysinfo.report(report)
-        print(output)
-        with open(report, 'a') as target:
-            target.write(output + '\n')
-        print('\nThe report is saved to "' + report + '".')
-
-    if not args.profile and not args.test:
+    if not args.profile:
         profile = get_system_filename(sysinfo) + '.profile'
         sysinfo.save(profile)
         print('\nThe profile is saved to "' + profile + '".')
+
+    if args.report:
+        if args.profile:
+            report = '.'.join(args.profile.split('.')[:-1]) + '.report'
+        else:
+            report = get_system_filename(sysinfo) + '.report'
+        sysinfo.report(report)
+        with open(report, 'a') as target:
+            target.write(output + '\n')
+        print('\nThe report is saved to "' + report + '".')
 
     if args.excel:
         if args.profile:
             excel = '.'.join(args.profile.split('.')[:-1]) + '.xlsx'
         else:
-            excel = get_system_filename() + '.xlsx'
+            excel = get_system_filename(sysinfo) + '.xlsx'
         generate_excel(sysinfo, version, excel)
         print('\nThe excel is saved to "' + excel + '".')
 
 def get_system_filename(sysinfo):
-    return sysinfo.get_dmi_info('product_name') + '_' + sysinfo.get_dmi_info('bios_version')
+    return sysinfo.get_product_name() + sysinfo.get_bios_version()
 
 def erplot3_calculate(sysinfo):
     if sysinfo.product_type != 1:

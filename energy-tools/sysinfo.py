@@ -356,6 +356,16 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             with open(base + info, "r") as data:
                 return data.read().strip().replace(' ','_')
 
+    def get_bios_version(self):
+        if "BIOS version" not in self.profile:
+            self.profile["BIOS version"] = self.get_dmi_info('bios_version')
+        return self.profile["BIOS version"]
+
+    def get_product_name(self):
+        if "Product name" not in self.profile:
+            self.profile["Product name"] = self.get_dmi_info('product_name')
+        return self.profile["Product name"]
+
     def get_resolution(self):
         if "Display Width" in self.profile and "Display Height" in self.profile:
             self.width = self.profile["Display Width"]
@@ -384,9 +394,9 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             data.write('\n\tProduct Type: ' + product_types[self.profile['Product Type'] - 1])
             data.write('\n\tComputer Type: ' + computer_types[self.profile['Computer Type'] - 1])
 
-            for k, v in self.profile.items():
-                if k not in ('Off Mode', 'Sleep Mode', 'Short Idle Mode', 'Long Idle Mode', 'Product Type', 'Computer Type'):
-                    data.write('\n\t' + k + ': ' + str(v))
+            for key in sorted(self.profile.keys()):
+                if key not in ('Off Mode', 'Sleep Mode', 'Short Idle Mode', 'Long Idle Mode', 'Product Type', 'Computer Type', 'BIOS version'):
+                    data.write('\n\t' + key + ': ' + str(self.profile[key]))
             try:
                 result = subprocess.run(['ubuntu-report', 'show'], stdout=subprocess.PIPE)
                 ubuntu_report = json.loads(result.stdout)
@@ -396,7 +406,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             except KeyError:
                 pass
 
-            data.write('\nBIOS version: ' + self.get_dmi_info('bios_version'))
+            data.write('\nBIOS version: ' + self.get_bios_version())
 
             for k in ('Short Idle Mode', 'Long Idle Mode', 'Sleep Mode', 'Off Mode'):
                 data.write('\n' + k + ': ' + str(self.profile[k]))
