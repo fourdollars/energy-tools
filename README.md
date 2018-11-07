@@ -5,3 +5,6 @@ This program is designed to collect the system profile and calculate the results
 
 # Ubuntu PPA
 https://launchpad.net/~fourdollars/+archive/ubuntu/energy-tools
+
+# WARNING
+This tool just works for general computers right now.
