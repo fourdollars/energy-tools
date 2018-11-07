@@ -422,7 +422,7 @@ def energystar_calculate(sysinfo):
         raise Exception('This is a bug when you see this.')
 
 def main():
-    version = '1.5.12'
+    version = '1.5.13'
     print("Energy Tools %s for Energy Star 5/6/7 and ErP Lot 3\n" % (version)+ '=' * 80)
     if args.test == 1:
         print("""# Test case from Notebooks of Energy Star 5.2 & 6.0
@@ -588,7 +588,7 @@ def main():
         print('\nThe excel is saved to "' + excel + '".')
 
 def get_system_filename(sysinfo):
-    return sysinfo.get_product_name() + sysinfo.get_bios_version()
+    return sysinfo.get_product_name() + '_' + sysinfo.get_bios_version()
 
 def erplot3_calculate(sysinfo):
     if sysinfo.product_type != 1:
