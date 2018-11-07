@@ -3,7 +3,8 @@ Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
 Section: python
 Priority: optional
 Build-Depends: python-all, debhelper, dh-python, python-setuptools
-Homepage: https://code.launchpad.net/~oem-solutions-engineers/somerville/energy-tools
+Homepage: https://github.com/fourdollars/energy-tools
+Vcs-Git: https://github.com/fourdollars/energy-tools.git
 Standards-Version: 3.9.5
 
 Package: energy-tools
