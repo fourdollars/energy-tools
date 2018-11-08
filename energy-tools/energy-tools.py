@@ -421,9 +421,8 @@ def energystar_calculate(sysinfo):
     else:
         raise Exception('This is a bug when you see this.')
 
-def main():
-    version = '1.5.13'
-    print("Energy Tools %s for Energy Star 5/6/7 and ErP Lot 3\n" % (version)+ '=' * 80)
+def main(description):
+    print(description + '\n' + '=' * 80)
     if args.test == 1:
         print("""# Test case from Notebooks of Energy Star 5.2 & 6.0
 # E_TEC: 33.03 kWh/year, E_TEC_MAX: 41.6 kWh/year, PASS for 5.2
@@ -597,10 +596,12 @@ def erplot3_calculate(sysinfo):
     erplot3.calculate()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    version = '1.5.13'
+    description = "Energy Tools %s for Energy Star 5/6/7 and ErP Lot 3" % version
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-d", "--debug",   help="print debug messages", action="store_true")
     parser.add_argument("-e", "--excel",   help="generate Excel file",  action="store_true")
-    parser.add_argument("-r", "--report",  help="generate report",      action="store_true")
+    parser.add_argument("-r", "--report",  help="generate report file", action="store_true")
     parser.add_argument("-p", "--profile", help="specify profile",      type=str)
     parser.add_argument("-t", "--test",    help="use test case",        type=int)
     args = parser.parse_args()
@@ -608,4 +609,4 @@ if __name__ == '__main__':
         logging.basicConfig(format='<%(levelname)s> %(message)s', level=logging.DEBUG)
     else:
         logging.basicConfig(format='<%(levelname)s> %(message)s')
-    main()
+    main(description)
