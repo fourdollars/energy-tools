@@ -389,6 +389,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
     def report(self, filename):
         product_types = ('Desktop, Integrated Desktop, and Notebook Computers', 'Workstations', 'Small-scale Servers', 'Thin Clients')
         computer_types = ('Desktop', 'Integrated Desktop', 'Notebook')
+        units = { "CPU Clock": "GHz", "Display Diagonal": "inches", "Display Height": "pixels", "Display Width": "pixels", "Memory Size": "GB", "Screen Area": "inches^2" }
         with open(filename, "w") as data:
             data.write('Devicie configuration details:')
             data.write('\n\tProduct Type: ' + product_types[self.profile['Product Type'] - 1])
@@ -396,7 +397,13 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
 
             for key in sorted(self.profile.keys()):
                 if key not in ('Off Mode', 'Sleep Mode', 'Short Idle Mode', 'Long Idle Mode', 'Product Type', 'Computer Type', 'BIOS version'):
-                    data.write('\n\t' + key + ': ' + str(self.profile[key]))
+                    if key in units:
+                        if isinstance(self.profile[key], float):
+                            data.write('\n\t' + key + ': ' + str(round(self.profile[key], 2)) + ' ' + units[key])
+                        else:
+                            data.write('\n\t' + key + ': ' + str(self.profile[key]) + ' ' + units[key])
+                    else:
+                        data.write('\n\t' + key + ': ' + str(self.profile[key]))
             try:
                 result = subprocess.run(['ubuntu-report', 'show'], stdout=subprocess.PIPE)
                 ubuntu_report = json.loads(result.stdout)
@@ -409,7 +416,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             data.write('\nBIOS version: ' + self.get_bios_version())
 
             for k in ('Short Idle Mode', 'Long Idle Mode', 'Sleep Mode', 'Off Mode'):
-                data.write('\n' + k + ': ' + str(self.profile[k]))
+                data.write('\n' + k + ': ' + str(self.profile[k]) + ' W')
             data.write('\n')
 
     def save(self, filename):

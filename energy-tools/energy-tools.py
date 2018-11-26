@@ -596,7 +596,7 @@ def erplot3_calculate(sysinfo):
     erplot3.calculate()
 
 if __name__ == '__main__':
-    version = '1.5.13'
+    version = '1.5.14'
     description = "Energy Tools %s for Energy Star 5/6/7 and ErP Lot 3" % version
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-d", "--debug",   help="print debug messages", action="store_true")
