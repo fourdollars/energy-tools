@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging, os, json
+import logging, os, json, sys
 from logging import debug, warning, error
 import argparse
 from excel_output import *
@@ -549,14 +549,18 @@ def main(description):
             'Frame Buffer Bandwidth': 64.0,
             'Short Idle Mode': 10.0})
     elif args.profile:
-        if os.path.exists(args.profile):
+        if args.profile == '-':
+            tmp = ''
+            for line in sys.stdin:
+                tmp = tmp + line.strip()
+        elif os.path.exists(args.profile):
             with open(args.profile, "r") as data:
                 tmp = data.read().replace('\n', '')
-                profile = json.loads(tmp)
-                sysinfo = SysInfo(profile)
         else:
             error('Can not read %s.' % args.profile)
             return
+        profile = json.loads(tmp)
+        sysinfo = SysInfo(profile)
     else:
         sysinfo = SysInfo()
 
@@ -569,7 +573,7 @@ def main(description):
         print('\nThe profile is saved to "' + profile + '".')
 
     if args.report:
-        if args.profile:
+        if args.profile and args.profile != '-':
             report = '.'.join(args.profile.split('.')[:-1]) + '.report'
         else:
             report = get_system_filename(sysinfo) + '.report'
@@ -596,7 +600,7 @@ def erplot3_calculate(sysinfo):
     erplot3.calculate()
 
 if __name__ == '__main__':
-    version = '1.5.14'
+    version = '1.5.15'
     description = "Energy Tools %s for Energy Star 5/6/7 and ErP Lot 3" % version
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-d", "--debug",   help="print debug messages", action="store_true")
