@@ -26,17 +26,7 @@ from energystar60 import EnergyStar60
 from energystar70 import EnergyStar70
 from sysinfo import SysInfo
 from erplot3 import ErPLot3
-
-def result_filter(result, value, maximum):
-    if maximum >= value:
-        delta = (maximum - value) * 100 / maximum
-        if delta < 5.0:
-            return "marginally %s (%s%% to fail)" % (result, round(delta, 2))
-        else:
-            return result
-    else:
-        delta = (value - maximum) * 100 / maximum
-        return "%s (%s%% to pass)" % (result, round(delta, 2))
+from common import result_filter
 
 def calculate_product_type1_estar5(sysinfo):
     print("Energy Star 5:")

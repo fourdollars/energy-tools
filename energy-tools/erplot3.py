@@ -20,6 +20,7 @@
 import unittest
 from sysinfo import SysInfo
 from logging import debug, warning
+from common import result_filter
 
 __all__ = [
         "ErPLot3",
@@ -32,20 +33,10 @@ class ErPLot3:
         self.sysinfo = sysinfo
 
     def calculate(self):
-        print("\nErP Lot 3 from 1 July 2014:\n")
-        early = ErPLot3_2014(self.sysinfo)
-        if early.check_special_case():
-            if early.computer_type == 3:
-                print("\033[1;91mWARNING\033[0m: If discrete graphics card(s) providing total frame buffer bandwidths above 225 GB/s, use the requirement from 1 January 2016 instead.")
-            else:
-                print("\033[1;91mWARNING\033[0m: If discrete graphics card(s) providing total frame buffer bandwidths above 320 GB/s and\n         a PSU with a rated output power of at least 1000W, use the requirement from 1 January 2016 instead.")
-
-        if self._verify_s3_s4(early):
-            self._calculate(early)
         print("\nErP Lot 3 from 1 January 2016:\n")
         late = ErPLot3_2016(self.sysinfo)
-        if self._verify_s3_s4(late):
-            self._calculate(late)
+        self._verify_s3_s5(late)
+        self._calculate(late)
 
     def _calculate(self, inst):
         if self.sysinfo.computer_type == 3:
@@ -73,42 +64,49 @@ class ErPLot3:
                 TEC_GRAPHICS = 0
                 E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_STORAGE + TEC_TV_TUNER + TEC_AUDIO + TEC_GRAPHICS
                 debug("TEC_GRAPHICS = %s" % TEC_GRAPHICS)
-                self._verifying(inst, E_TEC_MAX)
+                self._verifying(inst, E_TEC_MAX, wol=inst.wol)
             elif inst.discrete_graphics_cards == 1:
                 for gpu in ('G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'):
                     TEC_GRAPHICS = inst.get_TEC_GRAPHICS(gpu)
                     E_TEC_MAX = TEC_BASE + TEC_MEMORY + TEC_STORAGE + TEC_TV_TUNER + TEC_AUDIO + TEC_GRAPHICS
                     debug("TEC_GRAPHICS = %s" % TEC_GRAPHICS)
-                    self._verifying(inst, E_TEC_MAX, gpu)
+                    self._verifying(inst, E_TEC_MAX, gpu=gpu, wol=inst.wol)
             else:
                 print("    No console output because of more than one discrete graphics card.")
 
-    def _verify_s3_s4(self, inst):
+    def _verify_s3_s5(self, inst):
+        operator = '<='
+        result = 'PASS'
         if self.sysinfo.computer_type != 3:
             if inst.sleep > 5:
-                print("      Fail because P_SLEEP (%s) > 5.0" % inst.sleep)
-                return False
-            elif inst.sleep_wol > 5.7:
-                print("      Fail because P_SLEEP_WOL (%s) > 5.7" % inst.sleep_wol)
-                return False
+                print("  Fail because P_SLEEP (%s) > 5.0" % inst.sleep)
+                operator = '>'
+                result = 'FAIL'
+            if inst.sleep_wol > 5.7:
+                print("  Fail because P_SLEEP_WOL (%s) > 5.7" % inst.sleep_wol)
+                operator = '>'
+                result = 'FAIL'
         else:
             if inst.sleep > 3:
-                print("      Fail because P_SLEEP (%s) > 3.0" % inst.sleep)
-                return False
-            elif inst.sleep_wol > 3.7:
-                print("      Fail because P_SLEEP_WOL (%s) > 3.7" % inst.sleep_wol)
-                return False
+                print("  Fail because P_SLEEP (%s) > 3.0" % inst.sleep)
+                operator = '>'
+                result = 'FAIL'
+            if inst.sleep_wol > 3.7:
+                print("  Fail because P_SLEEP_WOL (%s) > 3.7" % inst.sleep_wol)
+                operator = '>'
+                result = 'FAIL'
 
-        if inst.off > 1.0:
-            print("      Fail because P_OFF (%s) > 1.0" % inst.off)
-            return False
-        elif inst.off_wol > 1.7:
-            print("      Fail because P_OFF (%s) > 1.7" % inst.off_wol)
-            return False
+        if inst.off > 0.5:
+            print("  Fail because P_OFF (%s) > 0.5" % inst.off)
+            operator = '>'
+            result = 'FAIL'
 
-        return True
+        if inst.off_wol > 0.5:
+            print("  Fail because P_OFF_WOL (%s) > 0.5" % inst.off_wol)
+            operator = '>'
+            result = 'FAIL'
 
-    def _verifying(self, inst, E_TEC_MAX, gpu=None):
+    def _verifying(self, inst, E_TEC_MAX, gpu=None, wol=False):
         msg = ''
         if gpu:
             if gpu == 'G1':
@@ -126,27 +124,28 @@ class ErPLot3:
             elif gpu == 'G7':
                 msg = "G7 (FB_BW > 128 (with FB Data Width >= 192-bit))"
         E_TEC = inst.get_E_TEC()
-        E_TEC_WOL = inst.get_E_TEC_WOL()
+        operator = '<='
+        result = 'PASS'
         if E_TEC > E_TEC_MAX:
-            if msg:
-                print("      %s (E_TEC) > %s (E_TEC_MAX) for %s, FAIL" % (E_TEC, E_TEC_MAX, msg))
-            else:
-                print("      %s (E_TEC) > %s (E_TEC_MAX), FAIL" % (E_TEC, E_TEC_MAX))
-            return
-        elif E_TEC_WOL > E_TEC_MAX:
-            if msg:
-                print("      %s (E_TEC_WOL) > %s (E_TEC_MAX) for %s, FAIL" % (E_TEC_WOL, E_TEC_MAX, msg))
-            else:
-                print("      %s (E_TEC_WOL) > %s (E_TEC_MAX), FAIL" % (E_TEC_WOL, E_TEC_MAX))
-            return
-        else:
-            if gpu:
-                print("      %s (E_TEC) <= %s (E_TEC_MAX), and %s (E_TEC_WOL) <= %s (E_TEC_MAX) for %s, PASS" %
-                        (E_TEC, E_TEC_MAX, E_TEC_WOL, E_TEC_MAX, msg))
-            else:
-                print("      %s (E_TEC) <= %s (E_TEC_MAX), and %s (E_TEC_WOL) <= %s (E_TEC_MAX), PASS" %
-                        (E_TEC, E_TEC_MAX, E_TEC_WOL, E_TEC_MAX))
+            operator = '>'
+            result = 'FAIL'
 
+        if gpu:
+            print("      For %s, %s (E_TEC) %s %s (E_TEC_MAX), %s" % (gpu, E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
+        else:
+            print("      %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)))
+
+        if wol:
+            E_TEC_WOL = inst.get_E_TEC_WOL()
+            operator = '<='
+            result = 'PASS'
+            if E_TEC_WOL > E_TEC_MAX:
+                operator = '>'
+                result = 'FAIL'
+            if gpu:
+                print("      For %s, %s (E_TEC_WOL) %s %s (E_TEC_MAX), %s" % (gpu, E_TEC_WOL, operator, E_TEC_MAX, result_filter(result, E_TEC_WOL, E_TEC_MAX)))
+            else:
+                print("      %s (E_TEC_WOL) %s %s (E_TEC_MAX), %s" % (E_TEC_WOL, operator, E_TEC_MAX, result_filter(result, E_TEC_WOL, E_TEC_MAX)))
 
 class ErPLot3_2014:
     """ErP Lot 3 calculator from 1 July 2014"""
@@ -165,6 +164,7 @@ class ErPLot3_2014:
         self.sleep = sysinfo.sleep
         self.sleep_wol = sysinfo.sleep_wol
         self.idle = sysinfo.short_idle
+        self.wol = sysinfo.profile.get("Wake-on-LAN")
 
     def check_special_case(self):
         if self.computer_type == 1 or self.computer_type == 2:

@@ -4,6 +4,7 @@ Section: python
 Priority: optional
 Build-Depends: python3-all, debhelper, dh-python, python3-setuptools
 Homepage: https://github.com/fourdollars/energy-tools
+Vcs-Browser: https://github.com/fourdollars/energy-tools.git
 Vcs-Git: https://github.com/fourdollars/energy-tools.git
 Standards-Version: 4.2.1
 
