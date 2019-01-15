@@ -27,6 +27,7 @@ from energystar70 import EnergyStar70
 from sysinfo import SysInfo
 from erplot3 import ErPLot3
 from common import result_filter
+import copy
 
 def calculate_product_type1_estar5(sysinfo):
     print("Energy Star 5:")
@@ -555,11 +556,34 @@ def main(description):
         sysinfo = SysInfo()
 
     output = energystar_calculate(sysinfo)
+
+    sysinfo_simulate_4G_ram = copy.deepcopy(sysinfo)
+    sysinfo_simulate_4G_ram.profile["Memory Size"]=4
+    # I assum the power consumption depends on used slots.
+    # refer to https://docs.google.com/spreadsheets/d/1vzzwbyoKw5PS0yjBMevNGUkaP_l4GaRaixpaW6GW_NY/edit#gid=246122990
+    # simulate the power consomption based on the reduced slots, so far we only know the difference of 1 and 2 using slot.
+    sysinfo_simulate_4G_ram.short_idle = sysinfo_simulate_4G_ram.short_idle - ((sysinfo_simulate_4G_ram.mem_used_slots - 1) * 1.3)
+    sysinfo_simulate_4G_ram.long_idle = sysinfo_simulate_4G_ram.long_idle - ((sysinfo_simulate_4G_ram.mem_used_slots - 1) * 1.6)
+    sysinfo_simulate_4G_ram.sleep = sysinfo_simulate_4G_ram.sleep - ((sysinfo_simulate_4G_ram.mem_used_slots - 1) * 0)
+    sysinfo_simulate_4G_ram.profile["Short Idle Mode"] = sysinfo_simulate_4G_ram.short_idle
+    sysinfo_simulate_4G_ram.profile["Long Idle Mode"] = sysinfo_simulate_4G_ram.long_idle
+    sysinfo_simulate_4G_ram.profile["Sleep Mode"] = sysinfo_simulate_4G_ram.sleep
+    sysinfo_simulate_4G_ram.mem_total_slots = 2
+    sysinfo_simulate_4G_ram.mem_used_slots = 1
+    sysinfo_simulate_4G_ram.profile["Memory Total Slots"] = sysinfo_simulate_4G_ram.mem_total_slots
+    sysinfo_simulate_4G_ram.profile["Memory Used Slots"] = sysinfo_simulate_4G_ram.mem_used_slots
+    print("\n=======================================================")
+    print("simulate 4G ram, total slots 2, used slot 1 for e-star 7:")
+    print("=======================================================")
+    calculate_product_type1_estar7(sysinfo_simulate_4G_ram)
+
     erplot3_calculate(sysinfo)
 
     if not args.profile:
         profile = get_system_filename(sysinfo) + '.profile'
+        profile_simulate_4G_ram = get_system_filename(sysinfo_simulate_4G_ram) + '_simulate_4G_ram.profile'
         sysinfo.save(profile)
+        sysinfo_simulate_4G_ram.save(profile_simulate_4G_ram)
         print('\nThe profile is saved to "' + profile + '".')
 
     if args.report:
