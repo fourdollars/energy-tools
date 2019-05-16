@@ -118,6 +118,10 @@ class SysInfo:
         else:
             self.profile = {}
 
+        # Assume there is a X Window System
+        if 'DISPLAY' not in os.environ:
+            os.environ['DISPLAY'] = ':0'
+
         # Product type
         self.product_type = self.question_int("""Which product type would you like to verify?
 [1] Desktop, Integrated Desktop, and Notebook Computers
