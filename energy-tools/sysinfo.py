@@ -51,8 +51,8 @@ class SysInfo:
                     self.profile[name] = False
                     return False
 
-    def question_int(self, prompt, maximum, name):
-        if name in self.profile:
+    def question_int(self, prompt, maximum, name=None):
+        if name and name in self.profile:
             return self.profile[name]
         while True:
             s = input(prompt + "\n>> ")
@@ -61,7 +61,8 @@ class SysInfo:
                     num = int(s)
                     if num <= maximum:
                         print('-'*80)
-                        self.profile[name] = num
+                        if name:
+                            self.profile[name] = num
                         return num
                 except ValueError:
                     print("Please input a positive integer less than or equal to %s." % (maximum))
@@ -150,16 +151,20 @@ when not required in favor of Integrated Graphics.""", "Switchable Graphics"):
                 # Those with switchable graphics can not apply the Discrete Graphics allowance.
                 self.discrete = False
                 self.discrete_gpu_num = 0
+                self.fb_bw = 0
+                self.profile["FB_BW"] = 0
             else:
                 self.discrete_gpu_num = self.question_int("How many discrete graphics cards?", 10, "Discrete Graphics Cards")
                 if self.discrete_gpu_num > 0:
                     self.switchable = False
                     self.discrete = True
-                    if self.computer_type == 3:
-                        self.fb_bw = self.question_num("How many is the display frame buffer bandwidth in gigabytes per second (GB/s) (abbr FB_BW)?\nThis is a manufacturer declared parameter and should be calculated as follows: (Data Rate [Mhz] × Frame Buffer Data Width [bits]) / ( 8 × 1000 ) ", "Frame Buffer Bandwidth")
+                    self.fb_bw = self.question_num("How many is the display frame buffer bandwidth in gigabytes per second (GB/s) (abbr FB_BW)?\nThis is a manufacturer declared parameter and should be calculated as follows: (Data Rate [Mhz] × Frame Buffer Data Width [bits]) / ( 8 × 1000 ) ", "Frame Buffer Bandwidth")
+                    self.profile["FB_BW"] = self.fb_bw
                 else:
                     self.switchable = False
                     self.discrete = False
+                    self.fb_bw = 0
+                    self.profile["FB_BW"] = 0
 
             # Screen size
             if self.computer_type != 1:
@@ -168,13 +173,34 @@ when not required in favor of Integrated Graphics.""", "Switchable Graphics"):
                 (width, height) = self.get_resolution()
                 if width * height >= 2300000:
                     self.ep = self.question_bool("""Is it an Enhanced-perforcemance Integrated Display?
-  i. Contrast ratio of at least 60:1 measured at a horizontal viewing angle of at least 85° from the 
-     perpendicular on a flat screen and at least 83° from the perpendicular on a curved screen, 
-     with or without a screen cover glass; 
+  i. Contrast ratio of at least 60:1 measured at a horizontal viewing angle of at least 85° from the
+     perpendicular on a flat screen and at least 83° from the perpendicular on a curved screen,
+     with or without a screen cover glass;
  ii. A native resolution greater than or equal to 2.3 megapixels (MP); and
 iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Display")
                 else:
                     self.ep = False
+
+            # Check the storage type
+            if self.product_type == 1:
+                storage_tuple = ("Unknown storage", "3.5 inch HDD", "2.5 inch HDD", "Hybrid HDD/SSD", "SSD")
+                disk_num = self.get_disk_num()
+
+                for disk_type in storage_tuple:
+                    if disk_type in self.profile:
+                        disk_num = disk_num - self.profile[disk_type]
+                    else:
+                        self.profile[disk_type] = 0
+
+                if disk_num != 0:
+                    for disk in subprocess.check_output('ls /sys/block | grep -e sd -e nvme -e emmc', shell=True, encoding='utf8').strip().split('\n'):
+                        disk_type = self.question_int("""Which storage type for /sys/block/%s?
+[0] Unknown
+[1] 3.5” HDD
+[2] 2.5” HDD
+[3] Hybrid HDD/SSD
+[4] SSD (including M.2 port solutions)""" % disk, 4)
+                        self.profile[storage_tuple[disk_type]] = self.profile[storage_tuple[disk_type]] + 1
 
             # Power Consumption
             self.off = self.question_num("What is the power consumption in Off Mode?", "Off Mode")
@@ -221,9 +247,9 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
                 (width, height) = self.get_resolution()
                 if width * height >= 2300000:
                     self.ep = self.question_bool("""Is it an Enhanced-perforcemance Integrated Display?
-  i. Contrast ratio of at least 60:1 measured at a horizontal viewing angle of at least 85° from the 
-     perpendicular on a flat screen and at least 83° from the perpendicular on a curved screen, 
-     with or without a screen cover glass; 
+  i. Contrast ratio of at least 60:1 measured at a horizontal viewing angle of at least 85° from the
+     perpendicular on a flat screen and at least 83° from the perpendicular on a curved screen,
+     with or without a screen cover glass;
  ii. A native resolution greater than or equal to 2.3 megapixels (MP); and
 iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Display")
                 else:
@@ -233,7 +259,12 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
         if "Gigabit Ethernet" in self.profile:
             self.eee = self.profile["Gigabit Ethernet"]
         else:
-            self._check_eee_num()
+            self._check_ethernet_num()
+
+        if "10 Gigabit Ethernet" in self.profile:
+            self.ten_glan = self.profile["10 Gigabit Ethernet"]
+        else:
+            self._check_ethernet_num()
 
         if "Disk Number" in self.profile:
             self.disk_num = self.profile["Disk Number"]
@@ -258,15 +289,18 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
                 line = f.readline()
         return False
 
-    def _check_eee_num(self):
+    def _check_ethernet_num(self):
         self.eee = 0
+        self.ten_glan = 0
         for dev in os.listdir("/sys/class/net/"):
             if dev.startswith('eth') or dev.startswith('enp'):
                 if os.path.exists("/sys/class/net/" + dev + "/speed"):
                     speed = 0
                     with open("/sys/class/net/" + dev + "/speed") as f:
                         speed = int(f.read())
-                    if speed >= 1000:
+                    if speed == 10000:
+                        self.ten_glan = self.ten_glan + 1
+                    elif speed == 1000:
                         self.eee = self.eee + 1
 
     def _get_cpu_vendor(self):
@@ -339,7 +373,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             self.disk_num = self.profile["Disk Number"]
             return self.disk_num
 
-        self.disk_num = len(subprocess.check_output('ls /sys/block | grep -e sd -e nvme', shell=True, encoding='utf8').strip().split('\n'))
+        self.disk_num = len(subprocess.check_output('ls /sys/block | grep -e sd -e nvme -e emmc', shell=True, encoding='utf8').strip().split('\n'))
 
         debug("Disk number: %s" % (self.disk_num))
         self.profile["Disk Number"] = self.disk_num
@@ -350,11 +384,22 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             self.eee = self.profile["Gigabit Ethernet"]
             return self.eee
 
-        self._check_eee_num()
+        self._check_ethernet_num()
 
         debug("Gigabit Ethernet: %s" % (self.eee))
         self.profile["Gigabit Ethernet"] = self.eee
         return self.eee
+
+    def get_10glan_num(self):
+        if "10 Gigabit Ethernet" in self.profile:
+            self.ten_glan = self.profile["10 Gigabit Ethernet"]
+            return self.ten_glan
+
+        self._check_ethernet_num()
+
+        debug("10 Gigabit Ethernet: %s" % (self.ten_glan))
+        self.profile["10 Gigabit Ethernet"] = self.ten_glan
+        return self.ten_glan
 
     def set_display(self, diagonal, ep):
         self.diagonal = diagonal

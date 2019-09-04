@@ -24,6 +24,7 @@ from excel_output import *
 from energystar52 import EnergyStar52
 from energystar60 import EnergyStar60
 from energystar70 import EnergyStar70
+from energystar80 import EnergyStar80
 from sysinfo import SysInfo
 from erplot3 import ErPLot3
 from common import result_filter
@@ -164,7 +165,7 @@ def calculate_product_type1_estar6(sysinfo):
 def tee(mesg, data=None):
     print(mesg)
     if data:
-        return data + mesg
+        return data + "\n" + mesg
     else:
         return mesg
 
@@ -247,11 +248,82 @@ def calculate_product_type1_estar7(sysinfo):
             data = tee("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (E_TEC, operator, E_TEC_MAX, result_filter(result, E_TEC, E_TEC_MAX)), data)
     return data
 
+def calculate_product_type1_estar8(sysinfo):
+    """Calculate Energy Star 8 draft 2"""
+    data = tee("\nEnergy Star 8 draft 2:\n")
+    estar80 = EnergyStar80(sysinfo)
+    e_tec = estar80.equation_one()
+    fb_bw = sysinfo.fb_bw
+
+    lower = 0.015
+
+    if sysinfo.computer_type == 1:
+        higher = 0.03
+        for allowance_proxy in (0, 0.12):
+            if allowance_proxy == 0:
+                data = tee("  If the desktop computer doesn't implement a full capability - full network proxy solution,", data)
+            elif allowance_proxy == 0.12:
+                data = tee("  If the desktop computer implements a full capability - full network proxy solution,", data)
+            for allowance_psu in (0, lower, higher):
+                if allowance_psu == 0:
+                    data = tee("   If power supplies do not meet the requirements of Power Supply Efficiency Allowance,", data)
+                elif allowance_psu == lower:
+                    data = tee("   If power supplies meet lower efficiency requirements,", data)
+                elif allowance_psu == higher:
+                    data = tee("   If power supplies meet higher efficiency requirements,", data)
+                e_tec_max = estar80.equation_two(fb_bw) * (1 + allowance_psu + allowance_proxy)
+                if e_tec <= e_tec_max:
+                    result = 'PASS'
+                    operator = '<='
+                else:
+                    result = 'FAIL'
+                    operator = '>'
+                data = tee("     %s (E_TEC) %s %s (E_TEC_MAX), %s" % (e_tec, operator, e_tec_max, result_filter(result, e_tec, e_tec_max)), data)
+    elif sysinfo.computer_type == 2:
+        higher = 0.04
+        for allowance_psu in (0, lower, higher):
+            if allowance_psu == 0:
+                data = tee("  If power supplies do not meet the requirements of Power Supply Efficiency Allowance,", data)
+            elif allowance_psu == lower:
+                data = tee("  If power supplies meet lower efficiency requirements,", data)
+            elif allowance_psu == higher:
+                data = tee("  If power supplies meet higher efficiency requirements,", data)
+            e_tec_max = estar80.equation_two(fb_bw) * (1 + allowance_psu)
+            if e_tec <= e_tec_max:
+                result = 'PASS'
+                operator = '<='
+            else:
+                result = 'FAIL'
+                operator = '>'
+            data = tee("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (e_tec, operator, e_tec_max, result_filter(result, e_tec, e_tec_max)), data)
+    else:
+        data = tee("  If the system doesn't meet the full Mobile Workstation definition,", data)
+        e_tec_max = estar80.equation_two(fb_bw, False)
+        if e_tec <= e_tec_max:
+            result = 'PASS'
+            operator = '<='
+        else:
+            result = 'FAIL'
+            operator = '>'
+        data = tee("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (e_tec, operator, e_tec_max, result_filter(result, e_tec, e_tec_max)), data)
+
+        data = tee("  If the system meets the full Mobile Workstation definition,", data)
+        e_tec_max = estar80.equation_two(fb_bw, True)
+        if e_tec <= e_tec_max:
+            result = 'PASS'
+            operator = '<='
+        else:
+            result = 'FAIL'
+            operator = '>'
+        data = tee("    %s (E_TEC) %s %s (E_TEC_MAX), %s" % (e_tec, operator, e_tec_max, result_filter(result, e_tec, e_tec_max)), data)
+    return data
+
 def energystar_calculate(sysinfo):
     if sysinfo.product_type == 1:
         calculate_product_type1_estar5(sysinfo)
         calculate_product_type1_estar6(sysinfo)
-        return calculate_product_type1_estar7(sysinfo)
+        estar7_result = calculate_product_type1_estar7(sysinfo)
+        return estar7_result + "\n" + calculate_product_type1_estar8(sysinfo)
     elif sysinfo.product_type == 2:
         # Energy Star 5.2
         print("Energy Star 5.2:")
@@ -428,6 +500,7 @@ def main(description):
             'Discrete Graphics Cards': 0,
             'Switchable Graphics': False,
             'Disk Number': 1,
+            "SSD": 1,
             'Display Diagonal': 14,
             'Display Height': 768,
             'Display Width': 1366,
@@ -435,6 +508,8 @@ def main(description):
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
             'Memory Size': 8,
+            'Memory Total Slots': 2,
+            'Memory Used Slots': 2,
             'TV Tuner': False,
             'Off Mode': 1.0,
             'Off Mode with WOL': 1.0,
@@ -455,6 +530,7 @@ def main(description):
             'Discrete Graphics Cards': 0,
             'Switchable Graphics': True,
             'Disk Number': 1,
+            "SSD": 1,
             'Display Diagonal': 14,
             'Display Height': 768,
             'Display Width': 1366,
@@ -462,6 +538,8 @@ def main(description):
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
             'Memory Size': 8,
+            'Memory Total Slots': 2,
+            'Memory Used Slots': 2,
             'TV Tuner': False,
             'Off Mode': 0.5,
             'Off Mode with WOL': 0.5,
@@ -475,6 +553,7 @@ def main(description):
         sysinfo = SysInfo({
             'Product Type': 2,
             'Disk Number': 2,
+            "SSD": 2,
             'Gigabit Ethernet': 0,
             'Off Mode': 2.0,
             'Sleep Mode': 4.0,
@@ -524,6 +603,7 @@ def main(description):
             'Discrete Graphics Cards': 1,
             'Switchable Graphics': False,
             'Disk Number': 1,
+            "SSD": 1,
             'Display Diagonal': 14,
             'Display Height': 768,
             'Display Width': 1366,
@@ -531,6 +611,8 @@ def main(description):
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
             'Memory Size': 8,
+            'Memory Total Slots': 2,
+            'Memory Used Slots': 2,
             'TV Tuner': False,
             'Off Mode': 0.5,
             'Off Mode with WOL': 0.5,
@@ -557,33 +639,32 @@ def main(description):
 
     output = energystar_calculate(sysinfo)
 
-    sysinfo_simulate_4G_ram = copy.deepcopy(sysinfo)
-    sysinfo_simulate_4G_ram.profile["Memory Size"]=4
-    # I assum the power consumption depends on used slots.
-    # refer to https://docs.google.com/spreadsheets/d/1vzzwbyoKw5PS0yjBMevNGUkaP_l4GaRaixpaW6GW_NY/edit#gid=246122990
-    # simulate the power consomption based on the reduced slots, so far we only know the difference of 1 and 2 using slot.
-    sysinfo_simulate_4G_ram.short_idle = sysinfo_simulate_4G_ram.short_idle - ((sysinfo_simulate_4G_ram.mem_used_slots - 1) * 1.3)
-    sysinfo_simulate_4G_ram.long_idle = sysinfo_simulate_4G_ram.long_idle - ((sysinfo_simulate_4G_ram.mem_used_slots - 1) * 1.6)
-    sysinfo_simulate_4G_ram.sleep = sysinfo_simulate_4G_ram.sleep - ((sysinfo_simulate_4G_ram.mem_used_slots - 1) * 0)
-    sysinfo_simulate_4G_ram.profile["Short Idle Mode"] = sysinfo_simulate_4G_ram.short_idle
-    sysinfo_simulate_4G_ram.profile["Long Idle Mode"] = sysinfo_simulate_4G_ram.long_idle
-    sysinfo_simulate_4G_ram.profile["Sleep Mode"] = sysinfo_simulate_4G_ram.sleep
-    sysinfo_simulate_4G_ram.mem_total_slots = 2
-    sysinfo_simulate_4G_ram.mem_used_slots = 1
-    sysinfo_simulate_4G_ram.profile["Memory Total Slots"] = sysinfo_simulate_4G_ram.mem_total_slots
-    sysinfo_simulate_4G_ram.profile["Memory Used Slots"] = sysinfo_simulate_4G_ram.mem_used_slots
-    print("\n=======================================================")
-    print("simulate 4G ram, total slots 2, used slot 1 for e-star 7:")
-    print("=======================================================")
-    calculate_product_type1_estar7(sysinfo_simulate_4G_ram)
+    if sysinfo.profile['Product Type'] == 1 and sysinfo.profile["Memory Size"] != 4 and args.simulate:
+        sysinfo_simulate_4G_ram = copy.deepcopy(sysinfo)
+        sysinfo_simulate_4G_ram.profile["Memory Size"] = 4
+        # I assum the power consumption depends on used slots.
+        # refer to https://docs.google.com/spreadsheets/d/1vzzwbyoKw5PS0yjBMevNGUkaP_l4GaRaixpaW6GW_NY/edit#gid=246122990
+        # simulate the power consomption based on the reduced slots, so far we only know the difference of 1 and 2 using slot.
+        sysinfo_simulate_4G_ram.short_idle = sysinfo_simulate_4G_ram.short_idle - ((sysinfo_simulate_4G_ram.mem_used_slots - 1) * 1.3)
+        sysinfo_simulate_4G_ram.long_idle = sysinfo_simulate_4G_ram.long_idle - ((sysinfo_simulate_4G_ram.mem_used_slots - 1) * 1.6)
+        sysinfo_simulate_4G_ram.sleep = sysinfo_simulate_4G_ram.sleep - ((sysinfo_simulate_4G_ram.mem_used_slots - 1) * 0)
+        sysinfo_simulate_4G_ram.profile["Short Idle Mode"] = sysinfo_simulate_4G_ram.short_idle
+        sysinfo_simulate_4G_ram.profile["Long Idle Mode"] = sysinfo_simulate_4G_ram.long_idle
+        sysinfo_simulate_4G_ram.profile["Sleep Mode"] = sysinfo_simulate_4G_ram.sleep
+        sysinfo_simulate_4G_ram.mem_total_slots = 2
+        sysinfo_simulate_4G_ram.mem_used_slots = 1
+        sysinfo_simulate_4G_ram.profile["Memory Total Slots"] = sysinfo_simulate_4G_ram.mem_total_slots
+        sysinfo_simulate_4G_ram.profile["Memory Used Slots"] = sysinfo_simulate_4G_ram.mem_used_slots
+        print("\n=======================================================")
+        print("simulate 4G ram, total slots 2, used slot 1 for e-star 7:")
+        print("=======================================================")
+        calculate_product_type1_estar7(sysinfo_simulate_4G_ram)
 
     erplot3_calculate(sysinfo)
 
     if not args.profile:
         profile = get_system_filename(sysinfo) + '.profile'
-        profile_simulate_4G_ram = get_system_filename(sysinfo_simulate_4G_ram) + '_simulate_4G_ram.profile'
         sysinfo.save(profile)
-        sysinfo_simulate_4G_ram.save(profile_simulate_4G_ram)
         print('\nThe profile is saved to "' + profile + '".')
 
     if args.report:
@@ -614,14 +695,15 @@ def erplot3_calculate(sysinfo):
     erplot3.calculate()
 
 if __name__ == '__main__':
-    version = '1.5.16'
-    description = "Energy Tools %s for Energy Star 5/6/7 and ErP Lot 3" % version
+    version = '1.6'
+    description = "Energy Tools %s for Energy Star 5/6/7/8 and ErP Lot 3" % version
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("-d", "--debug",   help="print debug messages", action="store_true")
-    parser.add_argument("-e", "--excel",   help="generate Excel file",  action="store_true")
-    parser.add_argument("-r", "--report",  help="generate report file", action="store_true")
-    parser.add_argument("-p", "--profile", help="specify profile",      type=str)
-    parser.add_argument("-t", "--test",    help="use test case",        type=int)
+    parser.add_argument("-d", "--debug",    help="print debug messages", action="store_true")
+    parser.add_argument("-e", "--excel",    help="generate Excel file",  action="store_true")
+    parser.add_argument("-r", "--report",   help="generate report file", action="store_true")
+    parser.add_argument("-s", "--simulate", help="simulate 4G ram",      action="store_true")
+    parser.add_argument("-p", "--profile",  help="specify profile",      type=str)
+    parser.add_argument("-t", "--test",     help="use test case",        type=int)
     args = parser.parse_args()
     if args.debug:
         logging.basicConfig(format='<%(levelname)s> %(message)s', level=logging.DEBUG)
