@@ -14,6 +14,7 @@ optional arguments:
   -d, --debug           print debug messages
   -e, --excel           generate Excel file
   -r, --report          generate report file
+  -s, --simulate        simulate 4G ram
   -p PROFILE, --profile PROFILE
                         specify profile
   -t TEST, --test TEST  use test case
