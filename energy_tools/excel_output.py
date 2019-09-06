@@ -25,7 +25,7 @@ __all__ = [
         "generate_excel_for_thin_clients"]
 
 from logging import debug, warning
-from erplot3 import *
+from .erplot3 import *
 
 G1 = 'G1 (FB_BW <= 16)'
 G2 = 'G2 (16 < FB_BW <= 32)'

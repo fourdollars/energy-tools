@@ -1,3 +1,9 @@
+energy-tools (1.6.1) bionic; urgency=medium
+
+  * Improve the packaging for Python3 and Debian.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 06 Sep 2019 12:11:00 +0800
+
 energy-tools (1.6) bionic; urgency=medium
 
   * Implement Energy Star 8.0 draft 2.

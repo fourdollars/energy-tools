@@ -18,9 +18,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-from sysinfo import SysInfo
+from .sysinfo import SysInfo
 from logging import debug, warning
-from common import result_filter
+from .common import result_filter
 
 __all__ = [
         "ErPLot3",

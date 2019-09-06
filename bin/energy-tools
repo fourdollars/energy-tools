@@ -1,0 +1,29 @@
+#! /usr/bin/env python3
+
+import argparse
+import logging
+from energy_tools import core
+
+if __name__ == '__main__':
+    ver = '1.6.1'
+    description = "Energy Tools %s for Energy Star 5/6/7/8 and ErP Lot 3" % ver
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("-d", "--debug",
+                        help="print debug messages", action="store_true")
+    parser.add_argument("-e", "--excel",
+                        help="generate Excel file",  action="store_true")
+    parser.add_argument("-r", "--report",
+                        help="generate report file", action="store_true")
+    parser.add_argument("-s", "--simulate",
+                        help="simulate 4G ram",      action="store_true")
+    parser.add_argument("-p", "--profile",
+                        help="specify profile",      type=str)
+    parser.add_argument("-t", "--test",
+                        help="use test case",        type=int)
+    args = parser.parse_args()
+    if args.debug:
+        logging.basicConfig(format='<%(levelname)s> %(message)s',
+                            level=logging.DEBUG)
+    else:
+        logging.basicConfig(format='<%(levelname)s> %(message)s')
+    core.process(description, args, ver)

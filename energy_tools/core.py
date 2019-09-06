@@ -17,17 +17,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging, os, json, sys
+import os
+import json
+import sys
 from logging import debug, warning, error
-import argparse
-from excel_output import *
-from energystar52 import EnergyStar52
-from energystar60 import EnergyStar60
-from energystar70 import EnergyStar70
-from energystar80 import EnergyStar80
-from sysinfo import SysInfo
-from erplot3 import ErPLot3
-from common import result_filter
+from .excel_output import *
+from .energystar52 import EnergyStar52
+from .energystar60 import EnergyStar60
+from .energystar70 import EnergyStar70
+from .energystar80 import EnergyStar80
+from .sysinfo import SysInfo
+from .erplot3 import ErPLot3
+from .common import result_filter
 import copy
 
 def calculate_product_type1_estar5(sysinfo):
@@ -484,7 +485,7 @@ def energystar_calculate(sysinfo):
     else:
         raise Exception('This is a bug when you see this.')
 
-def main(description):
+def process(description, args, version):
     print(description + '\n' + '=' * 80)
     if args.test == 1:
         print("""# Test case from Notebooks of Energy Star 5.2 & 6.0
@@ -693,20 +694,3 @@ def erplot3_calculate(sysinfo):
         return
     erplot3 = ErPLot3(sysinfo)
     erplot3.calculate()
-
-if __name__ == '__main__':
-    version = '1.6'
-    description = "Energy Tools %s for Energy Star 5/6/7/8 and ErP Lot 3" % version
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("-d", "--debug",    help="print debug messages", action="store_true")
-    parser.add_argument("-e", "--excel",    help="generate Excel file",  action="store_true")
-    parser.add_argument("-r", "--report",   help="generate report file", action="store_true")
-    parser.add_argument("-s", "--simulate", help="simulate 4G ram",      action="store_true")
-    parser.add_argument("-p", "--profile",  help="specify profile",      type=str)
-    parser.add_argument("-t", "--test",     help="use test case",        type=int)
-    args = parser.parse_args()
-    if args.debug:
-        logging.basicConfig(format='<%(levelname)s> %(message)s', level=logging.DEBUG)
-    else:
-        logging.basicConfig(format='<%(levelname)s> %(message)s')
-    main(description)
