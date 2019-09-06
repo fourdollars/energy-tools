@@ -1,5 +1,4 @@
-#! /usr/bin/env python3
-# -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4; -*-
+# -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4;-*-
 #
 # Copyright (C) 2014 Canonical Ltd.
 # Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
@@ -26,7 +25,7 @@ __all__ = [
         "ErPLot3",
         "ErPLot3_2014",
         "ErPLot3_2016"]
-    
+
 class ErPLot3:
     """ErP Lot 3 calculator"""
     def __init__(self, sysinfo):

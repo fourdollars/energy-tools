@@ -1,5 +1,4 @@
-#! /usr/bin/env python3
-# -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4; -*-
+# -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4;-*-
 #
 # Copyright (C) 2014-2018 Canonical Ltd.
 # Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
@@ -16,6 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 
 def result_filter(result, value, maximum):
     if maximum >= value:

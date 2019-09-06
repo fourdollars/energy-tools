@@ -1,6 +1,4 @@
-#! /usr/bin/env python3
-"""Energy Star 8.0 Draft 2 calculator"""
-# -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4; -*-
+# -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4;-*-
 #
 # Copyright (C) 2019 Canonical Ltd.
 # Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>

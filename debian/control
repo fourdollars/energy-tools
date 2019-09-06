@@ -2,30 +2,35 @@ Source: energy-tools
 Maintainer: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
 Section: python
 Priority: optional
-Build-Depends: python3-all, debhelper, dh-python, python3-setuptools
+Build-Depends: python3-all, debhelper (>=11), dh-python, python3-setuptools
 Homepage: https://github.com/fourdollars/energy-tools
 Vcs-Browser: https://github.com/fourdollars/energy-tools.git
 Vcs-Git: https://github.com/fourdollars/energy-tools.git
-Standards-Version: 4.2.1
+Standards-Version: 4.1.4
 
 Package: energy-tools
 Architecture: all
-Depends: ${misc:Depends}, python3-energy-tools
+Depends: ${python3:Depends}, ${misc:Depends}, python3-energy-tools
 Suggests: energy-tools-doc
 Description: Energy Tools for Energy Star and ErP Lot 3
- This program is designed to collect the system profile and calculate the
- results of Energy Star (5.2 & 6.0 & 7.0) and
- ErP Lot 3 (Jul. 2014 & Jan. 2016)
+ This program is designed to collect the system profile and
+ calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and
+ ErP Lot 3 (Jan. 2016)
 
 Package: energy-tools-doc
 Architecture: all
+Section: doc
 Depends: ${misc:Depends}
-Description: Energy Tools for Energy Star and ErP Lot 3
- The design flow for this program.
+Description: Design flow for Energy Tools
+ This program is designed to collect the system profile and
+ calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and
+ ErP Lot 3 (Jan. 2016) (Design Flow)
 
 Package: python3-energy-tools
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}, dmidecode, python3-debian, python3-xlsxwriter, python3-gi, gir1.2-gtk-3.0
 Recommends: energy-tools
-Description: Library for Energy Tools
- This library is for the energy-tools package.
+Description: Python3 library for Energy Tools
+ This program is designed to collect the system profile and
+ calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and
+ ErP Lot 3 (Jan. 2016) (Library)
