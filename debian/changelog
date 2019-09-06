@@ -1,3 +1,10 @@
+energy-tools (1.6.2) bionic; urgency=medium
+
+  * debian/control: Remove the dependency of ethtool.
+  * Use setuptools for better Python packaging.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 06 Sep 2019 23:12:08 +0800
+
 energy-tools (1.6.1) bionic; urgency=medium
 
   * Improve the packaging for Python3 and Debian.

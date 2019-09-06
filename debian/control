@@ -25,7 +25,7 @@ Description: Energy Tools for Energy Star and ErP Lot 3
 
 Package: python3-energy-tools
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, dmidecode, ethtool, python3-debian, python3-xlsxwriter, python3-gi, gir1.2-gtk-3.0
+Depends: ${python3:Depends}, ${misc:Depends}, dmidecode, python3-debian, python3-xlsxwriter, python3-gi, gir1.2-gtk-3.0
 Recommends: energy-tools
 Description: Library for Energy Tools
  This library is for the energy-tools package.

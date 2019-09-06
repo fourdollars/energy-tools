@@ -7,7 +7,7 @@ This program is designed to collect the system profile and calculate the results
 $ energy-tools -h
 usage: energy-tools [-h] [-d] [-e] [-r] [-p PROFILE] [-t TEST]
 
-Energy Tools 1.6.1 for Energy Star 5/6/7/8 and ErP Lot 3
+Energy Tools 1.6.2 for Energy Star 5/6/7/8 and ErP Lot 3
 
 optional arguments:
   -h, --help            show this help message and exit

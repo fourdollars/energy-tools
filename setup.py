@@ -19,8 +19,10 @@
 
 from setuptools import setup
 
+__version__ = '1.6.2'
+
 setup(name='energy-tools',
-      version='1.6.1',
+      version=__version__,
       description='Energy Tools for Energy Star 5/6/7/8 and ErP Lot 3',
       long_description='''
 This program is designed to collect the system profile and calculate
