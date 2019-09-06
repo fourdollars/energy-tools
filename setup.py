@@ -19,7 +19,9 @@
 
 from setuptools import setup
 
-__version__ = '1.6.2'
+import sys
+sys.path[0:0] = ['energy_tools']
+from version import __version__
 
 setup(name='energy-tools',
       version=__version__,

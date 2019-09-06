@@ -17,8 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import copy
 import json
+import os
 import sys
 from logging import debug, warning, error
 from .excel_output import *
@@ -29,7 +30,7 @@ from .energystar80 import EnergyStar80
 from .sysinfo import SysInfo
 from .erplot3 import ErPLot3
 from .common import result_filter
-import copy
+from .version import __version__
 
 def calculate_product_type1_estar5(sysinfo):
     print("Energy Star 5:")
@@ -485,7 +486,7 @@ def energystar_calculate(sysinfo):
     else:
         raise Exception('This is a bug when you see this.')
 
-def process(description, args, version):
+def process(description, args):
     print(description + '\n' + '=' * 80)
     if args.test == 1:
         print("""# Test case from Notebooks of Energy Star 5.2 & 6.0
@@ -683,7 +684,7 @@ def process(description, args, version):
             excel = '.'.join(args.profile.split('.')[:-1]) + '.xlsx'
         else:
             excel = get_system_filename(sysinfo) + '.xlsx'
-        generate_excel(sysinfo, version, excel)
+        generate_excel(sysinfo, __version__, excel)
         print('\nThe excel is saved to "' + excel + '".')
 
 def get_system_filename(sysinfo):
