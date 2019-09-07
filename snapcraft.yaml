@@ -54,5 +54,3 @@ apps:
       - unity7
       - wayland
       - x11
-  bash:
-    command: desktop-launch bash
