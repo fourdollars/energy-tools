@@ -1,0 +1,58 @@
+name: energy-tools
+base: core18
+version: '1.6.5'
+summary: Energy Tools for Energy Star and ErP Lot 3
+description: |
+  This program is designed to collect the system profile and calculate the
+  results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and ErP Lot 3 (Jul. 2014 &
+  Jan. 2016).
+
+grade: stable
+confinement: strict
+license: GPL-3.0
+architectures: [amd64, i386]
+
+parts:
+  energy-tools:
+    source: .
+    plugin: python
+    stage-packages:
+      - dmidecode
+      - gir1.2-gtk-3.0
+      - python3-debian
+      - python3-gi
+      - python3-xlsxwriter
+      - x11-xserver-utils
+    after:
+      - desktop-gnome-platform
+  desktop-gnome-platform:
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-depth: 1
+    source-subdir: gtk
+    plugin: make
+    build-packages:
+      - build-essential
+      - libgtk-3-dev
+    override-build: |
+      snapcraftctl build
+      mkdir -pv $SNAPCRAFT_PART_INSTALL/gnome-platform
+
+plugs:
+  gnome-3-28-1804:
+    interface: content
+    target: $SNAP/gnome-platform
+    default-provider: gnome-3-28-1804
+
+apps:
+  energy-tools:
+    command: desktop-launch $SNAP/bin/energy-tools
+    plugs:
+      - desktop
+      - desktop-legacy
+      - hardware-observe
+      - home
+      - unity7
+      - wayland
+      - x11
+  bash:
+    command: desktop-launch bash

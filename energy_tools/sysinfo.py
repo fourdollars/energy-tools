@@ -320,11 +320,20 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
         except subprocess.CalledProcessError:
             self.cpu_core = 1
         else:
-            self.cpu_core = int(subprocess.check_output('cat /proc/cpuinfo | grep "cpu cores" | sort -ru | head -n 1 | cut -d: -f2 | xargs', shell=True, encoding='utf8').strip())
+            self.cpu_core = self._int_cmd(
+                'cat /proc/cpuinfo | grep "cpu cores" | sort -ru | head -n 1 | cut -d: -f2 | xargs')
 
         debug("CPU core: %s" % (self.cpu_core))
         self.profile["CPU Cores"] = self.cpu_core
         return self.cpu_core
+
+    def _float_cmd(self, command):
+        return float(subprocess.check_output(
+            command, shell=True, encoding='utf8').strip())
+
+    def _int_cmd(self, command):
+        return int(subprocess.check_output(
+            command, shell=True, encoding='utf8').strip())
 
     def get_cpu_clock(self):
         if "CPU Clock" in self.profile:
@@ -333,9 +342,11 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
 
         cpu = self._get_cpu_vendor()
         if cpu == 'intel':
-            self.cpu_clock = float(subprocess.check_output("cat /proc/cpuinfo | grep 'model name' | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'", shell=True, encoding='utf8').strip())
+            self.cpu_clock = self._float_cmd(
+                "grep 'model name' /proc/cpuinfo | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'")
         elif cpu == 'amd':
-            self.cpu_clock = float(subprocess.check_output("sudo dmidecode -t processor | grep 'Current Speed' | cut -d: -f2 | xargs | sed 's/MHz//'", shell=True, encoding='utf8').strip()) / 1000
+            self.cpu_clock = self._float_cmd(
+                "dmidecode -t processor | grep 'Current Speed' | cut -d: -f2 | xargs | sed 's/MHz//'")
         else:
             raise Exception('Unknown CPU Vendor')
 
@@ -352,8 +363,9 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
 
         self.mem_size = 0
         self.mem_used_slots = 0
-        self.mem_total_slots = int(subprocess.check_output("sudo dmidecode -t 16 | grep ' Devices:' | awk -F':' '{print $2}'", shell=True, encoding='utf8'))
-        for size in subprocess.check_output("sudo dmidecode -t 17 | grep 'Size:.*MB' | awk '{print $2}'", shell=True, encoding='utf8').split('\n'):
+        self.mem_total_slots = self._int_cmd(
+            "dmidecode -t 16 | grep 'Devices:' | awk -F': ' '{print $2}'")
+        for size in subprocess.check_output("dmidecode -t 17 | grep 'Size:.*MB' | awk '{print $2}'", shell=True, encoding='utf8').split('\n'):
             if size:
                 self.mem_size = self.mem_size + int(size)
                 self.mem_used_slots = self.mem_used_slots + 1

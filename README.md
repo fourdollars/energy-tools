@@ -20,6 +20,18 @@ optional arguments:
   -t TEST, --test TEST  use test case
 ```
 
+You need to execute this command with root permission so it can collect the hardware information.
+
+```
+$ sudo energy-tools
+```
+
+If you are using some valid profile, you don't need to execute this command with root permission.
+
+```
+$ energy-tools -p MySystem.profile
+```
+
 # Ubuntu PPA
 https://launchpad.net/~fourdollars/+archive/ubuntu/energy-tools
 

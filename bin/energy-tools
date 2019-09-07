@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import os
 from energy_tools import core
 from energy_tools.version import __version__ as ver
 
@@ -26,4 +27,7 @@ if __name__ == '__main__':
                             level=logging.DEBUG)
     else:
         logging.basicConfig(format='<%(levelname)s> %(message)s')
-    core.process(description, args)
+    if args.test is None and args.profile is None and os.geteuid() != 0:
+        raise Exception("Please execute this command with root permission so it can collect the hardware information.")
+    else:
+        core.process(description, args)
