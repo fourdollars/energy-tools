@@ -26,4 +26,4 @@ if __name__ == '__main__':
                             level=logging.DEBUG)
     else:
         logging.basicConfig(format='<%(levelname)s> %(message)s')
-    core.process(description, args, ver)
+    core.process(description, args)
