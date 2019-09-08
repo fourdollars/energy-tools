@@ -485,6 +485,12 @@ def energystar_calculate(sysinfo):
     else:
         raise Exception('This is a bug when you see this.')
 
+def chown_for_user(filename):
+    if os.geteuid() == 0:
+        sudo_uid = int(os.getenv("SUDO_UID"))
+        sudo_gid = int(os.getenv("SUDO_GID"))
+        os.chown(filename, sudo_uid, sudo_gid)
+
 def process(description, args):
     print(description + '\n' + '=' * 80)
     if args.test == 1:
@@ -667,6 +673,7 @@ def process(description, args):
         profile = get_system_filename(sysinfo) + '.profile'
         sysinfo.save(profile)
         print('\nThe profile is saved to "' + profile + '".')
+        chown_for_user(profile)
 
     if args.report:
         if args.profile and args.profile != '-':
@@ -677,6 +684,7 @@ def process(description, args):
         with open(report, 'a') as target:
             target.write(output + '\n')
         print('\nThe report is saved to "' + report + '".')
+        chown_for_user(report)
 
     if args.excel:
         if args.profile:
@@ -685,6 +693,7 @@ def process(description, args):
             excel = get_system_filename(sysinfo) + '.xlsx'
         generate_excel(sysinfo, __version__, excel)
         print('\nThe excel is saved to "' + excel + '".')
+        chown_for_user(excel)
 
 def get_system_filename(sysinfo):
     return sysinfo.get_product_name() + '_' + sysinfo.get_bios_version()

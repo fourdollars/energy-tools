@@ -1,3 +1,10 @@
+energy-tools (1.6.7) bionic; urgency=medium
+
+  * Change the ownership for output files.
+  * Make snapcraft.yaml parse info from setup.py.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Sun, 08 Sep 2019 13:31:26 +0800
+
 energy-tools (1.6.6) bionic; urgency=medium
 
   * Polish the message for root permission.

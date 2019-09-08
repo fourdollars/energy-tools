@@ -1,11 +1,7 @@
 name: energy-tools
-base: core18
-version: '1.6.6'
 summary: Energy Tools for Energy Star and ErP Lot 3
-description: |
-  This program is designed to collect the system profile and calculate the
-  results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and ErP Lot 3 (Jul. 2014 &
-  Jan. 2016).
+adopt-info: energy-tools
+base: core18
 
 grade: devel #stable
 confinement: devmode #strict
@@ -16,6 +12,7 @@ parts:
   energy-tools:
     source: .
     plugin: python
+    parse-info: [setup.py]
     stage-packages:
       - dmidecode
       - gir1.2-gtk-3.0
