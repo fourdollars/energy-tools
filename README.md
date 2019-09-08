@@ -3,6 +3,7 @@ Energy Tools for Energy Star and ErP Lot 3
 
 This program is designed to collect the system profile and calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and ErP Lot 3 (Jan. 2016).
 
+## Usage
 ```
 $ energy-tools -h
 usage: energy-tools [-h] [-d] [-e] [-r] [-p PROFILE] [-t TEST]
@@ -22,18 +23,21 @@ optional arguments:
 
 You need to execute this command with root permission so it can collect the hardware information.
 
-```
-$ sudo energy-tools
-```
+`$ sudo energy-tools`
 
 If you are using some valid profile, you don't need to execute this command with root permission.
 
+`$ energy-tools -p MySystem.profile`
+
+## Snap Package
+`$ snap install --beta --devmode energy-tools`
+
+## Ubuntu PPA
 ```
-$ energy-tools -p MySystem.profile
+$ sudo add-apt-repository ppa:fourdollars/energy-tools
+$ sudo apt-get update
 ```
 
-# Ubuntu PPA
-https://launchpad.net/~fourdollars/+archive/ubuntu/energy-tools
+## WARNING
 
-# WARNING
 This tool just works for general computers right now.

@@ -28,6 +28,7 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(format='<%(levelname)s> %(message)s')
     if args.test is None and args.profile is None and os.geteuid() != 0:
-        raise Exception("Please execute this command with root permission so it can collect the hardware information.")
+        print("Please execute this command with root permission so it can \
+collect the hardware information.")
     else:
         core.process(description, args)

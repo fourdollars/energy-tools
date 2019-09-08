@@ -1,14 +1,14 @@
 name: energy-tools
 base: core18
-version: '1.6.5'
+version: '1.6.6'
 summary: Energy Tools for Energy Star and ErP Lot 3
 description: |
   This program is designed to collect the system profile and calculate the
   results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and ErP Lot 3 (Jul. 2014 &
   Jan. 2016).
 
-grade: stable
-confinement: strict
+grade: devel #stable
+confinement: devmode #strict
 license: GPL-3.0
 architectures: [amd64, i386]
 
