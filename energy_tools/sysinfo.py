@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from logging import debug, warning
+from pathlib import Path
 
 import json
 import math
@@ -24,7 +25,62 @@ import os
 import re
 import subprocess
 
+MODELINE_PATTERN = \
+    r'Modeline\s+"([\w ]+)"\s+[0-9.]+ (\d+) \d+ \d+ \d+ (\d+) \d+ \d+ \d+'
+
+
 class SysInfo:
+    def parse_edid(self):
+        monitor = None
+        for edid in Path('/sys/devices').glob('**/edid'):
+            with open(edid, 'rb') as f:
+                content = f.read()
+                if len(content) != 0:
+                    monitor = edid
+                    break
+        debug("EDID location is %s" % (monitor))
+        if monitor is None:
+            return None
+        width_mm = None
+        height_mm = None
+        modeline = dict()
+        preferred_mode = None
+        edid = subprocess.check_output(
+            "cat %s | parse-edid" % monitor,
+            shell=True, encoding='utf8', stderr=open(os.devnull, 'w'))
+        debug(edid)
+
+        for line in edid.split('\n'):
+            m = re.search(r'DisplaySize\s+(\d+) (\d+)', line)
+            if m:
+                debug(m.group(0))
+                width_mm = m.group(1)
+                height_mm = m.group(2)
+                continue
+
+            m = re.search(r'Option\s+"PreferredMode"\s+"([\w ]+)"', line)
+            if m:
+                debug(m.group(0))
+                preferred_mode = m.group(1)
+                continue
+
+            m = re.search(MODELINE_PATTERN, line)
+            if m:
+                debug(m.group(0))
+                mode = m.group(1)
+                width = m.group(2)
+                height = m.group(3)
+                modeline[mode] = (width, height)
+
+        if width_mm and height_mm:
+            self.width_mm = int(width_mm)
+            self.height_mm = int(height_mm)
+
+        if preferred_mode and preferred_mode in modeline:
+            (width, height) = modeline[preferred_mode]
+            self.width = int(width)
+            self.height = int(height)
+
     def question_str(self, prompt, length, validator, name):
         if name in self.profile:
             return self.profile[name]
@@ -85,12 +141,9 @@ class SysInfo:
         if key in self.profile:
             return self.profile[key]
         else:
-            import gi
-            gi.require_version('Gdk', '3.0')
-            from gi.repository import Gdk
-            screen = Gdk.Screen.get_default()
-            major = screen.get_primary_monitor()
-            diagonal_mm = math.sqrt(screen.get_monitor_width_mm(major) ** 2 + screen.get_monitor_height_mm(major) ** 2)
+            if self.width_mm is None or self.height_mm is None:
+                self.parse_edid()
+            diagonal_mm = math.sqrt(self.width_mm ** 2 + self.height_mm ** 2)
             self.profile[key] = diagonal_mm / 25.4
             return self.profile[key]
 
@@ -99,19 +152,18 @@ class SysInfo:
         if key in self.profile:
             return self.profile[key]
         else:
-            import gi
-            gi.require_version('Gdk', '3.0')
-            from gi.repository import Gdk
-            screen = Gdk.Screen.get_default()
-            major = screen.get_primary_monitor()
-            self.profile[key] = screen.get_monitor_width_mm(major) * screen.get_monitor_height_mm(major) / 25.4 / 25.4
+            if self.width_mm is None or self.height_mm is None:
+                self.parse_edid()
+            self.profile[key] = self.width_mm * self.height_mm / 25.4 / 25.4
             return self.profile[key]
 
     def __init__(self, profile=None):
         self.ep = False
         self.diagonal = 0.0
-        self.width = 0
-        self.height = 0
+        self.width = None
+        self.height = None
+        self.width_mm = None
+        self.height_mm = None
 
         if profile:
             self.profile = profile
@@ -195,8 +247,8 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
                     for disk in subprocess.check_output('ls /sys/block | grep -e sd -e nvme -e emmc', shell=True, encoding='utf8').strip().split('\n'):
                         disk_type = self.question_int("""Which storage type for /sys/block/%s?
 [0] Unknown
-[1] 3.5” HDD
-[2] 2.5” HDD
+[1] 3.5" HDD
+[2] 2.5" HDD
 [3] Hybrid HDD/SSD
 [4] SSD (including M.2 port solutions)""" % disk, 4)
                         self.profile[storage_tuple[disk_type]] = self.profile[storage_tuple[disk_type]] + 1
@@ -277,22 +329,23 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
     def _check_wol(self):
         if "Wake-on-LAN" in self.profile:
             return self.profile["Wake-on-LAN"]
-        with open("/proc/acpi/wakeup") as f:
-            line = f.readline()
-            while line:
-                if line.startswith('GLAN'):
-                    if 'enabled' in line:
-                        return True
-                    elif 'disabled' in line:
-                        return False
-                line = f.readline()
+        for dev in os.listdir("/sys/class/net/"):
+            if dev.startswith('eth') or dev.startswith('en'):
+                wakeup = os.path.join("/sys/class/net/", dev, "/device/power/wakeup")
+                if os.path.exists(wakeup):
+                    with open(wakeup, 'r') as f:
+                        value = f.raed()
+                        if 'enabled' in value:
+                            self.profile["Wake-on-LAN"] = True
+                            return True
+        self.profile["Wake-on-LAN"] = False
         return False
 
     def _check_ethernet_num(self):
         self.eee = 0
         self.ten_glan = 0
         for dev in os.listdir("/sys/class/net/"):
-            if dev.startswith('eth') or dev.startswith('enp'):
+            if dev.startswith('eth') or dev.startswith('en'):
                 if os.path.exists("/sys/class/net/" + dev + "/speed"):
                     speed = 0
                     with open("/sys/class/net/" + dev + "/speed") as f:
@@ -441,10 +494,8 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             self.height = self.profile["Display Height"]
             return (self.width, self.height)
 
-        (width, height) = subprocess.check_output("xrandr --current | grep current | sed 's/.*current \\([0-9]*\\) x \\([0-9]*\\).*/\\1 \\2/'", shell=True, encoding='utf8').strip().split(' ')
-        self.width = int(width)
-        self.height = int(height)
-        debug("Resolution: %s x %s" % (self.width, self.height))
+        if self.width is None or self.height is None:
+            self.parse_edid()
         self.profile["Display Width"] = self.width
         self.profile["Display Height"] = self.height
         return (self.width, self.height)

@@ -1,3 +1,9 @@
+energy-tools (1.6.8) bionic; urgency=medium
+
+  * Get rid of X11 and parse edid directly.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 11 Sep 2019 11:59:36 +0800
+
 energy-tools (1.6.7) bionic; urgency=medium
 
   * Change the ownership for output files.
