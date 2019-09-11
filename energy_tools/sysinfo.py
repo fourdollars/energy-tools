@@ -47,8 +47,7 @@ class SysInfo:
         preferred_mode = None
         edid = subprocess.check_output(
             "cat %s | parse-edid" % monitor,
-            shell=True, encoding='utf8', stderr=open(os.devnull, 'w'))
-        debug(edid)
+            shell=True, encoding='ISO-8859-15', stderr=open(os.devnull, 'w'))
 
         for line in edid.split('\n'):
             m = re.search(r'DisplaySize\s+(\d+) (\d+)', line)
@@ -78,8 +77,11 @@ class SysInfo:
 
         if preferred_mode and preferred_mode in modeline:
             (width, height) = modeline[preferred_mode]
-            self.width = int(width)
-            self.height = int(height)
+        else:
+            (width, height) = modeline["Mode 0"]
+
+        self.width = int(width)
+        self.height = int(height)
 
     def question_str(self, prompt, length, validator, name):
         if name in self.profile:
