@@ -45,27 +45,28 @@ class SysInfo:
         height_mm = None
         modeline = dict()
         preferred_mode = None
-        edid = subprocess.check_output(
-            "cat %s | parse-edid" % monitor,
-            shell=True, encoding='ISO-8859-15', stderr=open(os.devnull, 'w'))
-
+        edid = subprocess.check_output("""parse-edid < %s | \
+                                          grep -v \
+                                          -e Identifier \
+                                          -e ModelName""" % monitor,
+                                       shell=True,
+                                       encoding='utf8',
+                                       stderr=open(os.devnull, 'w'))
+        debug(edid)
         for line in edid.split('\n'):
             m = re.search(r'DisplaySize\s+(\d+) (\d+)', line)
             if m:
-                debug(m.group(0))
                 width_mm = m.group(1)
                 height_mm = m.group(2)
                 continue
 
             m = re.search(r'Option\s+"PreferredMode"\s+"([\w ]+)"', line)
             if m:
-                debug(m.group(0))
                 preferred_mode = m.group(1)
                 continue
 
             m = re.search(MODELINE_PATTERN, line)
             if m:
-                debug(m.group(0))
                 mode = m.group(1)
                 width = m.group(2)
                 height = m.group(3)
