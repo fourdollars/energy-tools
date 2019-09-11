@@ -417,15 +417,26 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             self.mem_used_slots = self.profile["Memory Used Slots"]
             return self.mem_size
 
-        self.mem_size = 0
         self.mem_used_slots = 0
         self.mem_total_slots = self._int_cmd(
             "dmidecode -t 16 | grep 'Devices:' | awk -F': ' '{print $2}'")
-        for size in subprocess.check_output("dmidecode -t 17 | grep 'Size:.*MB' | awk '{print $2}'", shell=True, encoding='utf8').split('\n'):
+        for size in subprocess.check_output(
+                "dmidecode -t 17 | grep 'Size:.*MB' | awk '{print $2}'",
+                shell=True, encoding='utf8').split('\n'):
             if size:
-                self.mem_size = self.mem_size + int(size)
                 self.mem_used_slots = self.mem_used_slots + 1
-        self.mem_size = self.mem_size / 1024
+
+        total_online = 0
+        block_size = 0
+        for online in Path('/sys/devices/system/memory').glob('*/online'):
+            with open(online, 'r') as f:
+                if f.read().strip() == '1':
+                    total_online = total_online + 1
+
+        with open('/sys/devices/system/memory/block_size_bytes') as f:
+            block_size = int(f.read().strip(), 16)
+
+        self.mem_size = block_size * total_online / 1024 / 1024 / 1024
 
         debug("Memory size: %s GB" % (self.mem_size))
         debug("Memory total slots: %s" % (self.mem_total_slots))
