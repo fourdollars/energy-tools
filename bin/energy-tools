@@ -16,8 +16,9 @@ if __name__ == '__main__':
                         help="generate Excel file",  action="store_true")
     parser.add_argument("-r", "--report",
                         help="generate report file", action="store_true")
-    parser.add_argument("-s", "--simulate",
-                        help="simulate 4G ram",      action="store_true")
+    if 'SNAP_NAME' not in os.environ:
+        parser.add_argument("-s", "--simulate",
+                            help="simulate 4G ram",      action="store_true")
     parser.add_argument("-p", "--profile",
                         help="specify profile",      type=str)
     parser.add_argument("-t", "--test",
@@ -29,8 +30,4 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(format='<%(levelname)s> %(message)s')
 
-    if args.test is None and args.profile is None and os.geteuid() != 0:
-        print("Please execute this command with root permission so it can \
-collect the hardware information.")
-    else:
-        core.process(description, args)
+    core.process(description, args)

@@ -25,12 +25,9 @@ import os
 import re
 import subprocess
 
-MODELINE_PATTERN = \
-    r'Modeline\s+"([\w ]+)"\s+[0-9.]+ (\d+) \d+ \d+ \d+ (\d+) \d+ \d+ \d+'
-
 
 class SysInfo:
-    def parse_edid(self):
+    def edid_decode(self):
         monitor = None
         for edid in Path('/sys/devices').glob('**/edid'):
             with open(edid, 'rb') as f:
@@ -39,48 +36,45 @@ class SysInfo:
                     monitor = edid
                     break
         debug("EDID location is %s" % (monitor))
+
         if monitor is None:
             return None
+
+        width = None
+        height = None
         width_mm = None
         height_mm = None
-        modeline = dict()
-        preferred_mode = None
-        edid = subprocess.check_output("""parse-edid < %s | \
-                                          grep -v \
-                                          -e Identifier \
-                                          -e ModelName""" % monitor,
+
+        edid = subprocess.check_output("""edid-decode < %s | \
+                                       grep 'Detailed mode:' -A 2""" % monitor,
                                        shell=True,
                                        encoding='utf8',
                                        stderr=open(os.devnull, 'w'))
         debug(edid)
+
         for line in edid.split('\n'):
-            m = re.search(r'DisplaySize\s+(\d+) (\d+)', line)
+            m = re.search(r'(\d+) mm x (\d+) mm', line)
             if m:
                 width_mm = m.group(1)
                 height_mm = m.group(2)
                 continue
 
-            m = re.search(r'Option\s+"PreferredMode"\s+"([\w ]+)"', line)
+            m = re.search(r'(\d+)\s+\d+\s+\d+\s+\d+\s+hborder\s+\d+', line)
             if m:
-                preferred_mode = m.group(1)
+                width = m.group(1)
                 continue
 
-            m = re.search(MODELINE_PATTERN, line)
+            m = re.search(r'(\d+)\s+\d+\s+\d+\s+\d+\s+vborder\s+\d+', line)
             if m:
-                mode = m.group(1)
-                width = m.group(2)
-                height = m.group(3)
-                modeline[mode] = (width, height)
+                height = m.group(1)
+                continue
 
-        if width_mm and height_mm:
-            self.width_mm = int(width_mm)
-            self.height_mm = int(height_mm)
+            if width_mm and height_mm and width and height:
+                break
+        debug('%s %s %s %s' % (width, height, width_mm, height_mm))
 
-        if preferred_mode and preferred_mode in modeline:
-            (width, height) = modeline[preferred_mode]
-        else:
-            (width, height) = modeline["Mode 0"]
-
+        self.width_mm = int(width_mm)
+        self.height_mm = int(height_mm)
         self.width = int(width)
         self.height = int(height)
 
@@ -145,7 +139,7 @@ class SysInfo:
             return self.profile[key]
         else:
             if self.width_mm is None or self.height_mm is None:
-                self.parse_edid()
+                self.edid_decode()
             diagonal_mm = math.sqrt(self.width_mm ** 2 + self.height_mm ** 2)
             self.profile[key] = diagonal_mm / 25.4
             return self.profile[key]
@@ -156,7 +150,7 @@ class SysInfo:
             return self.profile[key]
         else:
             if self.width_mm is None or self.height_mm is None:
-                self.parse_edid()
+                self.edid_decode()
             self.profile[key] = self.width_mm * self.height_mm / 25.4 / 25.4
             return self.profile[key]
 
@@ -454,35 +448,22 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             self.cpu_clock = self.profile["CPU Clock"]
             return self.cpu_clock
 
-        cpu = self._get_cpu_vendor()
-        if cpu == 'intel':
+        if self._get_cpu_vendor() == 'intel':
             self.cpu_clock = self._float_cmd(
-                "grep 'model name' /proc/cpuinfo | sort -u | cut -d: -f2 | cut -d@ -f2 | xargs | sed 's/GHz//'")
-        elif cpu == 'amd':
-            self.cpu_clock = self._float_cmd(
-                "dmidecode -t processor | grep 'Current Speed' | cut -d: -f2 | xargs | sed 's/MHz//'")
+                "grep -oP '[0-9.]+GHz' /proc/cpuinfo | uniq | sed 's/GHz//'")
         else:
-            raise Exception('Unknown CPU Vendor')
+            self.cpu_clock = self.question_num("What is CPU frequency (GHz)?",
+                                               "CPU Clock")
 
         debug("CPU clock: %s GHz" % (self.cpu_clock))
         self.profile["CPU Clock"] = self.cpu_clock
+
         return self.cpu_clock
 
     def get_mem_size(self):
         if "Memory Size" in self.profile:
             self.mem_size = self.profile["Memory Size"]
-            self.mem_total_slots = self.profile["Memory Total Slots"]
-            self.mem_used_slots = self.profile["Memory Used Slots"]
             return self.mem_size
-
-        self.mem_used_slots = 0
-        self.mem_total_slots = self._int_cmd(
-            "dmidecode -t 16 | grep 'Devices:' | awk -F': ' '{print $2}'")
-        for size in subprocess.check_output(
-                "dmidecode -t 17 | grep 'Size:.*MB' | awk '{print $2}'",
-                shell=True, encoding='utf8').split('\n'):
-            if size:
-                self.mem_used_slots = self.mem_used_slots + 1
 
         total_online = 0
         block_size = 0
@@ -497,11 +478,8 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
         self.mem_size = block_size * total_online / 1024 / 1024 / 1024
 
         debug("Memory size: %s GB" % (self.mem_size))
-        debug("Memory total slots: %s" % (self.mem_total_slots))
-        debug("Memory used slots: %s" % (self.mem_used_slots))
         self.profile["Memory Size"] = self.mem_size
-        self.profile["Memory Total Slots"] = self.mem_total_slots
-        self.profile["Memory Used Slots"] = self.mem_used_slots
+
         return self.mem_size
 
     def get_disk_num(self):
@@ -570,7 +548,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             return (self.width, self.height)
 
         if self.width is None or self.height is None:
-            self.parse_edid()
+            self.edid_decode()
         self.profile["Display Width"] = self.width
         self.profile["Display Height"] = self.height
         return (self.width, self.height)
@@ -615,16 +593,12 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
                     else:
                         data.write('\n\t' + key + ': ' +
                                    str(self.profile[key]))
-            try:
-                result = subprocess.run(['ubuntu-report', 'show'],
-                                        stdout=subprocess.PIPE)
-                ubuntu_report = json.loads(result.stdout)
-                data.write('\nManifest version: ' +
-                           ubuntu_report['OEM']['DCD'])
-            except FileNotFoundError:
-                pass
-            except KeyError:
-                pass
+            if os.path.isfile('/var/lib/ubuntu_dist_channel'):
+                with open('/var/lib/ubuntu_dist_channel', 'r') as f:
+                    for line in f:
+                        if line.startswith('#'):
+                            continue
+                        data.write('\nManifest version: ' + line.strip())
 
             data.write('\nBIOS version: ' + self.get_bios_version())
 

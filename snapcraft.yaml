@@ -3,8 +3,8 @@ summary: Energy Tools for Energy Star and ErP Lot 3
 adopt-info: energy-tools
 base: core18
 
-grade: devel #stable
-confinement: devmode #strict
+grade: stable
+confinement: strict
 license: GPL-3.0
 architectures: [amd64, i386]
 
@@ -14,8 +14,7 @@ parts:
     plugin: python
     parse-info: [setup.py]
     stage-packages:
-      - dmidecode
-      - read-edid
+      - edid-decode
       - python3-debian
       - python3-xlsxwriter
 
@@ -24,3 +23,4 @@ apps:
     command: energy-tools
     plugs:
       - hardware-observe
+      - home

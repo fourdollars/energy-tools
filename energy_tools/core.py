@@ -19,6 +19,7 @@
 import copy
 import json
 import os
+import subprocess
 import sys
 from logging import debug, warning, error
 from .excel_output import *
@@ -515,8 +516,6 @@ def process(description, args):
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
             'Memory Size': 8,
-            'Memory Total Slots': 2,
-            'Memory Used Slots': 2,
             'TV Tuner': False,
             'Off Mode': 1.0,
             'Off Mode with WOL': 1.0,
@@ -545,8 +544,6 @@ def process(description, args):
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
             'Memory Size': 8,
-            'Memory Total Slots': 2,
-            'Memory Used Slots': 2,
             'TV Tuner': False,
             'Off Mode': 0.5,
             'Off Mode with WOL': 0.5,
@@ -618,8 +615,6 @@ def process(description, args):
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
             'Memory Size': 8,
-            'Memory Total Slots': 2,
-            'Memory Used Slots': 2,
             'TV Tuner': False,
             'Off Mode': 0.5,
             'Off Mode with WOL': 0.5,
@@ -646,9 +641,17 @@ def process(description, args):
 
     output = energystar_calculate(sysinfo)
 
-    if sysinfo.profile['Product Type'] == 1 and sysinfo.profile["Memory Size"] != 4 and args.simulate:
+    if sysinfo.profile['Product Type'] == 1 and sysinfo.profile["Memory Size"] != 4 and hasattr(args, 'simulate') and args.simulate:
         sysinfo_simulate_4G_ram = copy.deepcopy(sysinfo)
         sysinfo_simulate_4G_ram.profile["Memory Size"] = 4
+        sysinfo_simulate_4G_ram.mem_total_slots = sysinfo._int_cmd("sudo dmidecode -t 16 | grep 'Devices:' | awk -F': ' '{print $2}'")
+        sysinfo_simulate_4G_ram.mem_used_slots = 0
+        for size in subprocess.check_output("sudo dmidecode -t 17 | grep 'Size:.*MB' | awk '{print $2}'",
+                                            shell=True, encoding='utf8').split('\n'):
+            if size:
+                sysinfo_simulate_4G_ram.mem_used_slots = sysinfo_simulate_4G_ram.mem_used_slots + 1
+        sysinfo.profile["Memory Total Slots"] = sysinfo_simulate_4G_ram.mem_total_slots
+        sysinfo.profile["Memory Used Slots"] = sysinfo_simulate_4G_ram.mem_used_slots
         # I assum the power consumption depends on used slots.
         # refer to https://docs.google.com/spreadsheets/d/1vzzwbyoKw5PS0yjBMevNGUkaP_l4GaRaixpaW6GW_NY/edit#gid=246122990
         # simulate the power consomption based on the reduced slots, so far we only know the difference of 1 and 2 using slot.
@@ -674,6 +677,11 @@ def process(description, args):
         sysinfo.save(profile)
         print('\nThe profile is saved to "' + profile + '".')
         chown_for_user(profile)
+        if hasattr(args, 'simulate') and args.simulate:
+            profile_simulate_4G_ram = get_system_filename(sysinfo_simulate_4G_ram) + '_simulate_4G_ram.profile'
+            sysinfo_simulate_4G_ram.save(profile_simulate_4G_ram)
+            print('\nThe simulated 4G ram profile is saved to "' + profile_simulate_4G_ram + '".')
+            chown_for_user(profile_simulate_4G_ram)
 
     if args.report:
         if args.profile and args.profile != '-':
@@ -695,8 +703,10 @@ def process(description, args):
         print('\nThe excel is saved to "' + excel + '".')
         chown_for_user(excel)
 
+
 def get_system_filename(sysinfo):
     return sysinfo.get_product_name() + '_' + sysinfo.get_bios_version()
+
 
 def erplot3_calculate(sysinfo):
     if sysinfo.product_type != 1:
