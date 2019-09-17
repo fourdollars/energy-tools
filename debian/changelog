@@ -1,3 +1,9 @@
+energy-tools (1.6.12) bionic; urgency=medium
+
+  * Fix an error for TEC_STORAGE of Energy Star 8.0 draft 2.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 17 Sep 2019 12:35:27 +0800
+
 energy-tools (1.6.11) bionic; urgency=medium
 
   * Use edid-decode to get the display information.

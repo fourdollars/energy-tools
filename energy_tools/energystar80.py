@@ -52,7 +52,7 @@ class EnergyStar80(object):
     def equation_two(self, fb_bw, mobile_workstation=False):
         """Equation 2: E_TEC_MAX Calculation for
                        Desktop, Integrated Desktop, and Notebook Computers"""
-        (core, clock, memory, _) = self.sysinfo.get_basic_info()
+        (core, clock, memory, disk) = self.sysinfo.get_basic_info()
         storage_info = self.sysinfo.profile
 
         pscore = core * clock
@@ -113,12 +113,19 @@ class EnergyStar80(object):
         else:
             tec_10glan = 0
 
-        if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
-            tec_storage = storage_info["3.5 inch HDD"] * 21.0 + storage_info["2.5 inch HDD"] * 2.1 \
-                + storage_info["Hybrid HDD/SSD"] * 0.8 + storage_info["SSD"] * 0.4
+        if disk > 1:
+            if self.sysinfo.computer_type == 3:
+                tec_storage = storage_info["3.5 inch HDD"] * 26.0 \
+                    + storage_info["2.5 inch HDD"] * 2.6 \
+                    + storage_info["Hybrid HDD/SSD"] * 1.0 \
+                    + storage_info["SSD"] * 0.5
+            else:
+                tec_storage = storage_info["3.5 inch HDD"] * 21.0 \
+                    + storage_info["2.5 inch HDD"] * 2.1 \
+                    + storage_info["Hybrid HDD/SSD"] * 0.8 \
+                    + storage_info["SSD"] * 0.4
         else:
-            tec_storage = storage_info["3.5 inch HDD"] * 26.0 + storage_info["2.5 inch HDD"] * 2.6 \
-                + storage_info["Hybrid HDD/SSD"] * 1.0 + storage_info["SSD"] * 0.5
+            tec_storage = 0
 
         if self.sysinfo.computer_type != 1:
             (e_p, resolution, area) = self.equation_three()
