@@ -15,22 +15,22 @@ optional arguments:
   -d, --debug           print debug messages
   -e, --excel           generate Excel file
   -r, --report          generate report file
-  -s, --simulate        simulate 4G ram
+  -s, --simulate        simulate 4G ram (Not support in Snap package.)
   -p PROFILE, --profile PROFILE
                         specify profile
   -t TEST, --test TEST  use test case
 ```
 
-You need to execute this command with root permission so it can collect the hardware information.
-
-`$ sudo energy-tools`
-
-If you are using some valid profile, you don't need to execute this command with root permission.
-
-`$ energy-tools -p MySystem.profile`
-
 ## Snap Package
-`$ snap install --beta --devmode energy-tools`
+
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-white.svg)](https://snapcraft.io/energy-tools)
+
+Or
+
+```
+$ snap install energy-tools
+$ snap connect energy-tools:hardware-observe
+```
 
 ## Ubuntu PPA
 ```
