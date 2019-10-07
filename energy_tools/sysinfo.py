@@ -205,13 +205,17 @@ when not required in favor of Integrated Graphics.""", "Switchable Graphics"):
                 self.profile["FB_BW"] = 0
             else:
                 self.discrete_gpu_num = self.question_int(
-                    "How many discrete graphics cards?", 10,
+                    """Discrete Graphics (dGfx):
+    A graphics processor (GPU) which must contain a local memory controller
+    interface and local graphics-specific memory.
+How many discrete graphics cards?""", 10,
                     "Discrete Graphics Cards")
                 if self.discrete_gpu_num > 0:
                     self.switchable = False
                     self.discrete = True
                     self.fb_bw = self.question_num("""How many is the display frame buffer bandwidth in gigabytes per second (GB/s) (abbr FB_BW)?
-This is a manufacturer declared parameter and should be calculated as follows: (Data Rate [Mhz] × Frame Buffer Data Width [bits]) / ( 8 × 1000 ) """,
+    This is a manufacturer declared parameter and should be calculated as follows
+    (Data Rate [Mhz] * Frame Buffer Data Width [bits]) / ( 8 * 1000 ) """,
                                                    "Frame Buffer Bandwidth")
                     self.profile["FB_BW"] = self.fb_bw
                 else:
@@ -238,7 +242,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""",
 
             # Check the storage type
             if self.product_type == 1:
-                storage_tuple = ("Unknown storage",
+                storage_tuple = ("Unknown / System Disk",
                                  "3.5 inch HDD",
                                  "2.5 inch HDD",
                                  "Hybrid HDD/SSD",
@@ -251,18 +255,20 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""",
                     else:
                         self.profile[disk_type] = 0
 
-                if disk_num != 0:
+                if disk_num > 1:
                     for disk in subprocess.check_output(
                             'ls /sys/block | grep -e sd -e nvme -e emmc',
                             shell=True, encoding='utf8').strip().split('\n'):
                         disk_type = self.question_int("""Which storage type for /sys/block/%s?
-[0] Unknown
+[0] Unknown / System Disk (by checking the output of `lsblk`)
 [1] 3.5" HDD
 [2] 2.5" HDD
 [3] Hybrid HDD/SSD
 [4] SSD (including M.2 port solutions)""" % disk, 4)
                         self.profile[storage_tuple[disk_type]] = \
                             self.profile[storage_tuple[disk_type]] + 1
+                else:
+                    self.profile["Unknown / System Disk"] = 1
 
             # Power Consumption
             self.off = self.question_num(
