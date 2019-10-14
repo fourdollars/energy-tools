@@ -1,3 +1,9 @@
+energy-tools (1.6.14) UNRELEASED; urgency=medium
+
+  * debian/control: Update Homepage.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 14 Oct 2019 14:08:23 +0800
+
 energy-tools (1.6.13) bionic; urgency=medium
 
   * Fix the error of FB_BW.
