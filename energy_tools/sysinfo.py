@@ -231,8 +231,8 @@ How many discrete graphics cards?""", 10,
                 (width, height) = self.get_resolution()
                 if width * height >= 2300000:
                     self.ep = self.question_bool("""Is it an Enhanced-perforcemance Integrated Display?
-  i. Contrast ratio of at least 60:1 measured at a horizontal viewing angle of at least 85 degrees from the
-     perpendicular on a flat screen and at least 83 degrees from the perpendicular on a curved screen,
+  i. Contrast ratio of at least 60:1 measured at a horizontal viewing angle of at least 85° from the
+     perpendicular on a flat screen and at least 83° from the perpendicular on a curved screen,
      with or without a screen cover glass;
  ii. A native resolution greater than or equal to 2.3 megapixels (MP); and
 iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""",
