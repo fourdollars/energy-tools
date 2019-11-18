@@ -2,13 +2,27 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import codecs
+import locale
 import logging
 import os
+import subprocess
 
 from energy_tools import core
 from energy_tools.version import __version__ as ver
 
 if __name__ == '__main__':
+    # Avoid some problems when there is no language Unicode locale
+    if codecs.lookup(locale.getpreferredencoding()).name == "ascii" \
+            and os.name == "posix":
+        output = subprocess.check_output(["locale", "-a"])\
+            .decode("ascii", "replace")
+        for line in output.splitlines():
+            this_locale = line.strip()
+            if this_locale.lower() in ("c.utf8", "c.utf-8"):
+                os.environ["LC_ALL"] = "C.UTF-8"
+                os.environ["LANG"] = "C.UTF-8"
+                break
     description = "Energy Tools %s for Energy Star 5/6/7/8 and ErP Lot 3" % ver
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-d", "--debug",
