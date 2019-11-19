@@ -31,6 +31,7 @@ optional arguments:
 ```
 $ snap install energy-tools
 $ snap connect energy-tools:hardware-observe
+$ snap connect energy-tools:home
 ```
 
 ## Ubuntu PPA
