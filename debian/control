@@ -10,7 +10,7 @@ Standards-Version: 4.1.4
 
 Package: energy-tools
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-energy-tools, edid-decode
+Depends: ${python3:Depends}, ${misc:Depends}, python3-energy-tools, edid-decode, ethtool
 Suggests: energy-tools-doc
 Description: Energy Tools for Energy Star and ErP Lot 3
  This program is designed to collect the system profile and

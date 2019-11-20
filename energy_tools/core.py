@@ -515,6 +515,7 @@ def process(description, args):
             'Screen Area': 83.4,
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
+            '10 Gigabit Ethernet': 0,
             'Memory Size': 8,
             'TV Tuner': False,
             'Off Mode': 1.0,
@@ -543,6 +544,7 @@ def process(description, args):
             'Screen Area': 83.4,
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
+            '10 Gigabit Ethernet': 0,
             'Memory Size': 8,
             'TV Tuner': False,
             'Off Mode': 0.5,
@@ -559,6 +561,7 @@ def process(description, args):
             'Disk Number': 2,
             "SSD": 2,
             'Gigabit Ethernet': 0,
+            '10 Gigabit Ethernet': 0,
             'Off Mode': 2.0,
             'Sleep Mode': 4.0,
             'Long Idle Mode': 50.0,
@@ -573,6 +576,7 @@ def process(description, args):
             'CPU Cores': 1,
             'More Discrete Graphics': False,
             'Gigabit Ethernet': 1,
+            '10 Gigabit Ethernet': 0,
             'Disk Number': 1,
             'Off Mode': 2.7,
             'Short Idle Mode': 65.0})
@@ -592,6 +596,7 @@ def process(description, args):
             'Long Idle Mode': 15.0,
             'Short Idle Mode': 15.0,
             'Gigabit Ethernet': 1,
+            '10 Gigabit Ethernet': 0,
             'Media Codec': True})
     elif args.test == 6:
         print("""# Test case for Notebooks with discrete graphics of Energy Star 7.0
@@ -614,6 +619,7 @@ def process(description, args):
             'Screen Area': 83.4,
             'Enhanced Display': False,
             'Gigabit Ethernet': 1,
+            '10 Gigabit Ethernet': 0,
             'Memory Size': 8,
             'TV Tuner': False,
             'Off Mode': 0.5,

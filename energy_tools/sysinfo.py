@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from logging import debug, warning
+from logging import debug
 from pathlib import Path
 
 import json
@@ -365,7 +365,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
 
         # Ethernet
         if "Gigabit Ethernet" in self.profile:
-            self.eee = self.profile["Gigabit Ethernet"]
+            self.one_glan = self.profile["Gigabit Ethernet"]
         else:
             self._check_ethernet_num()
 
@@ -400,18 +400,24 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
         return False
 
     def _check_ethernet_num(self):
-        self.eee = 0
+        self.one_glan = 0
         self.ten_glan = 0
         for dev in os.listdir("/sys/class/net/"):
             if dev.startswith('eth') or dev.startswith('en'):
-                if os.path.exists("/sys/class/net/" + dev + "/speed"):
-                    speed = 0
-                    with open("/sys/class/net/" + dev + "/speed") as f:
-                        speed = int(f.read())
-                    if speed == 10000:
-                        self.ten_glan = self.ten_glan + 1
-                    elif speed == 1000:
-                        self.eee = self.eee + 1
+                eee_enabled = False
+                output = subprocess.check_output(
+                    "ethtool --show-eee " + dev,
+                    shell=True, encoding='utf8')
+                for line in output.split('\t'):
+                    if eee_enabled:
+                        if "10000baseT/Full" in line:
+                            self.ten_glan = self.ten_glan + 1
+                            break
+                        elif "1000baseT/Full" in line:
+                            self.one_glan = self.one_glan + 1
+                            break
+                    elif "EEE status: enabled" in line:
+                        eee_enabled = True
 
     def _get_cpu_vendor(self):
         vendor = subprocess.check_output(
@@ -501,16 +507,16 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
         self.profile["Disk Number"] = self.disk_num
         return self.disk_num
 
-    def get_eee_num(self):
+    def get_1glan_num(self):
         if "Gigabit Ethernet" in self.profile:
-            self.eee = self.profile["Gigabit Ethernet"]
-            return self.eee
+            self.one_glan = self.profile["Gigabit Ethernet"]
+            return self.one_glan
 
         self._check_ethernet_num()
 
-        debug("Gigabit Ethernet: %s" % (self.eee))
-        self.profile["Gigabit Ethernet"] = self.eee
-        return self.eee
+        debug("Gigabit Ethernet: %s" % (self.one_glan))
+        self.profile["Gigabit Ethernet"] = self.one_glan
+        return self.one_glan
 
     def get_10glan_num(self):
         if "10 Gigabit Ethernet" in self.profile:

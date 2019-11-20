@@ -123,9 +123,9 @@ class EnergyStar60:
                 TEC_GRAPHICS = 0
 
         if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
-            TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * self.sysinfo.get_eee_num()
+            TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * self.sysinfo.get_1glan_num()
         else:
-            TEC_EEE = 8.76 * 0.2 * (0.10 + 0.30) * self.sysinfo.get_eee_num()
+            TEC_EEE = 8.76 * 0.2 * (0.10 + 0.30) * self.sysinfo.get_1glan_num()
 
         if self.sysinfo.computer_type == 1 or self.sysinfo.computer_type == 2:
             TEC_STORAGE = 26 * (disk - 1)
@@ -171,7 +171,7 @@ class EnergyStar60:
     def equation_five(self):
         """Equation 5: P_TEC_MAX Calculation for Workstations"""
         (T_SLEEP, T_LONG_IDLE, T_SHORT_IDLE) = (0.10, 0.15, 0.40)
-        P_EEE = 0.2 * self.sysinfo.get_eee_num()
+        P_EEE = 0.2 * self.sysinfo.get_1glan_num()
         P_MAX = self.sysinfo.max_power
         N_HDD = self.sysinfo.disk_num
         P_TEC_MAX = 0.28 * (P_MAX + N_HDD * 5) + 8.76 * P_EEE * (T_SLEEP + T_LONG_IDLE + T_SHORT_IDLE)
@@ -192,7 +192,7 @@ class EnergyStar60:
         N = self.sysinfo.disk_num
         P_IDLE_BASE = 24.0
         P_IDLE_HDD = 8.0
-        P_EEE = 0.2 * self.sysinfo.get_eee_num()
+        P_EEE = 0.2 * self.sysinfo.get_1glan_num()
         P_IDLE_MAX = P_IDLE_BASE + (N - 1) * P_IDLE_HDD + P_EEE
         return P_IDLE_MAX
 
@@ -217,7 +217,7 @@ class EnergyStar60:
             TEC_INT_DISPLAY = 0
         debug("TEC_INT_DISPLAY = %s" % (TEC_INT_DISPLAY))
 
-        TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * self.sysinfo.get_eee_num()
+        TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * self.sysinfo.get_1glan_num()
 
         E_TEC_MAX = TEC_BASE + TEC_GRAPHICS + TEC_WOL + TEC_INT_DISPLAY + TEC_EEE
 

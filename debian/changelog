@@ -1,8 +1,9 @@
-energy-tools (1.6.14) UNRELEASED; urgency=medium
+energy-tools (1.6.14) bionic; urgency=medium
 
   * debian/control: Update Homepage.
+  * Use ethtool to get Ethernet information.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 14 Oct 2019 14:08:23 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 20 Nov 2019 15:53:51 +0800
 
 energy-tools (1.6.13) bionic; urgency=medium
 

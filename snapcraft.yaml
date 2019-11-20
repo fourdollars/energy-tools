@@ -20,6 +20,7 @@ parts:
     parse-info: [setup.py]
     stage-packages:
       - edid-decode
+      - ethtool
       - python3-debian
       - python3-xlsxwriter
 
