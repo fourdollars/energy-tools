@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from logging import debug
+from logging import debug, warning
 from pathlib import Path
 
 import json
@@ -410,6 +410,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
                         "ethtool --show-eee " + dev,
                         shell=True, encoding='utf8')
                 except subprocess.CalledProcessError:
+                    warning("`ethtool --show-eee " + dev + "` failed. Please check it.")
                     continue
                 for line in output.split('\t'):
                     if eee_enabled:
