@@ -405,9 +405,12 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
         for dev in os.listdir("/sys/class/net/"):
             if dev.startswith('eth') or dev.startswith('en'):
                 eee_enabled = False
-                output = subprocess.check_output(
-                    "ethtool --show-eee " + dev,
-                    shell=True, encoding='utf8')
+                try:
+                    output = subprocess.check_output(
+                        "ethtool --show-eee " + dev,
+                        shell=True, encoding='utf8')
+                except subprocess.CalledProcessError:
+                    continue
                 for line in output.split('\t'):
                     if eee_enabled:
                         if "10000baseT/Full" in line:
