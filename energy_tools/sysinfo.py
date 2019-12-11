@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from logging import debug, warning
+from logging import debug, warning, error
 from pathlib import Path
 
 import json
@@ -30,11 +30,16 @@ class SysInfo:
     def edid_decode(self):
         monitor = None
         for edid in Path('/sys/devices').glob('**/edid'):
-            with open(edid, 'rb') as f:
-                content = f.read()
-                if len(content) != 0:
-                    monitor = edid
-                    break
+            try:
+                with open(edid, 'rb') as f:
+                    content = f.read()
+                    if len(content) != 0:
+                        monitor = edid
+                        break
+            except PermissionError as err:
+                if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
+                    error('Please execute `snap connect energy-tools:hardware-observe` to get the permissions.')
+                raise err
         debug("EDID location is %s" % (monitor))
 
         if monitor is None:
@@ -626,6 +631,11 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             data.write('\n')
 
     def save(self, filename):
-        with open(filename, "w") as data:
-            data.write(json.dumps(self.profile, sort_keys=True, indent=4,
-                                  separators=(',', ': ')) + '\n')
+        try:
+            with open(filename, "w") as data:
+                data.write(json.dumps(self.profile, sort_keys=True, indent=4,
+                                      separators=(',', ': ')) + '\n')
+        except PermissionError as err:
+            if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
+                error('Please execute `snap connect energy-tools:home` to get the permissions.')
+            raise err
