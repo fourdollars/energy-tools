@@ -107,6 +107,8 @@ class SysInfo:
                 else:
                     self.profile[name] = False
                     return False
+            else:
+                warning("Please input a valid answer.")
 
     def question_int(self, prompt, maximum, name=None):
         if name and name in self.profile:
@@ -114,7 +116,7 @@ class SysInfo:
         while True:
             s = input(prompt + "\n>> ")
             if not set(s).issubset("0123456789"):
-                print("Please input a positive integer <= %s." % (maximum))
+                warning("Please input a positive integer <= %s." % (maximum))
             try:
                 num = int(s)
                 if num <= maximum:
@@ -123,7 +125,7 @@ class SysInfo:
                         self.profile[name] = num
                     return num
             except ValueError:
-                print("Please input a positive integer <= %s." % (maximum))
+                warning("Please input a positive integer <= %s." % (maximum))
 
     def question_num(self, prompt, name):
         if name in self.profile:
@@ -136,7 +138,7 @@ class SysInfo:
                 self.profile[name] = num
                 return num
             except ValueError:
-                print("Please input a valid number.")
+                warning("Please input a valid number.")
 
     def get_diagonal(self):
         key = 'Display Diagonal'
