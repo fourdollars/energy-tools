@@ -422,8 +422,9 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             return self.profile["Wake-on-LAN"]
         for dev in os.listdir("/sys/class/net/"):
             if dev.startswith('eth') or dev.startswith('en'):
-                wakeup = os.path.join("/sys/class/net/", dev,
-                                      "/device/power/wakeup")
+                wakeup = os.path.join("/sys", "class", "net", dev,
+                                      "device", "power", "wakeup")
+                debug("Checking " + wakeup)
                 if os.path.exists(wakeup):
                     with open(wakeup, 'r') as f:
                         value = f.read()
