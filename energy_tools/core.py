@@ -635,15 +635,20 @@ def process(description, args):
             for line in sys.stdin:
                 tmp = tmp + line.strip()
         elif os.path.exists(args.profile):
-            with open(args.profile, "r") as data:
-                tmp = data.read().replace('\n', '')
+            try:
+                with open(args.profile, "r") as data:
+                    tmp = data.read().replace('\n', '')
+            except PermissionError as err:
+                if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
+                    error('Please execute `snap connect energy-tools:home` to get the permissions.')
+                raise err
         else:
             error('Can not read %s.' % args.profile)
             return
         profile = json.loads(tmp)
         sysinfo = SysInfo(profile)
     else:
-        sysinfo = SysInfo()
+        sysinfo = SysInfo(manual=args.manual)
 
     output = energystar_calculate(sysinfo)
 
@@ -695,8 +700,13 @@ def process(description, args):
         else:
             report = get_system_filename(sysinfo) + '.report'
         sysinfo.report(report)
-        with open(report, 'a') as target:
-            target.write(output + '\n')
+        try:
+            with open(report, 'a') as target:
+                target.write(output + '\n')
+        except PermissionError as err:
+            if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
+                error('Please execute `snap connect energy-tools:home` to get the permissions.')
+                raise err
         print('\nThe report is saved to "' + report + '".')
         chown_for_user(report)
 

@@ -64,7 +64,12 @@ def generate_excel(sysinfo, version, output):
         generate_excel_for_thin_clients(book, sysinfo, version)
 
     if sysinfo.product_type == 1:
-        excel.save()
+        try:
+            excel.save()
+        except PermissionError as err:
+            if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
+                error('Please execute `snap connect energy-tools:home` to get the permissions.')
+            raise err
     else:
         book.close()
 
@@ -406,7 +411,7 @@ def generate_excel_for_computers(excel, sysinfo):
     else:
         msg = "No"
     excel.tcell("Discrete audio card", msg, ["Yes", "No"], abbr='audio')
-    excel.tcell("IEEE 802.3az compliant Gigabit Ethernet", sysinfo.eee, abbr='eee')
+    excel.tcell("IEEE 802.3az compliant Gigabit Ethernet", sysinfo.one_glan, abbr='eee')
 
     excel.down()
 
@@ -918,9 +923,9 @@ def generate_excel_for_computers(excel, sysinfo):
 
     # TEC_EEE
     if sysinfo.computer_type == 3:
-        TEC_EEE = 8.76 * 0.2 * (0.1 + 0.3) * sysinfo.eee
+        TEC_EEE = 8.76 * 0.2 * (0.1 + 0.3) * sysinfo.one_glan
     else:
-        TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * sysinfo.eee
+        TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * sysinfo.one_glan
     excel.tcell('TEC_EEE','=IF(EXACT(%(computer)s, "Notebook"), 8.76 * 0.2 * (0.1 + 0.3) * %(eee)s, 8.76 * 0.2 * (0.15 + 0.35) * %(eee)s)', TEC_EEE)
 
     # ALLOWANCE_PSU
@@ -1364,7 +1369,7 @@ def generate_excel_for_workstations(book, sysinfo, version):
     sheet.write("A3", "Number of Hard Drives", field)
     sheet.write("B3", sysinfo.disk_num, value)
     sheet.write("A4", "IEEE 802.3az compliant Gigabit Ethernet", field)
-    sheet.write("B4", sysinfo.eee, value)
+    sheet.write("B4", sysinfo.one_glan, value)
 
     sheet.merge_range("A6:B6", "Power Consumption", header)
     sheet.write("A7", "Off mode (W)", field)
@@ -1427,7 +1432,7 @@ def generate_excel_for_workstations(book, sysinfo, version):
     sheet.write('A25', 'P_TEC', result)
     sheet.write('B25', '=(B21*B7+B22*B8+B23*B9+B24*B10)', result_value, P_TEC)
 
-    P_MAX = 0.28 * (sysinfo.max_power + sysinfo.disk_num * 5) + 8.76 * 0.2 * sysinfo.eee * (T_SLEEP + T_LONG_IDLE + T_SHORT_IDLE)
+    P_MAX = 0.28 * (sysinfo.max_power + sysinfo.disk_num * 5) + 8.76 * 0.2 * sysinfo.one_glan * (T_SLEEP + T_LONG_IDLE + T_SHORT_IDLE)
     sheet.write('A26', 'P_MAX', result)
     sheet.write('B26', '=0.28*(B11+B3*5) + 8.76*0.2*B4*(B22 + B23 + B24)', result_value, P_MAX)
 
@@ -1524,7 +1529,7 @@ def generate_excel_for_small_scale_servers(book, sysinfo, version):
             'No']})
 
     sheet.write("A7", "IEEE 802.3az compliant Gigabit Ethernet", field)
-    sheet.write("B7", sysinfo.eee, value)
+    sheet.write("B7", sysinfo.one_glan, value)
 
     sheet.write("A8", "Number of Hard Drives", field)
     sheet.write("B8", sysinfo.disk_num, value)
@@ -1592,7 +1597,7 @@ def generate_excel_for_small_scale_servers(book, sysinfo, version):
     sheet.write('A26', 'P_IDLE_HDD', field1)
     sheet.write('B26', P_IDLE_HDD, value1)
 
-    P_EEE = 0.2 * sysinfo.eee
+    P_EEE = 0.2 * sysinfo.one_glan
     sheet.write('A27', 'P_EEE', field1)
     sheet.write('B27', '=0.2*B7', value1, P_EEE)
 
@@ -1688,7 +1693,7 @@ def generate_excel_for_thin_clients(book, sysinfo, version):
             'No']})
 
     sheet.write("A6", "IEEE 802.3az compliant Gigabit Ethernet", field)
-    sheet.write("B6", sysinfo.eee, value)
+    sheet.write("B6", sysinfo.one_glan, value)
 
     sheet.merge_range("A8:B8", "Power Consumption", header)
     sheet.write("A9", "Off mode (W)", field)
@@ -1836,7 +1841,7 @@ def generate_excel_for_thin_clients(book, sysinfo, version):
     sheet.write("D20", "TEC_INT_DISPLAY", field1)
     sheet.write("E20", '=IF(EXACT(A14, "Display"), 8.76 * 0.35 * (1+G12) * (4*G13 + 0.05*G14), 0)', value1, TEC_INT_DISPLAY)
 
-    TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * sysinfo.eee
+    TEC_EEE = 8.76 * 0.2 * (0.15 + 0.35) * sysinfo.one_glan
     sheet.write("D21", "TEC_EEE", field1)
     sheet.write("E21", '=8.76 * 0.2 * (0.15 + 0.35) * B6', value1, TEC_EEE)
 

@@ -159,13 +159,22 @@ class SysInfo:
             self.profile[key] = self.width_mm * self.height_mm / 25.4 / 25.4
             return self.profile[key]
 
-    def __init__(self, profile=None):
+    def __init__(self, profile=None, chassis=0, manual=False):
         self.ep = False
         self.diagonal = 0.0
         self.width = None
         self.height = None
         self.width_mm = None
         self.height_mm = None
+
+        if not manual and not profile and os.path.exists('/sys/class/dmi/id/chassis_type'):
+            try:
+                with open('/sys/class/dmi/id/chassis_type') as chassis_type:
+                    chassis = int(chassis_type.read().strip())
+            except PermissionError as err:
+                if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
+                    error('Please execute `snap connect energy-tools:hardware-observe` to get the permissions.')
+                raise err
 
         if profile:
             self.profile = profile
@@ -175,6 +184,26 @@ class SysInfo:
         # Assume there is a X Window System
         if 'DISPLAY' not in os.environ:
             os.environ['DISPLAY'] = ':0'
+
+        product_type = ""
+
+        if chassis == 3 or chassis == 16:
+            self.profile['Product Type'] = 1
+            self.profile['Computer Type'] = 1
+            product_type = "Desktop"
+        elif chassis == 13:
+            self.profile['Product Type'] = 1
+            self.profile['Computer Type'] = 2
+            product_type = "Integrated Desktop"
+        elif chassis == 10:
+            self.profile['Product Type'] = 1
+            self.profile['Computer Type'] = 3
+            product_type = "Notebook"
+
+        if product_type:
+            warning("According to /sys/class/dmi/id/chassis_type = " +
+                    str(chassis) + ", this should be a " + product_type +
+                    " Computer. If it is wrong, please use '-m' option to skip this detection.")
 
         # Product type
         self.product_type = self.question_int("""Which product type would you like to verify?
@@ -397,7 +426,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
                                       "/device/power/wakeup")
                 if os.path.exists(wakeup):
                     with open(wakeup, 'r') as f:
-                        value = f.raed()
+                        value = f.read()
                         if 'enabled' in value:
                             self.profile["Wake-on-LAN"] = True
                             return True
@@ -447,6 +476,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             subprocess.check_output('cat /proc/cpuinfo | grep cores',
                                     shell=True, encoding='utf8')
         except subprocess.CalledProcessError:
+            warning("Can not check the core number by /proc/cpuinfo. Assume the core number is 1")
             self.cpu_core = 1
         else:
             self.cpu_core = self._int_cmd(

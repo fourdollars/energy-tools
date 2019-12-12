@@ -14,17 +14,36 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--debug",
                         help="print debug messages", action="store_true")
     parser.add_argument("-e", "--excel",
-                        help="generate Excel file",  action="store_true")
+                        help="generate Excel file", action="store_true")
+    parser.add_argument("-m", "--manual",
+                        help="Skip checking chassis type", action="store_true")
     parser.add_argument("-r", "--report",
                         help="generate report file", action="store_true")
     if 'SNAP_NAME' not in os.environ:
         parser.add_argument("-s", "--simulate",
-                            help="simulate 4G ram",      action="store_true")
+                            help="simulate 4G ram", action="store_true")
     parser.add_argument("-p", "--profile",
-                        help="specify profile",      type=str)
+                        help="specify profile", type=str)
     parser.add_argument("-t", "--test",
-                        help="use test case",        type=int)
+                        help="use test case", type=int)
     args = parser.parse_args()
+
+    logging.addLevelName(logging.DEBUG,
+                         "\033[1;96m%s\033[1;0m" %
+                         logging.getLevelName(logging.DEBUG))
+    logging.addLevelName(logging.INFO,
+                         "\033[1;32m%s\033[1;0m" %
+                         logging.getLevelName(logging.INFO))
+    logging.addLevelName(logging.WARNING,
+                         "\033[1;33m%s\033[1;0m" %
+                         logging.getLevelName(logging.WARNING))
+    logging.addLevelName(logging.ERROR,
+                         "\033[1;31m%s\033[1;0m" %
+                         logging.getLevelName(logging.ERROR))
+    logging.addLevelName(logging.CRITICAL,
+                         "\033[1;41m%s\033[1;0m" %
+                         logging.getLevelName(logging.CRITICAL))
+
     if args.debug:
         logging.basicConfig(format='<%(levelname)s> %(message)s',
                             level=logging.DEBUG)
