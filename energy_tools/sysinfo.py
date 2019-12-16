@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from logging import debug, warning, error
+from logging import debug, info, warning, error
 from pathlib import Path
 
 import json
@@ -203,7 +203,7 @@ class SysInfo:
             product_type = "Notebook"
 
         if product_type:
-            warning("According to /sys/class/dmi/id/chassis_type = " +
+            info("According to /sys/class/dmi/id/chassis_type = " +
                     str(chassis) + ", this should be a " + product_type +
                     " Computer. If it is wrong, please use '-m' option to skip this detection.")
 
@@ -292,11 +292,25 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""",
                         self.profile[disk_type] = 0
 
                 if disk_num > 1:
+                    try:
+                        print(subprocess.check_output("udisksctl status", shell=True, encoding='utf8'))
+                    except subprocess.CalledProcessError:
+                        if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
+                            warning('Please execute `snap connect energy-tools:udisks2` to get the permissions.')
                     for disk in subprocess.check_output(
                             'ls /sys/block | grep -e sd -e nvme -e emmc',
                             shell=True, encoding='utf8').strip().split('\n'):
+                        if not manual:
+                            try:
+                                subprocess.check_output("udisksctl info -b /dev/" + disk + " | grep HintSystem | grep -i true", shell=True, encoding='utf8', stderr=subprocess.STDOUT)
+                                self.profile["Unknown / System Disk"] = \
+                                    self.profile["Unknown / System Disk"] + 1
+                                info("/sys/block/" + disk + " is detected as the system disk. If it is wrong, please use '-m' option to skip this detection.")
+                                continue
+                            except subprocess.CalledProcessError as e:
+                                pass
                         disk_type = self.question_int("""Which storage type for /sys/block/%s?
-[0] Unknown / System Disk (by checking the output of `lsblk`)
+[0] Unknown / System Disk
 [1] 3.5" HDD
 [2] 2.5" HDD
 [3] Hybrid HDD/SSD

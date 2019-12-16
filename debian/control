@@ -10,7 +10,7 @@ Standards-Version: 4.1.4
 
 Package: energy-tools
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-energy-tools, edid-decode, ethtool
+Depends: ${python3:Depends}, ${misc:Depends}, python3-energy-tools
 Suggests: energy-tools-doc
 Description: Energy Tools for Energy Star and ErP Lot 3
  This program is designed to collect the system profile and
@@ -28,7 +28,12 @@ Description: Design flow for Energy Tools
 
 Package: python3-energy-tools
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-debian, python3-xlsxwriter
+Depends: ${python3:Depends}, ${misc:Depends},
+ edid-decode,
+ ethtool,
+ python3-debian,
+ python3-xlsxwriter,
+ udisks2
 Recommends: energy-tools
 Description: Python3 library for Energy Tools
  This program is designed to collect the system profile and

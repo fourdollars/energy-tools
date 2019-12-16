@@ -16,7 +16,8 @@ if __name__ == '__main__':
     parser.add_argument("-e", "--excel",
                         help="generate Excel file", action="store_true")
     parser.add_argument("-m", "--manual",
-                        help="Skip checking chassis type", action="store_true")
+                        help="Skip the chassis type and system disk checking",
+                        action="store_true")
     parser.add_argument("-r", "--report",
                         help="generate report file", action="store_true")
     if 'SNAP_NAME' not in os.environ:
@@ -48,7 +49,8 @@ if __name__ == '__main__':
         logging.basicConfig(format='<%(levelname)s> %(message)s',
                             level=logging.DEBUG)
     else:
-        logging.basicConfig(format='<%(levelname)s> %(message)s')
+        logging.basicConfig(format='<%(levelname)s> %(message)s',
+                            level=logging.INFO)
 
     try:
         core.process(description, args)
