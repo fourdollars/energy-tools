@@ -13,6 +13,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-d", "--debug",
                         help="print debug messages", action="store_true")
+    parser.add_argument("-q", "--quiet",
+                        help="Don't print info messages", action="store_true")
     parser.add_argument("-e", "--excel",
                         help="generate Excel file", action="store_true")
     parser.add_argument("-m", "--manual",
@@ -48,9 +50,11 @@ if __name__ == '__main__':
     if args.debug:
         logging.basicConfig(format='<%(levelname)s> %(message)s',
                             level=logging.DEBUG)
-    else:
+    elif not args.quiet:
         logging.basicConfig(format='<%(levelname)s> %(message)s',
                             level=logging.INFO)
+    else:
+        logging.basicConfig(format='<%(levelname)s> %(message)s')
 
     try:
         core.process(description, args)

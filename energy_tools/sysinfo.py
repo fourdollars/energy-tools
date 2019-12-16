@@ -203,9 +203,9 @@ class SysInfo:
             product_type = "Notebook"
 
         if product_type:
-            info("According to /sys/class/dmi/id/chassis_type = " +
-                    str(chassis) + ", this should be a " + product_type +
-                    " Computer. If it is wrong, please use '-m' option to skip this detection.")
+            info("According to /sys/class/dmi/id/chassis_type (" + str(chassis)
+                 + "), it should be a " + product_type + " Computer.")
+            info("Use '-m' option to skip this detection if wrong.")
 
         # Product type
         self.product_type = self.question_int("""Which product type would you like to verify?
@@ -293,7 +293,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""",
 
                 if disk_num > 1:
                     try:
-                        print(subprocess.check_output("udisksctl status", shell=True, encoding='utf8'))
+                        info(subprocess.check_output("udisksctl status", shell=True, encoding='utf8').strip())
                     except subprocess.CalledProcessError:
                         if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
                             warning('Please execute `snap connect energy-tools:udisks2` to get the permissions.')
@@ -305,7 +305,8 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""",
                                 subprocess.check_output("udisksctl info -b /dev/" + disk + " | grep HintSystem | grep -i true", shell=True, encoding='utf8', stderr=subprocess.STDOUT)
                                 self.profile["Unknown / System Disk"] = \
                                     self.profile["Unknown / System Disk"] + 1
-                                info("/sys/block/" + disk + " is detected as the system disk. If it is wrong, please use '-m' option to skip this detection.")
+                                info("/sys/block/" + disk + " is detected as the system disk.")
+                                info("Use '-m' option to skip this detection if wrong.")
                                 continue
                             except subprocess.CalledProcessError as e:
                                 pass
