@@ -21,7 +21,6 @@ parts:
     stage-packages:
       - edid-decode
       - ethtool
-      - udisks2
       - python3-debian
       - python3-xlsxwriter
 
@@ -31,4 +30,4 @@ apps:
     plugs:
       - hardware-observe
       - home
-      - udisks2
+      - mount-observe

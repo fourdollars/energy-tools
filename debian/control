@@ -32,8 +32,7 @@ Depends: ${python3:Depends}, ${misc:Depends},
  edid-decode,
  ethtool,
  python3-debian,
- python3-xlsxwriter,
- udisks2
+ python3-xlsxwriter
 Recommends: energy-tools
 Description: Python3 library for Energy Tools
  This program is designed to collect the system profile and

@@ -292,23 +292,21 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""",
                         self.profile[disk_type] = 0
 
                 if disk_num > 1:
-                    try:
-                        info(subprocess.check_output("udisksctl status", shell=True, encoding='utf8').strip())
-                    except subprocess.CalledProcessError:
-                        if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
-                            warning('Please execute `snap connect energy-tools:udisks2` to get the permissions.')
                     for disk in subprocess.check_output(
                             'ls /sys/block | grep -e sd -e nvme -e emmc',
                             shell=True, encoding='utf8').strip().split('\n'):
                         if not manual:
                             try:
-                                subprocess.check_output("udisksctl info -b /dev/" + disk + " | grep HintSystem | grep -i true", shell=True, encoding='utf8', stderr=subprocess.STDOUT)
+                                subprocess.check_output("grep " + disk + " /proc/mounts | grep boot", shell=True, encoding='utf8', stderr=subprocess.STDOUT)
                                 self.profile["Unknown / System Disk"] = \
                                     self.profile["Unknown / System Disk"] + 1
                                 info("/sys/block/" + disk + " is detected as the system disk.")
                                 info("Use '-m' option to skip this detection if wrong.")
                                 continue
                             except subprocess.CalledProcessError as e:
+                                if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools' and 'grep: /proc/mounts: Permission denied' in e.output:
+                                    print(e.output.strip())
+                                    warning('Please execute `snap connect energy-tools:mount-observe` to get the permissions.')
                                 pass
                         disk_type = self.question_int("""Which storage type for /sys/block/%s?
 [0] Unknown / System Disk
