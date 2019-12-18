@@ -251,8 +251,8 @@ def calculate_product_type1_estar7(sysinfo):
     return data
 
 def calculate_product_type1_estar8(sysinfo):
-    """Calculate Energy Star 8 draft 2"""
-    data = tee("\nEnergy Star 8 draft 2:\n")
+    """Calculate Energy Star 8"""
+    data = tee("\nEnergy Star 8:\n")
     estar80 = EnergyStar80(sysinfo)
     e_tec = estar80.equation_one()
     fb_bw = sysinfo.fb_bw

@@ -37,8 +37,10 @@ class SysInfo:
                         monitor = edid
                         break
             except PermissionError as err:
-                if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
-                    error('Please execute `snap connect energy-tools:hardware-observe` to get the permissions.')
+                if 'SNAP_NAME' in os.environ and \
+                        os.environ['SNAP_NAME'] == 'energy-tools':
+                    error('Please execute `snap connect energy-tools:'
+                          + 'hardware-observe` to get the permissions.')
                 raise err
         debug("EDID location is %s" % (monitor))
 
@@ -169,13 +171,16 @@ class SysInfo:
         self.width_mm = None
         self.height_mm = None
 
-        if not manual and not profile and os.path.exists('/sys/class/dmi/id/chassis_type'):
+        if not manual and not profile and \
+                os.path.exists('/sys/class/dmi/id/chassis_type'):
             try:
                 with open('/sys/class/dmi/id/chassis_type') as chassis_type:
                     chassis = int(chassis_type.read().strip())
             except PermissionError as err:
-                if 'SNAP_NAME' in os.environ and os.environ['SNAP_NAME'] == 'energy-tools':
-                    error('Please execute `snap connect energy-tools:hardware-observe` to get the permissions.')
+                if 'SNAP_NAME' in os.environ and \
+                        os.environ['SNAP_NAME'] == 'energy-tools':
+                    error('Please execute `snap connect energy-tools:'
+                          + 'hardware-observe` to get the permissions.')
                 raise err
 
         if profile:
@@ -418,6 +423,11 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
         else:
             self._check_ethernet_num()
 
+        if "1~10 Gigabit Ethernet" in self.profile:
+            self.one_to_ten_glan = self.profile["1~10 Gigabit Ethernet"]
+        else:
+            self._check_ethernet_num()
+
         if "10 Gigabit Ethernet" in self.profile:
             self.ten_glan = self.profile["10 Gigabit Ethernet"]
         else:
@@ -451,6 +461,7 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
 
     def _check_ethernet_num(self):
         self.one_glan = 0
+        self.one_to_ten_glan = 0
         self.ten_glan = 0
         for dev in os.listdir("/sys/class/net/"):
             if dev.startswith('eth') or dev.startswith('en'):
@@ -460,12 +471,19 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
                         "ethtool --show-eee " + dev,
                         shell=True, encoding='utf8')
                 except subprocess.CalledProcessError:
-                    warning("`ethtool --show-eee " + dev + "` failed. Please check it.")
+                    warning("`ethtool --show-eee " + dev
+                            + "` failed. Please check it.")
                     continue
                 for line in output.split('\t'):
                     if eee_enabled:
                         if "10000baseT/Full" in line:
                             self.ten_glan = self.ten_glan + 1
+                            break
+                        elif "5000baseT/Full" in line:
+                            self.one_to_ten_glan = self.one_to_ten_glan + 1
+                            break
+                        elif "2500baseT/Full" in line:
+                            self.one_to_ten_glan = self.one_to_ten_glan + 1
                             break
                         elif "1000baseT/Full" in line:
                             self.one_glan = self.one_glan + 1
@@ -572,6 +590,17 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
         debug("Gigabit Ethernet: %s" % (self.one_glan))
         self.profile["Gigabit Ethernet"] = self.one_glan
         return self.one_glan
+
+    def get_1to10glan_num(self):
+        if "1~10 Gigabit Ethernet" in self.profile:
+            self.one_to_ten_glan = self.profile["1~10 Gigabit Ethernet"]
+            return self.one_to_ten_glan
+
+        self._check_ethernet_num()
+
+        debug("1~10 Gigabit Ethernet: %s" % (self.one_to_ten_glan))
+        self.profile["1~10 Gigabit Ethernet"] = self.one_to_ten_glan
+        return self.one_to_ten_glan
 
     def get_10glan_num(self):
         if "10 Gigabit Ethernet" in self.profile:
