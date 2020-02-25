@@ -34,8 +34,17 @@ class ErPLot26:
         self._verify_s3_s5()
 
     def _verify_s3_s5(self):
+        passed = True
+
         if self.sysinfo.sleep_wol > 2:
-            print("  Fail because P_SLEEP_WOL (%s) > 2.0"
+            print("  Failed. P_SLEEP_WOL (%s) > 2.0"
                   % self.sysinfo.sleep_wol)
+            passed = False
+
         if self.sysinfo.off_wol > 0.5:
-            print("  Fail because P_OFF_WOL (%s) > 0.5" % self.sysinfo.off_wol)
+            print("  Failed. P_OFF_WOL (%s) > 0.5" % self.sysinfo.off_wol)
+            passed = False
+
+        if passed:
+            print("  Pass. P_SLEEP_WOL (%s) <= 2.0 and P_OFF_WOL (%s) <= 0.5"
+                  % (self.sysinfo.sleep_wol, self.sysinfo.off_wol))
