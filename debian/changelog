@@ -1,3 +1,9 @@
+energy-tools (1.7.2) bionic; urgency=medium
+
+  * Only check the power consumptions of WOL for ErP Lot 26.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 25 Feb 2020 15:48:29 +0800
+
 energy-tools (1.7.1) bionic; urgency=medium
 
   * Check ErP Lot 26 Tier 3 (1 Jan 2019).
