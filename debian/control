@@ -12,10 +12,10 @@ Package: energy-tools
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}, python3-energy-tools
 Suggests: energy-tools-doc
-Description: Energy Tools for Energy Star and ErP Lot 3
+Description: Energy Tools for Energy Star and ErP Lot 3 or Lot 26
  This program is designed to collect the system profile and
  calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and
- ErP Lot 3 (Jan. 2016)
+ ErP Lot 3 (Jan. 2016) or Lot 26 (Jan. 2019)
 
 Package: energy-tools-doc
 Architecture: all
@@ -37,4 +37,4 @@ Recommends: energy-tools
 Description: Python3 library for Energy Tools
  This program is designed to collect the system profile and
  calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and
- ErP Lot 3 (Jan. 2016) (Library)
+ ErP Lot 3 (Jan. 2016) or Lot 26 (Jan. 2019) (Library)

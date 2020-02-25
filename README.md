@@ -1,7 +1,7 @@
 # energy-tools
-Energy Tools for Energy Star and ErP Lot 3
+Energy Tools for Energy Star and ErP Lot 3 or Lot 26
 
-This program is designed to collect the system profile and calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and ErP Lot 3 (Jan. 2016).
+This program is designed to collect the system profile and calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and ErP Lot 3 (Jan. 2016) or Lot 26 Tier 3 (Jan. 2019).
 
 ## Usage
 
@@ -9,7 +9,7 @@ This program is designed to collect the system profile and calculate the results
 $ energy-tools -h
 usage: energy-tools [-h] [-d] [-e] [-r] [-p PROFILE] [-t TEST]
 
-Energy Tools 1.7 for Energy Star 5/6/7/8 and ErP Lot 3
+Energy Tools 1.7.1 for Energy Star 5/6/7/8 and ErP Lot 3 or Lot 26
 
 optional arguments:
   -h, --help            show this help message and exit

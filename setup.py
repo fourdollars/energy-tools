@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""Energy Tools for Energy Star and ErP Lot 3"""
+"""Energy Tools for Energy Star and ErP Lot 3 or Lot 26"""
 #
 # Copyright (C) 2014-2019 Canonical Ltd.
 # Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
@@ -25,11 +25,11 @@ from version import __version__
 
 setup(name='energy-tools',
       version=__version__,
-      description='Energy Tools for Energy Star 5/6/7/8 and ErP Lot 3',
+      description='Energy Tools for Energy Star 5/6/7/8 and ErP Lot 3 or Lot 26',
       long_description='''
 This program is designed to collect the system profile and calculate
 the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and
-ErP Lot 3 (Jan. 2016).''',
+ErP Lot 3 (Jan. 2016) or Lot 26 Tier 3 (Jan. 2019).''',
       platforms=['Linux'],
       license='GPLv3',
       author='Shih-Yuan Lee (FourDollars)',

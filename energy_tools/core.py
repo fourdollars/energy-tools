@@ -1,6 +1,6 @@
 # -*- coding: utf-8; indent-tabs-mode: nil; tab-width: 4; c-basic-offset: 4;-*-
 #
-# Copyright (C) 2014-2018 Canonical Ltd.
+# Copyright (C) 2014-2020 Canonical Ltd.
 # Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -29,6 +29,7 @@ from .energystar70 import EnergyStar70
 from .energystar80 import EnergyStar80
 from .sysinfo import SysInfo
 from .erplot3 import ErPLot3
+from .erplot26 import ErPLot26
 from .common import result_filter
 from .version import __version__
 
@@ -682,6 +683,7 @@ def process(description, args):
         calculate_product_type1_estar7(sysinfo_simulate_4G_ram)
 
     erplot3_calculate(sysinfo)
+    erplot26_calculate(sysinfo)
 
     if not args.profile:
         profile = get_system_filename(sysinfo) + '.profile'
@@ -727,5 +729,19 @@ def get_system_filename(sysinfo):
 def erplot3_calculate(sysinfo):
     if sysinfo.product_type != 1:
         return
+    if sysinfo.computer_type == 3:
+        if sysinfo.diagonal < 9 or sysinfo.long_idle < 6:
+            return
     erplot3 = ErPLot3(sysinfo)
     erplot3.calculate()
+
+
+def erplot26_calculate(sysinfo):
+    if sysinfo.product_type != 1:
+        return
+    if sysinfo.computer_type != 3:
+        return
+    if sysinfo.diagonal > 9 and sysinfo.long_idle > 6:
+        return
+    erplot26 = ErPLot26(sysinfo)
+    erplot26.calculate()
