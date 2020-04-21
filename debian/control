@@ -10,8 +10,8 @@ Standards-Version: 4.1.4
 
 Package: energy-tools
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-energy-tools
-Suggests: energy-tools-doc
+Depends: ${python3:Depends}, ${misc:Depends}, python3-energy-tools (= ${binary:Version})
+Suggests: energy-tools-doc (= ${binary:Version})
 Description: Energy Tools for Energy Star and ErP Lot 3 or Lot 26
  This program is designed to collect the system profile and
  calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and
@@ -24,7 +24,7 @@ Depends: ${misc:Depends}
 Description: Design flow for Energy Tools
  This program is designed to collect the system profile and
  calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and
- ErP Lot 3 (Jan. 2016) (Design Flow)
+ ErP Lot 3 (Jan. 2016) or Lot 26 (Jan. 2019) (Design Flow)
 
 Package: python3-energy-tools
 Architecture: all
@@ -33,7 +33,7 @@ Depends: ${python3:Depends}, ${misc:Depends},
  ethtool,
  python3-debian,
  python3-xlsxwriter
-Recommends: energy-tools
+Recommends: energy-tools (= ${binary:Version})
 Description: Python3 library for Energy Tools
  This program is designed to collect the system profile and
  calculate the results of Energy Star (5.2 & 6.0 & 7.0 & 8.0) and
