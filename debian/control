@@ -2,6 +2,7 @@ Source: energy-tools
 Maintainer: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
 Section: python
 Priority: optional
+XS-Testsuite: autopkgtest
 Build-Depends: python3-all, debhelper (>=11), dh-python, python3-setuptools
 Homepage: https://fourdollars.github.io/energy-tools/
 Vcs-Browser: https://github.com/fourdollars/energy-tools.git

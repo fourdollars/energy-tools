@@ -1,6 +1,8 @@
 energy-tools (1.7.4) UNRELEASED; urgency=medium
 
   * debian/control: Use an exact version dependency.
+  * debian/control,
+    debian/tests/control: Add some example for autopkgtest.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 21 Apr 2020 12:33:26 +0800
 
