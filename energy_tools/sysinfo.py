@@ -27,6 +27,35 @@ import subprocess
 
 
 class SysInfo:
+    def get_width_height_width_mm_height_mm(self, data_block_of_DTD):
+        havip = bytearray((data_block_of_DTD[4] >> 4).to_bytes(1, byteorder='big'))
+        havip.append(data_block_of_DTD[2])
+        width = int.from_bytes(havip, byteorder='big')
+
+        vavip = bytearray((data_block_of_DTD[7] >> 4).to_bytes(1, byteorder='big'))
+        vavip.append(data_block_of_DTD[5])
+        height = int.from_bytes(vavip, byteorder='big')
+
+        havsimm = bytearray((data_block_of_DTD[14] >> 4).to_bytes(1, byteorder='big'))
+        havsimm.append(data_block_of_DTD[12])
+        width_mm = int.from_bytes(havsimm, byteorder='big')
+
+        vavsimm = bytearray((data_block_of_DTD[14] & 0x0f).to_bytes(1, byteorder='big'))
+        vavsimm.append(data_block_of_DTD[13])
+        height_mm = int.from_bytes(vavsimm, byteorder='big')
+
+        debug("DTD: Horizontal Addressable Video in Pixels: %d" % int.from_bytes(havip, byteorder='big'))
+        debug("DTD: Veritcal Addressable Video in Pixels: %d" % int.from_bytes(vavip, byteorder='big'))
+        debug("DTD: Horizontal Addressable Video Size in mm: %d" % int.from_bytes(havsimm, byteorder='big'))
+        debug("DTD: Veritcal Addressable Video Size in mm: %d" % int.from_bytes(vavsimm, byteorder='big'))
+        return width, height, width_mm, height_mm
+
+    def read_edid(self, edid_fobj, address, bytelen):
+        """ Read edid number of bytelen bytes from specified address """
+        edid_fobj.seek(address)
+        rbytes = edid_fobj.read(bytelen)
+        return rbytes
+
     def edid_decode(self):
         monitor = None
         for edid in Path('/sys/devices').glob('**/edid'):
@@ -35,6 +64,7 @@ class SysInfo:
                     content = f.read()
                     if len(content) != 0:
                         monitor = edid
+                        self.width, self.height, self.width_mm, self.height_mm = self.get_width_height_width_mm_height_mm(self.read_edid(f, 0x36, 18))
                         break
             except PermissionError as err:
                 if 'SNAP_NAME' in os.environ and \
@@ -42,48 +72,12 @@ class SysInfo:
                     error('Please execute `snap connect energy-tools:'
                           + 'hardware-observe` to get the permissions.')
                 raise err
-        debug("EDID location is %s" % (monitor))
 
         if monitor is None:
             return None
 
-        width = None
-        height = None
-        width_mm = None
-        height_mm = None
-
-        edid = subprocess.check_output("""edid-decode < %s | \
-                                       grep 'Detailed mode:' -A 2""" % monitor,
-                                       shell=True,
-                                       encoding='utf8',
-                                       stderr=open(os.devnull, 'w'))
-        debug(edid)
-
-        for line in edid.split('\n'):
-            m = re.search(r'(\d+) mm x (\d+) mm', line)
-            if m:
-                width_mm = m.group(1)
-                height_mm = m.group(2)
-                continue
-
-            m = re.search(r'(\d+)\s+\d+\s+\d+\s+\d+\s+hborder\s+\d+', line)
-            if m:
-                width = m.group(1)
-                continue
-
-            m = re.search(r'(\d+)\s+\d+\s+\d+\s+\d+\s+vborder\s+\d+', line)
-            if m:
-                height = m.group(1)
-                continue
-
-            if width_mm and height_mm and width and height:
-                break
-        debug('%s %s %s %s' % (width, height, width_mm, height_mm))
-
-        self.width_mm = int(width_mm)
-        self.height_mm = int(height_mm)
-        self.width = int(width)
-        self.height = int(height)
+        debug("EDID location is %s" % (monitor))
+        debug('%s %s %s %s' % (self.width, self.height, self.width_mm, self.height_mm))
 
     def question_str(self, prompt, length, validator, name):
         if name in self.profile:
