@@ -1,4 +1,4 @@
-energy-tools (1.7.4) UNRELEASED; urgency=medium
+energy-tools (1.7.4) focal; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
   * debian/control: Use an exact version dependency.
@@ -11,7 +11,7 @@ energy-tools (1.7.4) UNRELEASED; urgency=medium
   * energy_tools/sysinfo.py: Read edid file directly instead parse edid-decode
     output.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 02 Jun 2020 11:23:27 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 02 Jun 2020 11:38:12 +0800
 
 energy-tools (1.7.3) bionic; urgency=medium
 
