@@ -30,7 +30,6 @@ Description: Design flow for Energy Tools
 Package: python3-energy-tools
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends},
- edid-decode,
  ethtool,
  python3-debian,
  python3-xlsxwriter
