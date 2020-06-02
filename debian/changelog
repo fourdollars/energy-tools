@@ -1,10 +1,15 @@
 energy-tools (1.7.4) UNRELEASED; urgency=medium
 
+  [ Shih-Yuan Lee (FourDollars) ]
   * debian/control: Use an exact version dependency.
   * debian/control,
     debian/tests/control: Add some example for autopkgtest.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 21 Apr 2020 12:33:26 +0800
+  [ Cyrus Lien ]
+  * energy_tools/sysinfo.py: Read edid file directly instead parse edid-decode
+    output.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 02 Jun 2020 11:23:27 +0800
 
 energy-tools (1.7.3) bionic; urgency=medium
 
