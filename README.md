@@ -24,7 +24,7 @@ optional arguments:
 
 ## Snap Package
 
-[![Snap Status](https://build.snapcraft.io/badge/fourdollars/energy-tools.svg)](https://build.snapcraft.io/user/fourdollars/energy-tools)
+[![energy-tools](https://snapcraft.io/energy-tools/badge.svg)](https://snapcraft.io/energy-tools)
 
 [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-white.svg)](https://snapcraft.io/energy-tools)
 
