@@ -1,0 +1,29 @@
+app-id: io.github.fourdollars.EnergyTools
+runtime: org.freedesktop.Platform
+runtime-version: '20.08'
+sdk: org.freedesktop.Sdk
+command: energy-tools
+separate-locales: false
+modules:
+  - name: ethtool
+    buildsystem: autotools
+    config-opts:
+      - --disable-netlink
+      - --disable-pretty-dump
+      - --prefix=/app
+      - --sbindir=/app/bin
+    sources:
+      - type: archive
+        url: https://mirrors.edge.kernel.org/pub/software/network/ethtool/ethtool-5.12.tar.gz
+        sha256: 7ca623cc1dd25ba66531573da6a11f1ecde9b62b00742d9ba54f9ba983439bfa
+  - name: energy-tools
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=/app --no-deps .
+    sources:
+      - type: archive
+        url: https://github.com/fourdollars/energy-tools/archive/refs/tags/1.7.4.tar.gz
+        sha256: 0aa34b6855cba9f3192db4f481f44ca637e159de2569f4ec0b60d44135103f8d
+finish-args:
+  - --filesystem=home
+  - --share=network
