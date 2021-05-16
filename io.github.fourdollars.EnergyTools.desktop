@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=EnergyTools
+Comment=Energy Tools for Energy Star and ErP Lot 3 or Lot 26
+Exec=energy-tools
+Terminal=true
+Type=Application
+Icon=io.github.fourdollars.EnergyTools
+StartupWMClass=EnergyTools
+Categories=Development;Profiling;ConsoleOnly;

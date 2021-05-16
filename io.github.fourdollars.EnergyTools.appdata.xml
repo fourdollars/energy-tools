@@ -5,7 +5,9 @@
   <metadata_license>MIT</metadata_license>
   <name>Energy Tools</name>
   <summary>Energy Tools for Energy Star and ErP Lot 3 or Lot 26</summary>
-  <description>This program is designed to collect the system profile and calculate the results of Energy Star (5.2 &amp; 6.0 &amp; 7.0 &amp; 8.0) and ErP Lot 3 (Jan. 2016) or Lot 26 Tier 3 (Jan. 2019).</description>
+  <description>
+      <p>This program is designed to collect the system profile and calculate the results of Energy Star (5.2 &amp; 6.0 &amp; 7.0 &amp; 8.0) and ErP Lot 3 (Jan. 2016) or Lot 26 Tier 3 (Jan. 2019).</p>
+  </description>
   <url type="homepage">https://fourdollars.github.io/energy-tools/</url>
   <url type="bugtracker">https://github.com/fourdollars/energy-tools/issues</url>
   <releases>
