@@ -1,3 +1,9 @@
+energy-tools (1.7.5) focal; urgency=medium
+
+  * Add "Watt" in the power consumption questions.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Sat, 25 Sep 2021 14:46:59 +0800
+
 energy-tools (1.7.4) focal; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
