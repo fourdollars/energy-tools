@@ -320,54 +320,54 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""",
 
             # Power Consumption
             self.off = self.question_num(
-                "What is the power consumption in Off Mode?", "Off Mode")
+                "What is the power consumption (Watt) in Off Mode?", "Off Mode")
             if self._check_wol():
                 self.profile["Wake-on-LAN"] = True
                 self.off_wol = self.question_num(
-                    "What is the power consumption in Off Mode with Wake-on-LAN enabled?",
+                    "What is the power consumption (Watt) in Off Mode with Wake-on-LAN enabled?",
                     "Off Mode with WOL")
             else:
                 self.profile["Wake-on-LAN"] = False
                 self.off_wol = self.off
             self.sleep = self.question_num(
-                "What is the power consumption in Sleep Mode?", "Sleep Mode")
+                "What is the power consumption (Watt) in Sleep Mode?", "Sleep Mode")
             if self._check_wol():
                 self.profile["Wake-on-LAN"] = True
                 self.sleep_wol = self.question_num(
-                    "What is the power consumption in Sleep Mode with Wake-on-LAN enabled?",
+                    "What is the power consumption (Watt) in Sleep Mode with Wake-on-LAN enabled?",
                     "Sleep Mode with WOL")
             else:
                 self.profile["Wake-on-LAN"] = False
                 self.sleep_wol = self.sleep
             self.long_idle = self.question_num(
-                "What is the power consumption in Long Idle Mode?",
+                "What is the power consumption (Watt) in Long Idle Mode?",
                 "Long Idle Mode")
             self.short_idle = self.question_num(
-                "What is the power consumption in Short Idle Mode?",
+                "What is the power consumption (Watt) in Short Idle Mode?",
                 "Short Idle Mode")
         elif self.product_type == 2:
             self.off = self.question_num(
-                "What is the power consumption in Off Mode?",
+                "What is the power consumption (Watt) in Off Mode?",
                 "Off Mode")
             self.sleep = self.question_num(
-                "What is the power consumption in Sleep Mode?",
+                "What is the power consumption (Watt) in Sleep Mode?",
                 "Sleep Mode")
             self.long_idle = self.question_num(
-                "What is the power consumption in Long Idle Mode?",
+                "What is the power consumption (Watt) in Long Idle Mode?",
                 "Long Idle Mode")
             self.short_idle = self.question_num(
-                "What is the power consumption in Short Idle Mode?",
+                "What is the power consumption (Watt) in Short Idle Mode?",
                 "Short Idle Mode")
             self.max_power = self.question_num(
-                "What is the maximum power consumption?",
+                "What is the maximum power consumption (Watt)?",
                 "Maximum Power")
             self.get_disk_num()
         elif self.product_type == 3:
             self.off = self.question_num(
-                "What is the power consumption in Off Mode?",
+                "What is the power consumption (Watt) in Off Mode?",
                 "Off Mode")
             self.short_idle = self.question_num(
-                "What is the power consumption in Short Idle Mode?",
+                "What is the power consumption (Watt) in Short Idle Mode?",
                 "Short Idle Mode")
             if self.get_cpu_core() < 2:
                 self.more_discrete = self.question_bool(
@@ -377,16 +377,16 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""",
                 self.more_discrete = False
         elif self.product_type == 4:
             self.off = self.question_num(
-                "What is the power consumption in Off Mode?", "Off Mode")
+                "What is the power consumption (Watt) in Off Mode?", "Off Mode")
             self.sleep = self.question_num(
-                """What is the power consumption in Sleep Mode?
+                """What is the power consumption (Watt) in Sleep Mode?
 (You can input the power consumption in Long Idle Mode, if it lacks a discrete System Sleep Mode)""",
                 "Sleep Mode")
             self.long_idle = self.question_num(
-                "What is the power consumption in Long Idle Mode?",
+                "What is the power consumption (Watt) in Long Idle Mode?",
                 "Long Idle Mode")
             self.short_idle = self.question_num(
-                "What is the power consumption in Short Idle Mode?",
+                "What is the power consumption (Watt) in Short Idle Mode?",
                 "Short Idle Mode")
             self.media_codec = self.question_bool(
                 "Does it support local multimedia encode/decode?",
