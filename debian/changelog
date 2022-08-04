@@ -1,3 +1,9 @@
+energy-tools (1.7.7) focal; urgency=medium
+
+  * Bump the version to fix the versioning.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 04 Aug 2022 16:41:30 +0800
+
 energy-tools (1.7.6) focal; urgency=medium
 
   * Read the base frequency of the CPU from /sys/devices/system/cpu/cpufreq/policy0/base_frequency when it exists.
