@@ -527,7 +527,10 @@ iii. Color Gamut greater than or equal to 32.9% of CIE LUV.""", "Enhanced Displa
             self.cpu_clock = self.profile["CPU Clock"]
             return self.cpu_clock
 
-        if self._get_cpu_vendor() == 'intel':
+        if os.path.exists('/sys/devices/system/cpu/cpufreq/policy0/base_frequency'):
+            with open('/sys/devices/system/cpu/cpufreq/policy0/base_frequency') as f:
+                self.cpu_clock = float(f.read()) / 1000000
+        elif self._get_cpu_vendor() == 'intel':
             self.cpu_clock = self._float_cmd(
                 "grep -oP '[0-9.]+GHz' /proc/cpuinfo | uniq | sed 's/GHz//'")
         else:
